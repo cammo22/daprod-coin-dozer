@@ -4,6 +4,31 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [1.2.2] — 2026-09-18 · Gettoni sempre in ricarica 🪙♾️
+
+### Risolto
+- **Il gioco non si bloccava più, adesso non si blocca davvero**: la ricarica dei gettoni non è
+  più legata all'interruttore IDLE (se lo si spegneva, i gettoni finivano e non si poteva più
+  giocare). Ora il caricatore si riempie **sempre**: velocità base 1,2 gettoni/s e capacità base 16
+  (prima 0,55/s e 12). Il chip 🪙 GETTONI è diventato un indicatore "SEMPRE ATTIVA".
+- **La spazzata non toglie più lire dal mucchio**: spazza solo le lire già arrivate sul bordo di
+  caduta (quelle che stavano per cadere) e le **paga**. Il tavolo resta pieno, niente più mucchi
+  che si svuotano.
+- **Telefono, negozio sistemato**:
+  - l'elenco del negozio ora ha `min-height: 0` → **scorre davvero** (prima veniva tagliato e
+    sembrava vuoto/non funzionante);
+  - il negozio si apre con **click + touchend** (con scarto anti-doppio-tocco) sia dal pulsante
+    ▲ NEGOZIO sia **toccando il riquadro 🏆 PREMI**;
+  - anche schede e bottoni del negozio rispondono al tocco;
+  - zone separate in basso: chip a sinistra, ▲ NEGOZIO e ◎ SPARA a destra;
+  - `touch-action: manipulation` su tutti i pulsanti (tocco immediato, niente zoom da doppio tap).
+- **Versione visibile nell'HUD** (`SALA SLOT · v1.2.2`): serve a capire subito se il telefono sta
+  usando la versione nuova o una copia in cache.
+
+### Modificato
+- Limite lire in scena: **200 su desktop**, **130 su telefono** (profilo misurato: 152 fps a 200 lire,
+  298 fps a 130 lire, quindi sempre fluido).
+
 ## [1.2.1] — 2026-09-18 · Fix telefono 📱
 
 ### Risolto

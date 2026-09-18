@@ -20,6 +20,9 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
     color: #fff; user-select: none; -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+  button, .tondo, .chip, .compra, .inter, .tab button, .box.premi {
+    touch-action: manipulation;   /* tocco immediato, niente zoom da doppio tap */
+    -webkit-tap-highlight-color: transparent; }
   canvas { display: block; cursor: crosshair; touch-action: none; }
   #vignetta { position: fixed; inset: 0; pointer-events: none; z-index: 4;
     background: radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 42%, rgba(0,0,0,.62) 100%); }
@@ -49,6 +52,9 @@
   .box.idle { min-width: 138px; }
   .box.idle b { font-size: 14px; margin-top: 2px; color: #7ef0c0;
     text-shadow: 0 0 12px rgba(90,255,190,.45); }
+  .box.premi { pointer-events: auto; cursor: pointer; }
+  .box.premi:hover { border-color: var(--oro); }
+  .box.premi:active { transform: scale(.98); }
   .barra { display: block; height: 5px; border-radius: 999px; background: rgba(255,255,255,.12);
     margin-top: 6px; overflow: hidden; }
   .barra i { display: block; height: 100%; width: 0%; border-radius: 999px;
@@ -170,7 +176,8 @@
     border-radius: 14px; cursor: pointer; transition: all .18s; }
   .tab button.sel { color: #14101f; background: linear-gradient(180deg, #ffe89a, var(--oro2));
     border-color: transparent; box-shadow: 0 8px 22px rgba(255,170,0,.3); }
-  .voci { padding: 14px 22px 22px; overflow-y: auto; display: grid; gap: 12px; }
+  .voci { padding: 14px 22px 22px; overflow-y: auto; display: grid; gap: 12px;
+    flex: 1 1 auto; min-height: 0; -webkit-overflow-scrolling: touch; }
   .voce { display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; align-items: center;
     background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.09);
     border-radius: 18px; padding: 14px 16px; transition: border-color .2s, transform .15s; }
@@ -266,7 +273,7 @@
   }
   @media (max-width: 430px) {
     .chip { padding: 8px 4px; font-size: 8.5px; }
-    #abilita { right: 138px; }
+    #abilita { right: 150px; }
     .voce { grid-template-columns: 1fr; }   /* righe a colonna singola: più leggibile */
     .compra, .inter { width: 100%; }
     .prog { max-width: none; }
@@ -278,10 +285,10 @@
 <div id="hud">
   <div class="marchio">
     <div class="logo">DaProd</div>
-    <div class="sub">SALA SLOT · COIN DOZER</div>
+    <div class="sub">SALA SLOT · <span id="versione">v1.2.2</span></div>
   </div>
   <div class="stat">
-    <div class="box">🏆 PREMI<b id="premi">30</b></div>
+    <div class="box premi" id="boxPremi" title="Tocca per aprire il negozio">🏆 PREMI<b id="premi">30</b></div>
     <div class="box">🏅 VINTE<b id="vinte">0</b></div>
     <div class="box idle">🪙 GETTONI<b id="gettoniV">12/12</b><span class="barra"><i id="gettoniBar"></i></span></div>
   </div>
@@ -406,7 +413,7 @@ function salvaPartita() {
 caricaPartita();
 
 // --- formule di gioco (costi e potenza) ---
-// GETTONI INFINITI: il caricatore si ricarica sempre; il potenziamento alza velocità e capacità
+// GETTONI INFINITI: il caricatore si ricarica SEMPRE (mai blocchi di gioco)
 const LIVELLI_MAX = { idle: 15, forza: 8, multi: 4, cannonePot: 8, raffica: 6 };
 const COSTO_CANNONE = 300;
 const COSTO_RAFFICA = 450;
@@ -416,11 +423,12 @@ const costoMulti = (n) => Math.round(140 * Math.pow(3.3, n));
 const costoCannonePot = (n) => Math.round(420 * Math.pow(2.2, n));
 const costoRaffica = (n) => (n <= 0 ? COSTO_RAFFICA : Math.round(COSTO_RAFFICA * Math.pow(2.3, n)));
 const rateRaffica = (n) => (n <= 0 ? 0 : 3 + 2 * n);      // lire al secondo a raffica
-const capCaricatore = (n) => 12 + 3 * n;                  // gettoni trasportabili nel caricatore
-const ricaricaGettoni = (n) => 0.55 + 0.35 * n;            // gettoni al secondo (sempre attivi)
+const capCaricatore = (n) => 16 + 4 * n;                  // gettoni trasportabili nel caricatore
+const ricaricaGettoni = (n) => 1.2 + 0.55 * n;            // gettoni al secondo, sempre attivi
 const fattoreForza = (n) => 1 + 0.25 * n;                 // moltiplicatore della spinta di lancio
 const lirePerLancio = (n) => 1 + n;                       // lire lanciate per click
 const forzaCannone = (n) => 1 + 0.5 * n;                  // potenza dello sparo
+const VERSIONE = 'v1.2.2';                                // mostrata nell'HUD per verificare gli aggiornamenti
 const PRESTIGIO = { argento: 400, rubino: 1200, arcobaleno: 4000 };
 const COSTO_FELTRO = { blu: 250, bordeaux: 700, notte: 1500 };
 const NOME_FELTRO = { verde: 'Verde DaProd', blu: 'Blu Royal', bordeaux: 'Bordeaux', notte: 'Notte Neon' };
@@ -815,7 +823,7 @@ const lire = [];
 const LIRE_INIZIALI = 90; // il tavolo tra piastra e bordo deve essere PIENO di lire, come nella macchina vera
 
 // Le lire NASCONO SDRAIATE in una pila compatta tra il bordo e la piastra (come nella macchina vera)
-const MAX_LIRE = TATTILE ? 120 : 180; // limite di sicurezza per la fluidità (meno lire sul telefono)
+const MAX_LIRE = TATTILE ? 130 : 200; // limite di sicurezza per la fluidità (meno lire sul telefono)
 function creaLira(x, y, z, opz = {}) {
   const mesh = new THREE.Mesh(coinGeo, materialiCorrenti);
   mesh.position.set(x, y, z);
@@ -841,18 +849,17 @@ function creaLira(x, y, z, opz = {}) {
     attiva: true
   };
   lire.push(m);
-  // tavolo pieno: le lire più vicine al bordo vengono "spazzate" e PAGATE (mai sparizioni a vuoto)
+  // tavolo pieno: spazza SOLO le lire già sul bordo di caduta (e le paga).
+  // Le lire del mucchio non vengono mai rimosse: il tavolo resta pieno.
   if (lire.length > MAX_LIRE) {
-    let daSpazzare = lire.length - MAX_LIRE + 2;
-    const sulBordo = lire.filter(q => q.attiva && q !== m)
+    const sulBordo = lire.filter(q => q.attiva && q !== m && q.mesh.position.z < -4.2)
       .sort((a, b) => a.mesh.position.z - b.mesh.position.z);
     let spazzate = 0;
     for (const q of sulBordo) {
-      if (daSpazzare <= 0) break;
+      if (lire.filter(r => r.attiva).length - spazzate <= MAX_LIRE) break;
       q.attiva = false;
       scene.remove(q.mesh);
       particelle(q.mesh.position.x, 0.25, q.mesh.position.z, 5, 0xffd54a, 0.8);
-      daSpazzare--;
       spazzate++;
     }
     if (spazzate > 0) {
@@ -1376,7 +1383,7 @@ const chipAbilita = [
   { id: 'raffica', sbloccata: () => stato.pot.raffica > 0, nota: () => rateRaffica(stato.pot.raffica).toFixed(0) + '/s' },
   { id: 'forza', sbloccata: () => stato.pot.forza > 0, nota: () => 'x' + fmt(fattoreForza(stato.pot.forza)) },
   { id: 'multi', sbloccata: () => stato.pot.multi > 0, nota: () => lirePerLancio(stato.pot.multi) + 'x' },
-  { id: 'idle', sbloccata: () => true, nota: () => fmt(ricaricaGettoni(stato.pot.idle)) + '/s' },
+  { id: 'idle', sbloccata: () => true, sempre: true, nota: () => fmt(ricaricaGettoni(stato.pot.idle)) + '/s' },
   { id: 'torri', sbloccata: () => true, nota: () => 'bonus' },
   { id: 'audio', sbloccata: () => true, nota: () => (stato.audio ? 'ON' : 'OFF') }
 ];
@@ -1385,7 +1392,7 @@ function aggiornaAbilita() {
     const el = document.getElementById('ch-' + c.id);
     if (!el) continue;
     const sbloccata = c.sbloccata();
-    const acceso = c.id === 'audio' ? stato.audio : (sbloccata && !!stato.attivi[c.id]);
+    const acceso = c.sempre ? true : (c.id === 'audio' ? stato.audio : (sbloccata && !!stato.attivi[c.id]));
     el.classList.toggle('bloccata', !sbloccata);
     el.classList.toggle('on', acceso);
     el.classList.toggle('off', !acceso);
@@ -1401,6 +1408,7 @@ function cambiaAbilita(id) {
   } else {
     const c = chipAbilita.find(q => q.id === id);
     if (!c || !c.sbloccata()) { suono.errore(); avviso('Prima sbloccalo nel negozio'); return; }
+    if (c.sempre) { avviso('I gettoni si ricaricano sempre 🪙  ' + fmt(ricaricaGettoni(stato.pot.idle)) + '/s'); suono.compra(); return; }
     stato.attivi[id] = !stato.attivi[id];
   }
   if (id === 'raffica') { inRaffica = false; accRaffica = 0; }
@@ -1488,17 +1496,20 @@ function rendiNegozio() {
       { id: 'raffica', nome: 'RAFFICA', desc: 'Tieni premuto e spari una lira dietro l\'altra (' + rateRaffica(p.raffica).toFixed(0) + '/s).', sbloccata: p.raffica > 0 },
       { id: 'forza', nome: 'FORZA DI LANCIO', desc: 'Ogni lira lanciata colpisce la pila spingendola verso il bordo.', sbloccata: p.forza > 0 },
       { id: 'multi', nome: 'MULTI-LANCIO', desc: 'Lancia più lire per click (ora ' + lirePerLancio(p.multi) + ').', sbloccata: p.multi > 0 },
-      { id: 'idle', nome: '🪙 RICARICA GETTONI', desc: 'Il caricatore si riempie da solo (' + fmt(ricaricaGettoni(p.idle)) + '/s, cap ' + capCaricatore(p.idle) + '): i gettoni sono infiniti.', sbloccata: true },
+      { id: 'idle', nome: '🪙 RICARICA GETTONI', desc: 'Sempre attiva: il caricatore si riempie da solo (' + fmt(ricaricaGettoni(p.idle)) + '/s, cap ' + capCaricatore(p.idle) + '). Non si può spegnere: i gettoni sono infiniti.', sbloccata: true, sempre: true },
       { id: 'torri', nome: 'BONUS TORRI', desc: 'Premio quando si formano torri di 3 o più lire.', sbloccata: true },
       { id: 'audio', nome: 'AUDIO', desc: 'Effetti sonori della sala, sintetizzati in tempo reale (nessun file esterno).', sbloccata: true }
     ];
     html = vociAb.map(v => {
-      const acceso = v.id === 'audio' ? stato.audio : (v.sbloccata && !!stato.attivi[v.id]);
+      const acceso = v.sempre ? true : (v.id === 'audio' ? stato.audio : (v.sbloccata && !!stato.attivi[v.id]));
+      const disabilitato = v.sempre || !v.sbloccata;
+      const etichetta = v.sempre ? 'SEMPRE' : (acceso ? 'ON' : 'OFF');
+      const statoTesto = v.sempre ? 'SEMPRE ATTIVA' : (v.sbloccata ? (acceso ? 'ATTIVA' : 'DISATTIVATA') : 'DA SBLOCCARE NEL NEGOZIO');
       return '<div class="voce"><div><div class="nome">' + v.nome + '</div>' +
         '<div class="desc">' + v.desc + '</div>' +
-        '<div class="lv">' + (v.sbloccata ? (acceso ? 'ATTIVA' : 'DISATTIVATA') : 'DA SBLOCCARE NEL NEGOZIO') + '</div></div>' +
-        '<button class="inter' + (acceso ? ' acceso' : '') + '" data-ab="' + v.id + '"' + (v.sbloccata ? '' : ' disabled') + '>' +
-        '<span class="pallino"></span>' + (acceso ? 'ON' : 'OFF') + '</button></div>';
+        '<div class="lv">' + statoTesto + '</div></div>' +
+        '<button class="inter' + (acceso ? ' acceso' : '') + '" data-ab="' + v.id + '"' + (disabilitato ? ' disabled' : '') + '>' +
+        '<span class="pallino"></span>' + etichetta + '</button></div>';
     }).join('');
   } else {
     html = '<div class="voce"><div class="riepilogo">' +
@@ -1514,6 +1525,13 @@ function rendiNegozio() {
   elVoci.innerHTML = html;
   elVoci.querySelectorAll('button.compra').forEach(b => { b.onclick = () => compra(b.dataset.id); });
   elVoci.querySelectorAll('button.inter').forEach(b => { b.onclick = () => cambiaAbilita(b.dataset.ab); });
+  // su telefono i bottoni del negozio devono rispondere al tocco
+  elVoci.querySelectorAll('button.compra, button.inter').forEach(b => {
+    b.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      if (b.dataset.id) compra(b.dataset.id); else if (b.dataset.ab) cambiaAbilita(b.dataset.ab);
+    }, { passive: false });
+  });
 }
 
 function compra(id) {
@@ -1585,10 +1603,13 @@ function animate() {
   aggiornaFisica(dt);
   aggiornaParticelle(dt);
 
-  // --- GETTONI INFINITI: il caricatore si ricarica sempre (se l'abilità è ON) ---
+  // --- GETTONI INFINITI: il caricatore si ricarica SEMPRE, senza interruttori che lo fermino ---
   const capG = capCaricatore(stato.pot.idle);
-  if (stato.attivi.idle && stato.gettoni < capG) {
+  if (stato.gettoni < capG) {
     stato.gettoni = Math.min(capG, stato.gettoni + ricaricaGettoni(stato.pot.idle) * dt);
+    aggiornaHUD();
+  } else if (stato.gettoni > capG) {
+    stato.gettoni = capG;                      // potenziamento appena comprato: riempio fino al nuovo tetto
     aggiornaHUD();
   }
 
@@ -1691,19 +1712,43 @@ function aggiornaSpara() {
     elSpara.style.opacity = elSpara.disabled ? '.45' : '1';
   }
 }
-document.getElementById('apriNegozio').onclick = () => {
+// ---------- apertura/chiusura negozio: funziona con mouse e con tocco ----------
+function apriNegozio() {
   elNegozio.classList.remove('chiuso');
   rendiNegozio();
   suono.compra();
-};
+}
+const elApriNegozio = document.getElementById('apriNegozio');
+const elBoxPremi = document.getElementById('boxPremi');
+let ultimaApertura = 0;
+function apriNegozioSicuro(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  const ora = performance.now();
+  if (ora - ultimaApertura < 350) return;   // evita il doppio scatto click + touchend
+  ultimaApertura = ora;
+  apriNegozio();
+}
+for (const el of [elApriNegozio, elBoxPremi]) {
+  if (!el) continue;
+  el.addEventListener('click', apriNegozioSicuro);
+  el.addEventListener('touchend', apriNegozioSicuro, { passive: false });
+  el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') apriNegozioSicuro(e); });
+}
+
 document.getElementById('chiudiNegozio').onclick = () => elNegozio.classList.add('chiuso');
 elNegozio.addEventListener('click', (e) => { if (e.target === elNegozio) elNegozio.classList.add('chiuso'); });
 document.querySelectorAll('.tab button').forEach(b => {
-  b.onclick = () => {
+  b.addEventListener('click', () => {
     schedaAttiva = b.dataset.tab;
     document.querySelectorAll('.tab button').forEach(q => q.classList.toggle('sel', q === b));
     rendiNegozio();
-  };
+  });
+  b.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    schedaAttiva = b.dataset.tab;
+    document.querySelectorAll('.tab button').forEach(q => q.classList.toggle('sel', q === b));
+    rendiNegozio();
+  }, { passive: false });
 });
 collegaAbilita();
 addEventListener('keydown', (e) => {
@@ -1722,6 +1767,8 @@ addEventListener('beforeunload', salvaPartita);
 
 // ============ AVVIO ============
 tavoloMat.color.setHex(COLORE_FELTRI[stato.sbloccati.feltro] || COLORE_FELTRI.verde);
+const elVersione = document.getElementById('versione');
+if (elVersione) elVersione.textContent = VERSIONE;
 stato.gettoni = Math.min(Math.max(stato.gettoni, 0), capCaricatore(stato.pot.idle));
 aggiornaHUD();
 aggiornaAbilita();
