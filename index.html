@@ -255,7 +255,7 @@
   <div class="stat">
     <div class="box">SALDO<b id="saldo">25</b></div>
     <div class="box">VINTE<b id="vinte">0</b></div>
-    <div class="box idle">PRODUZIONE IDLE<b id="idleRate">0,0/s</b><span class="barra"><i id="idleBar"></i></span></div>
+    <div class="box idle">LIRE AL SECONDO<b id="idleRate">0,0/s</b><span class="barra"><i id="idleBar"></i></span></div>
   </div>
 </div>
 <div id="floaters"></div>
@@ -1344,7 +1344,7 @@ let schedaAttiva = 'pot';
 function riga(o) {
   const massimo = !!o.max2;
   const dis = (massimo || o.bloccato || stato.saldo < o.costo) ? 'disabled' : '';
-  const testo = massimo ? (o.etichettaMax || 'MAX') : (o.bloccato ? 'BLOCCATO' : 'ACQUISTA · ' + o.costo);
+  const testo = massimo ? (o.etichettaMax || 'MAX') : (o.bloccato ? 'BLOCCATO' : 'ACQUISTA · L.' + o.costo);
   return '<div class="voce' + (massimo ? ' max' : '') + '">' +
     '<div><div class="nome">' + o.nome + (o.extra ? '<em>' + o.extra + '</em>' : '') + '</div>' +
     '<div class="desc">' + o.desc + '</div>' +
