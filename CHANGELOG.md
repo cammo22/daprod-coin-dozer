@@ -4,6 +4,25 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [1.2.1] — 2026-09-18 · Fix telefono 📱
+
+### Risolto
+- **I pulsanti in basso non rispondevano al tocco**: la barra delle abilità copriva il
+  pulsante ▲ POTENZIAMENTI e si mangiava i tocchi. Ora il contenitore della barra non
+  intercetta più i tocchi (`pointer-events: none`, solo i chip sono cliccabili) e le
+  zone non si sovrappongono più: chip a sinistra, ▲ NEGOZIO e ◎ SPARA a destra.
+- **Vista troppo zoomata in verticale**: quando lo schermo è più alto che largo la
+  camera **arretra automaticamente** finché il tavolo non entra tutto in larghezza.
+- Aggiunto lo **zoom con due dita (pinch)** su telefono: prima c'era solo la rotella.
+
+### Modificato
+- HUD su telefono in colonna (logo sopra, statistiche sotto), con rispetto del notch
+  e della barra di sistema (`env(safe-area-inset-*)`).
+- Chip delle abilità in **griglia compatta** (2-3 per riga) e pulsante con nome corto
+  `▲ NEGOZIO` sugli schermi piccoli.
+- Negozio: sotto i 430px le righe diventano a **colonna singola** con bottoni a tutta
+  larghezza, molto più facili da premere.
+
 ## [1.2.0] — 2026-09-18 · Gettoni infiniti 🪙♾️
 
 ### Aggiunto

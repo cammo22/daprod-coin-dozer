@@ -72,9 +72,10 @@
     border: 1px solid #4a4166; font: inherit; font-size: 11.5px; color: #fff; }
 
   /* ---------- barra abilità (interruttori ON/OFF) ---------- */
+  /* il contenitore non ruba i tocchi: solo i chip sono cliccabili */
   #abilita { position: fixed; left: 18px; bottom: 18px; z-index: 12;
-    display: flex; gap: 8px; flex-wrap: wrap; max-width: 52vw; }
-  .chip { border: 1px solid rgba(255,255,255,.14);
+    display: flex; gap: 8px; flex-wrap: wrap; max-width: 52vw; pointer-events: none; }
+  .chip { pointer-events: auto; border: 1px solid rgba(255,255,255,.14);
     background: linear-gradient(180deg, rgba(34,27,54,.94), rgba(16,12,28,.94));
     color: #cfc7de; font: 800 10.5px/1 inherit; letter-spacing: 1.3px;
     padding: 11px 14px; border-radius: 999px; cursor: pointer; backdrop-filter: blur(10px);
@@ -205,33 +206,44 @@
   /* ---------- pulsante sparo per touch (telefono) ---------- */
   #spara { position: fixed; right: 18px; bottom: 70px; z-index: 12; display: none;
     align-items: center; gap: 8px; }
+  .tCorto { display: none; }   /* su schermi grandi si legge il nome lungo */
 
   /* ---------- telefono / schermi stretti ---------- */
   @media (max-width: 780px), (max-height: 520px) {
-    #hud { padding: 8px 10px; gap: 6px; }
-    .marchio { padding: 7px 11px 8px; border-radius: 14px; }
+    /* HUD in colonna: logo sopra, statistiche sotto */
+    #hud { flex-direction: column; align-items: stretch; gap: 6px;
+      padding: max(8px, env(safe-area-inset-top)) 10px 6px; }
+    .marchio { align-self: flex-start; padding: 7px 12px 8px; border-radius: 14px; }
     .logo { font-size: 19px; letter-spacing: 1.6px; }
     .marchio .sub { font-size: 7.5px; letter-spacing: 1.8px; margin-top: 3px; }
-    .stat { gap: 5px; }
-    .box { padding: 6px 10px 7px; min-width: 68px; font-size: 7.5px; letter-spacing: 1.2px; border-radius: 13px; }
+    .stat { justify-content: flex-start; gap: 5px; }
+    .box { padding: 6px 10px 7px; min-width: 62px; font-size: 7.5px; letter-spacing: 1.2px; border-radius: 13px; }
     .box b { font-size: 15px; margin-top: 2px; }
-    .box.idle { min-width: 96px; }
+    .box.idle { min-width: 92px; }
     .box.idle b { font-size: 10.5px; }
     .barra { height: 4px; margin-top: 4px; }
 
-    #hint { top: 82px; bottom: auto; font-size: 9.5px; padding: 6px 11px; max-width: 94vw;
+    #hint { top: 146px; bottom: auto; font-size: 9.5px; padding: 6px 11px; max-width: 94vw;
       letter-spacing: .2px; line-height: 1.5; }
     #hint kbd { padding: 2px 6px; font-size: 9px; }
 
-    #abilita { left: 8px; right: 8px; bottom: 8px; max-width: none; gap: 5px; }
-    .chip { padding: 9px 10px; font-size: 9px; letter-spacing: .8px; gap: 6px; border-radius: 999px; }
-    .chip .led { width: 6px; height: 6px; }
+    /* chip in griglia, senza coprire i pulsanti in basso a destra */
+    #abilita { left: 8px; right: 148px; bottom: max(8px, env(safe-area-inset-bottom));
+      max-width: none; display: grid; gap: 5px;
+      grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); }
+    .chip { padding: 9px 6px; font-size: 9px; letter-spacing: .8px; gap: 6px;
+      justify-content: center; text-align: center; }
+    .chip .led { width: 6px; height: 6px; flex: none; }
     .chip small { display: none; }
-    .chip.audio small { display: inline; }
 
-    #apriNegozio { right: 8px; bottom: 8px; padding: 10px 13px; font-size: 10px; letter-spacing: 1px; }
-    #spara { right: 8px; bottom: 54px; padding: 11px 14px; font-size: 10.5px; }
-    #carica { width: 190px; bottom: 104px; }
+    /* pulsanti in basso a destra: NEGOZIO (nome corto) e sopra SPARA */
+    .tLungo { display: none; }
+    .tCorto { display: inline; }
+    #apriNegozio { right: 8px; bottom: max(8px, env(safe-area-inset-bottom));
+      padding: 12px 13px; font-size: 10px; letter-spacing: 1px; max-width: 136px; }
+    #spara { right: 8px; bottom: calc(max(8px, env(safe-area-inset-bottom)) + 56px);
+      padding: 11px 12px; font-size: 10.5px; }
+    #carica { width: 58vw; bottom: calc(max(8px, env(safe-area-inset-bottom)) + 112px); }
     #carica .track { height: 10px; }
     #combo { font-size: 32px; top: 26%; }
     .floater { font-size: 20px; }
@@ -241,18 +253,23 @@
     .pannello header { padding: 13px 15px 11px; }
     .pannello h2 { font-size: 15px; letter-spacing: 1.4px; }
     .pannello h2 small { font-size: 8.5px; letter-spacing: 1.8px; }
+    #chiudiNegozio { width: 42px; height: 42px; }
     .tab { padding: 11px 15px 0; gap: 6px; }
-    .tab button { padding: 10px 6px; font-size: 9.5px; letter-spacing: 1px; border-radius: 11px; }
+    .tab button { padding: 10px 4px; font-size: 9.5px; letter-spacing: .8px; border-radius: 11px; }
     .voci { padding: 11px 15px 16px; gap: 9px; }
     .voce { padding: 11px 12px; border-radius: 15px; gap: 8px 12px; }
     .voce .nome { font-size: 12.5px; }
     .voce .desc { font-size: 11px; }
+    .voce .ico { width: 24px; height: 24px; margin-right: 5px; font-size: 11px; }
     .compra { padding: 11px 12px; min-width: 92px; font-size: 10.5px; border-radius: 12px; }
     .inter { min-width: 78px; padding: 10px 11px; font-size: 10px; }
   }
   @media (max-width: 430px) {
-    .chip { padding: 8px 9px; font-size: 8.5px; }
-    #carica { width: 160px; }
+    .chip { padding: 8px 4px; font-size: 8.5px; }
+    #abilita { right: 138px; }
+    .voce { grid-template-columns: 1fr; }   /* righe a colonna singola: più leggibile */
+    .compra, .inter { width: 100%; }
+    .prog { max-width: none; }
   }
 </style>
 </head>
@@ -273,7 +290,7 @@
 <div id="combo"></div>
 <div id="carica"><div class="track"><i id="caricaBar"></i></div><span id="caricaTxt">CANNONE</span></div>
 <div id="hint"><kbd>click</kbd> lancia · <kbd>tieni premuto sx</kbd> raffica · <kbd>tieni premuto dx</kbd> cannone · <kbd>rotella</kbd> zoom</div>
-<button id="apriNegozio" class="tondo">▲ POTENZIAMENTI</button>
+<button id="apriNegozio" class="tondo">▲ <span class="tLungo">POTENZIAMENTI</span><span class="tCorto">NEGOZIO</span></button>
 <div id="abilita">
   <button class="chip" id="ch-cannone" title="Tieni premuto per caricare lo sparo"><span class="led"></span>💥 CANNONE</button>
   <button class="chip" id="ch-raffica" title="Tieni premuto per sparare a raffica"><span class="led"></span>⚡ RAFFICA <small id="ch-raffica-v"></small></button>
@@ -605,6 +622,36 @@ addEventListener('resize', () => {
 let cameraZoom = 1;
 addEventListener('wheel', (e) => {
   cameraZoom = Math.max(0.6, Math.min(1.4, cameraZoom - e.deltaY * 0.001));
+}, { passive: true });
+
+// In verticale (telefono) il tavolo non ci sta in larghezza: la camera arretra da sola
+const fattoreVerticale = () => {
+  const asp = innerWidth / innerHeight;
+  if (asp >= 1.05) return 1;
+  return 1 + (1.05 - asp) * 0.62;
+};
+
+// Zoom con due dita (pinch) sul telefono
+const distanzaTocchi = (e) => {
+  const t0 = e.touches[0], t1 = e.touches[1];
+  return Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
+};
+let pizzicaBase = null;
+renderer.domElement.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    inRaffica = false; accRaffica = 0; colpiRaffica = 0;    // il secondo dito è zoom, non fuoco
+    if (inCarica) { inCarica = false; elCarica.classList.remove('attiva'); carica = 0; }
+    pizzicaBase = distanzaTocchi(e) / cameraZoom;
+  }
+}, { passive: true });
+renderer.domElement.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 2 && pizzicaBase) {
+    cameraZoom = Math.max(0.55, Math.min(1.8, distanzaTocchi(e) / pizzicaBase));
+    e.preventDefault();
+  }
+}, { passive: false });
+renderer.domElement.addEventListener('touchend', (e) => {
+  if (e.touches.length < 2) pizzicaBase = null;
 }, { passive: true });
 
 // ============ LUCI ============
@@ -1610,8 +1657,9 @@ function animate() {
 
   if (combo > 0 && now > comboScadenza) combo = 0;
 
-  // --- camera: zoom + scossa ---
-  const targetPos = new THREE.Vector3(0, 10 * cameraZoom, -12 * cameraZoom);
+  // --- camera: zoom (utente + arretramento in verticale) + scossa ---
+  const kv = fattoreVerticale();
+  const targetPos = new THREE.Vector3(0, 10 * kv * cameraZoom, -12 * kv * cameraZoom);
   camera.position.lerp(targetPos, 0.1);
   if (scossaForza > 0) {
     scossaForza = Math.max(0, scossaForza - dt * 2.6);
