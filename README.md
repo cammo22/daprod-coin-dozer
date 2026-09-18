@@ -1,0 +1,72 @@
+# DaProd · Coin Dozer 🪙
+
+[![▶ GIOCA ORA](https://img.shields.io/badge/%E2%96%B6_GIOCA_ORA-DaProd_Coin_Dozer-ffd54a?style=for-the-badge&labelColor=1a1428)](https://cammo22.github.io/daprod-coin-dozer/)
+
+[![Pagina attiva](https://img.shields.io/badge/GitHub_Pages-attiva-success?style=flat-square)](https://cammo22.github.io/daprod-coin-dozer/)
+[![Made with Three.js](https://img.shields.io/badge/Three.js-r160-black?style=flat-square&logo=three.js)](https://threejs.org/)
+[![Un solo file](https://img.shields.io/badge/HTML-singolo_file-ffab00?style=flat-square)](index.html)
+[![Licenza MIT](https://img.shields.io/badge/Licenza-MIT-blue?style=flat-square)](LICENSE)
+
+Il **coin dozer della sala slot DaProd**: la piastra spinge la pila di lire verso il bordo, tu lanci le
+lire dall'alto e quelle che cadono sono le tue. Funziona **da telefono, tablet e desktop**, basta il browser.
+
+## ▶ Come si gioca
+
+| Azione | Desktop | Telefono |
+| --- | --- | --- |
+| Lancia una lira | `click` nella zona illuminata | `tap` nella zona illuminata |
+| **Raffica** (tieni premuto e spara) | tieni premuto il **tasto sinistro** | tieni premuto il dito |
+| **Cannone** (sparo potente) | tieni premuto il **tasto destro** e rilascia | tieni premuto e rilascia, oppure il pulsante **◎ SPARA** |
+| Zoom | rotella del mouse | pizzica con due dita |
+
+Ogni lira lanciata costa **1 lira dal saldo**. Quando una lira cade oltre il bordo entra nel saldo.
+Gli **switch in basso** accendono e spengono ogni abilità (le voci non sbloccate restano **grigie**).
+
+## ✨ Cosa c'è dentro
+
+- **Marchio DaProd** ovunque: logo nell'HUD, targa neon sul retro della macchina, logo inciso sul
+  panno e **incisione "DaProd · L. 100 · LIRE"** su ogni monetina 3D.
+- **Zona di lancio illuminata** con bordo tratteggiato pulsante, mirino e moneta fantasma.
+- **Fisica vera 2,5D**: le lire cadono sempre verso il basso, si appiattiscono all'atterraggio e si
+  impilano; zero rimbalzi, zero monete storte.
+- **Torri di lire**: le lire si centrano su quella sotto (pile ordinate) e a 3+ livelli scatta un
+  **bonus torre** con suono e particelle. Massimo 4 di altezza: oltre, la pila cede.
+- **Potenziamenti** (salvati nel browser):
+  - **Produzione Idle** — lire generate da sole ogni secondo, anche mentre fai altro
+  - **Forza di lancio** — le lire colpiscono la pila spingendola verso il bordo
+  - **Multi-lancio** — più lire con un solo click
+  - **Raffica** — tieni premuto e spari una lira dietro l'altra
+  - **Potenza cannone** — sparo che travolge la pila
+- **Sbloccabili**: cannone, skin delle lire (argento, rubino, arcobaleno animato) e panni del tavolo
+  (blu, bordeaux, notte).
+- **Soddisfazione**: suoni sintetizzati in tempo reale con la Web Audio API (nessun file audio),
+  particelle, testi volanti `+1`, **combo** con tono crescente, lampi e scossoni di camera sui colpi.
+- **Switch ON/OFF** per ogni abilità e per l'audio, più scorciatoie da tastiera:
+  `B` negozio · `C` cannone · `R` raffica · `F` forza · `M` multi · `I` idle · `T` torri · `A` audio.
+
+## 💾 Salvataggio
+
+Saldo, potenziamenti, sbloccabili, abilità accese e audio si salvano da soli in `localStorage`
+(chiave `daprod_dozer_v1`). Nel negozio, scheda **STATISTICHE**, trovi il pulsante **AZZERA TUTTO**.
+
+## 🛠 Come è fatto
+
+Un **singolo file HTML** (`index.html`) con Three.js r160 caricato da CDN: niente build, niente
+dipendenze da installare. Le texture (monetine, targa neon, panno, zona di lancio) sono disegnate a
+runtime su `<canvas>`.
+
+Per provarlo in locale basta aprirlo nel browser, oppure:
+
+```bash
+python -m http.server 8080     # poi apri http://localhost:8080
+```
+
+## 📱 Da telefono
+
+Apri il pulsante **▶ GIOCA ORA** qui sopra: la pagina è già ottimizzata per il touch (zoom bloccato,
+nessuna selezione, layout ridotto, meno lire in scena per restare fluido) e puoi aggiungerla alla
+schermata home per giocarla a tutto schermo.
+
+---
+
+**DaProd — Sala Slot** 🎰 · sviluppato con Three.js · rilasciato con licenza MIT.
