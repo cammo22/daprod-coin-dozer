@@ -179,6 +179,17 @@
     letter-spacing: 1.4px; margin-left: 8px; }
   .voce .desc { font-size: 12px; color: #a79fbd; margin-top: 4px; line-height: 1.45; }
   .voce .lv { font-size: 10px; letter-spacing: 1.6px; color: var(--oro); font-weight: 800; margin-top: 5px; }
+  .voce .ico { display: inline-flex; align-items: center; justify-content: center;
+    width: 27px; height: 27px; border-radius: 10px; margin-right: 7px;
+    background: rgba(255,213,74,.13); border: 1px solid rgba(255,213,74,.28);
+    font-size: 13px; vertical-align: -7px; }
+  .prog { position: relative; height: 15px; border-radius: 999px; overflow: hidden;
+    background: rgba(255,255,255,.10); margin-top: 7px; max-width: 240px; }
+  .prog i { display: block; height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, #ffe89a, var(--oro2)); }
+  .prog span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font: 800 8.5px/1 inherit; letter-spacing: 1.4px; color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,.65); }
   .compra { border: 1px solid rgba(255,255,255,.14); border-radius: 14px; cursor: pointer;
     background: linear-gradient(180deg, #ffe89a, var(--oro2)); color: #171024;
     font: 900 12px/1 inherit; letter-spacing: 1.2px; padding: 13px 16px; min-width: 122px;
@@ -253,9 +264,9 @@
     <div class="sub">SALA SLOT · COIN DOZER</div>
   </div>
   <div class="stat">
-    <div class="box">SALDO<b id="saldo">25</b></div>
-    <div class="box">VINTE<b id="vinte">0</b></div>
-    <div class="box idle">LIRE AL SECONDO<b id="idleRate">0,0/s</b><span class="barra"><i id="idleBar"></i></span></div>
+    <div class="box">🏆 PREMI<b id="premi">30</b></div>
+    <div class="box">🏅 VINTE<b id="vinte">0</b></div>
+    <div class="box idle">🪙 GETTONI<b id="gettoniV">12/12</b><span class="barra"><i id="gettoniBar"></i></span></div>
   </div>
 </div>
 <div id="floaters"></div>
@@ -264,13 +275,13 @@
 <div id="hint"><kbd>click</kbd> lancia · <kbd>tieni premuto sx</kbd> raffica · <kbd>tieni premuto dx</kbd> cannone · <kbd>rotella</kbd> zoom</div>
 <button id="apriNegozio" class="tondo">▲ POTENZIAMENTI</button>
 <div id="abilita">
-  <button class="chip" id="ch-cannone" title="Tieni premuto per caricare lo sparo"><span class="led"></span>CANNONE</button>
-  <button class="chip" id="ch-raffica" title="Tieni premuto per sparare a raffica"><span class="led"></span>RAFFICA <small id="ch-raffica-v"></small></button>
-  <button class="chip" id="ch-forza" title="Le lire colpiscono la pila"><span class="led"></span>FORZA</button>
-  <button class="chip" id="ch-multi" title="Più lire per click"><span class="led"></span>MULTI <small id="ch-multi-v"></small></button>
-  <button class="chip" id="ch-idle" title="Produzione automatica di lire"><span class="led"></span>IDLE</button>
-  <button class="chip" id="ch-torri" title="Bonus per le torri di lire"><span class="led"></span>TORRI</button>
-  <button class="chip audio" id="ch-audio" title="Audio ON/OFF"><span class="led"></span>AUDIO <small id="ch-audio-v">ON</small></button>
+  <button class="chip" id="ch-cannone" title="Tieni premuto per caricare lo sparo"><span class="led"></span>💥 CANNONE</button>
+  <button class="chip" id="ch-raffica" title="Tieni premuto per sparare a raffica"><span class="led"></span>⚡ RAFFICA <small id="ch-raffica-v"></small></button>
+  <button class="chip" id="ch-forza" title="Le lire colpiscono la pila"><span class="led"></span>💪 FORZA</button>
+  <button class="chip" id="ch-multi" title="Più lire per click"><span class="led"></span>✨ MULTI <small id="ch-multi-v"></small></button>
+  <button class="chip" id="ch-idle" title="Ricarica automatica dei gettoni"><span class="led"></span>🪙 GETTONI</button>
+  <button class="chip" id="ch-torri" title="Bonus per le torri di lire"><span class="led"></span>🏗️ TORRI</button>
+  <button class="chip audio" id="ch-audio" title="Audio ON/OFF"><span class="led"></span>🔊 AUDIO <small id="ch-audio-v">ON</small></button>
 </div>
 <button id="spara" class="tondo" title="Spara la lira-cannone (telefono)">◎ SPARA</button>
 <div id="negozio" class="chiuso">
@@ -280,10 +291,10 @@
       <button id="chiudiNegozio">✕</button>
     </header>
   <div class="tab">
-    <button data-tab="pot" class="sel">POTENZIAMENTI</button>
-    <button data-tab="sblocca">SBLOCCABILI</button>
-    <button data-tab="abilita">ABILITÀ</button>
-    <button data-tab="stat">STATISTICHE</button>
+    <button data-tab="pot" class="sel">🛠️ POTENZIAMENTI</button>
+    <button data-tab="sblocca">🎁 SBLOCCABILI</button>
+    <button data-tab="abilita">🎚️ ABILITÀ</button>
+    <button data-tab="stat">📊 STATISTICHE</button>
   </div>
   <div class="voci" id="voci"></div>
   </div>
@@ -338,13 +349,15 @@ function soffio(dur, freq, vol = 0.2, q = 1.2) {
   s.connect(f).connect(g).connect(c.destination); s.start();
 }
 // ============ STATO, ECONOMIA E SALVATAGGIO ============
-const CHIAVE_SALVATAGGIO = 'daprod_dozer_v1';
+const CHIAVE_SALVATAGGIO = 'daprod_dozer_v2';
 const stato = {
-  saldo: 30,
+  premi: 30,          // valuta del negozio: si vince quando le lire cadono dal bordo
+  gettoni: 12,        // caricatore: gettoni da lanciare, si ricarica sempre (infiniti)
   vinte: 0,
   totVinte: 0,
   totLanci: 0,
   totTorri: 0,
+  totSpazzate: 0,
   comboMax: 0,
   pot: { idle: 0, forza: 0, multi: 0, cannonePot: 0, raffica: 0 },
   attivi: { idle: true, forza: true, multi: true, cannone: true, raffica: true, torri: true },
@@ -352,7 +365,6 @@ const stato = {
   sbloccati: { cannone: false, skin: 'oro', feltro: 'verde' },
   skinPossedute: ['oro'],
   feltriPosseduti: ['verde'],
-  idleAcc: 0,
   ts: Date.now()
 };
 function caricaPartita() {
@@ -364,6 +376,7 @@ function caricaPartita() {
       stato.attivi = Object.assign(
         { idle: true, forza: true, multi: true, cannone: true, raffica: true, torri: true }, r.attivi);
       stato.audio = r.audio !== false;
+      if (typeof r.gettoni === 'number') stato.gettoni = r.gettoni; // salvato compatibile
       stato.sbloccati = Object.assign({ cannone: false, skin: 'oro', feltro: 'verde' }, r.sbloccati);
       stato.skinPossedute = Array.isArray(r.skinPossedute) ? r.skinPossedute : ['oro'];
       stato.feltriPosseduti = Array.isArray(r.feltriPosseduti) ? r.feltriPosseduti : ['verde'];
@@ -376,7 +389,8 @@ function salvaPartita() {
 caricaPartita();
 
 // --- formule di gioco (costi e potenza) ---
-const LIVELLI_MAX = { idle: 25, forza: 12, multi: 3, cannonePot: 12, raffica: 5 };
+// GETTONI INFINITI: il caricatore si ricarica sempre; il potenziamento alza velocità e capacità
+const LIVELLI_MAX = { idle: 15, forza: 8, multi: 4, cannonePot: 8, raffica: 6 };
 const COSTO_CANNONE = 300;
 const COSTO_RAFFICA = 450;
 const costoIdle = (n) => Math.round(30 * Math.pow(2.15, n));
@@ -384,11 +398,12 @@ const costoForza = (n) => Math.round(60 * Math.pow(2.0, n));
 const costoMulti = (n) => Math.round(140 * Math.pow(3.3, n));
 const costoCannonePot = (n) => Math.round(420 * Math.pow(2.2, n));
 const costoRaffica = (n) => (n <= 0 ? COSTO_RAFFICA : Math.round(COSTO_RAFFICA * Math.pow(2.3, n)));
-const rateRaffica = (n) => (n <= 0 ? 0 : 3 + 2 * n); // lire al secondo a raffica
-const rateIdle = (n) => 0.12 * Math.pow(1.8, n);   // lire al secondo
-const fattoreForza = (n) => 1 + 0.25 * n;          // moltiplicatore della spinta di lancio
-const lirePerLancio = (n) => 1 + n;              // lire lanciate per click
-const forzaCannone = (n) => 1 + 0.5 * n;           // potenza dello sparo
+const rateRaffica = (n) => (n <= 0 ? 0 : 3 + 2 * n);      // lire al secondo a raffica
+const capCaricatore = (n) => 12 + 3 * n;                  // gettoni trasportabili nel caricatore
+const ricaricaGettoni = (n) => 0.55 + 0.35 * n;            // gettoni al secondo (sempre attivi)
+const fattoreForza = (n) => 1 + 0.25 * n;                 // moltiplicatore della spinta di lancio
+const lirePerLancio = (n) => 1 + n;                       // lire lanciate per click
+const forzaCannone = (n) => 1 + 0.5 * n;                  // potenza dello sparo
 const PRESTIGIO = { argento: 400, rubino: 1200, arcobaleno: 4000 };
 const COSTO_FELTRO = { blu: 250, bordeaux: 700, notte: 1500 };
 const NOME_FELTRO = { verde: 'Verde DaProd', blu: 'Blu Royal', bordeaux: 'Bordeaux', notte: 'Notte Neon' };
@@ -779,9 +794,27 @@ function creaLira(x, y, z, opz = {}) {
     attiva: true
   };
   lire.push(m);
+  // tavolo pieno: le lire più vicine al bordo vengono "spazzate" e PAGATE (mai sparizioni a vuoto)
   if (lire.length > MAX_LIRE) {
-    const i = lire.findIndex(q => q.attiva && q !== m && q.aTerra);
-    if (i >= 0) { lire[i].attiva = false; scene.remove(lire[i].mesh); }
+    let daSpazzare = lire.length - MAX_LIRE + 2;
+    const sulBordo = lire.filter(q => q.attiva && q !== m)
+      .sort((a, b) => a.mesh.position.z - b.mesh.position.z);
+    let spazzate = 0;
+    for (const q of sulBordo) {
+      if (daSpazzare <= 0) break;
+      q.attiva = false;
+      scene.remove(q.mesh);
+      particelle(q.mesh.position.x, 0.25, q.mesh.position.z, 5, 0xffd54a, 0.8);
+      daSpazzare--;
+      spazzate++;
+    }
+    if (spazzate > 0) {
+      stato.premi += spazzate;
+      stato.totSpazzate += spazzate;
+      suono.vinci(2);
+      avviso('SPAZZATA +' + spazzate + ' 🏆');
+      aggiornaHUD();
+    }
   }
   return m;
 }
@@ -837,9 +870,9 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
   audioOn();
   aggiornaPuntatore(e);
   if (!puntatore.dentro) return;
-  // TAsto destro (o tasto sinistro se la raffica è spenta): CANNONE
+  // Tasto destro (o tasto sinistro se la raffica è spenta): CANNONE
   const usaCannone = stato.attivi.cannone && stato.sbloccati.cannone && cooldownSparo <= 0 &&
-    (e.button === 2 || !(stato.attivi.raffica && stato.pot.raffica > 0 && stato.saldo > 0));
+    (e.button === 2 || !(stato.attivi.raffica && stato.pot.raffica > 0 && stato.gettoni >= 1));
   if (e.button === 2 || usaCannone) {
     if (usaCannone) {
       inCarica = true;
@@ -849,7 +882,7 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
     return;
   }
   // RAFFICA: tieni premuto il tasto sinistro e spara una lira dietro l'altra
-  if (stato.attivi.raffica && stato.pot.raffica > 0 && stato.saldo > 0) {
+  if (stato.attivi.raffica && stato.pot.raffica > 0 && stato.gettoni >= 1) {
     inRaffica = true;
     accRaffica = 0;
     colpiRaffica = 0;
@@ -899,9 +932,9 @@ function lanciaDalPuntatore(daRaffica = false) {
   const ora = performance.now();
   if (!daRaffica && ora - ultimoLancio < COOLDOWN) return;
   const nMulti = stato.attivi.multi ? lirePerLancio(stato.pot.multi) : 1;
-  const n = Math.min(nMulti, stato.saldo);
+  const n = Math.min(nMulti, Math.floor(stato.gettoni));
   if (n <= 0) {
-    if (!daRaffica) { suono.errore(); avviso('SALDO ESAURITO'); }
+    if (!daRaffica) { suono.errore(); avviso('CARICATORE IN RICARICA…'); }
     inRaffica = false;
     return;
   }
@@ -911,7 +944,7 @@ function lanciaDalPuntatore(daRaffica = false) {
     // potenziamento FORZA DI LANCIO (se attivo): la lira colpisce la pila
     m.spinta = (stato.attivi.forza ? 0.25 * stato.pot.forza : 0);
   }
-  stato.saldo -= n;
+  stato.gettoni -= n;
   stato.totLanci += n;
   ultimoLancio = ora;
   if (!daRaffica) suono.lancio();
@@ -919,10 +952,10 @@ function lanciaDalPuntatore(daRaffica = false) {
   salvaPartita();
 }
 
-// sparo del cannone: lira pesante che travolge la pila
+// sparo del cannone: lira pesante che travolge la pila (costa 1 gettone)
 function sparaCannone(x, z, potenza) {
-  if (stato.saldo <= 0) { suono.errore(); avviso('SALDO ESAURITO'); return; }
-  stato.saldo -= 1;
+  if (stato.gettoni < 1) { suono.errore(); avviso('CARICATORE IN RICARICA…'); return; }
+  stato.gettoni -= 1;
   stato.totLanci += 1;
   const m = lanciaLira(x, z, true);
   m.proiettile = true;
@@ -1142,7 +1175,7 @@ function vinciLira(pos) {
   comboScadenza = ora + 2600;
   stato.comboMax = Math.max(stato.comboMax, combo);
   const guadagno = 1 + Math.floor(combo / 5); // bonus combo ogni 5 di fila
-  stato.saldo += guadagno;
+  stato.premi += guadagno;
   stato.vinte += 1;
   stato.totVinte += 1;
   if (combo >= 3) mostraCombo(combo);
@@ -1162,7 +1195,7 @@ function vinciLira(pos) {
 // torre di lire completata
 function suTorre(p, livello) {
   const bonus = 1 + (livello - 3);
-  stato.saldo += bonus;
+  stato.premi += bonus;
   stato.totTorri += 1;
   testoVolante(p.x, p.y + 0.35, p.z, 'TORRE x' + livello + '  +' + bonus, 'torre');
   particelle(p.x, p.y, p.z, 12 + livello * 2, 0x7ef0c0, 1);
@@ -1274,18 +1307,20 @@ let scossaForza = 0;
 function scossa(f) { scossaForza = Math.max(scossaForza, f); }
 
 // ============ HUD ============
-const elSaldo = document.getElementById('saldo');
+const elPremi = document.getElementById('premi');
 const elVinte = document.getElementById('vinte');
-const elIdleRate = document.getElementById('idleRate');
-const elIdleBar = document.getElementById('idleBar');
+const elGettoniV = document.getElementById('gettoniV');
+const elGettoniBar = document.getElementById('gettoniBar');
 const elCarica = document.getElementById('carica');
 const elCaricaBar = document.getElementById('caricaBar');
 const elCaricaTxt = document.getElementById('caricaTxt');
 const fmt = (n) => (Math.round(n * 10) / 10).toString().replace('.', ',');
 function aggiornaHUD() {
-  elSaldo.textContent = Math.floor(stato.saldo);
+  elPremi.textContent = Math.floor(stato.premi);
   elVinte.textContent = stato.vinte;
-  elIdleRate.textContent = (stato.attivi.idle ? fmt(rateIdle(stato.pot.idle)) : '0,0') + '/s';
+  const cap = capCaricatore(stato.pot.idle);
+  elGettoniV.textContent = Math.floor(stato.gettoni) + '/' + cap;
+  elGettoniBar.style.width = Math.min(100, stato.gettoni / cap * 100).toFixed(0) + '%';
 }
 
 // ============ ABILITÀ: interruttori ON/OFF ============
@@ -1294,7 +1329,7 @@ const chipAbilita = [
   { id: 'raffica', sbloccata: () => stato.pot.raffica > 0, nota: () => rateRaffica(stato.pot.raffica).toFixed(0) + '/s' },
   { id: 'forza', sbloccata: () => stato.pot.forza > 0, nota: () => 'x' + fmt(fattoreForza(stato.pot.forza)) },
   { id: 'multi', sbloccata: () => stato.pot.multi > 0, nota: () => lirePerLancio(stato.pot.multi) + 'x' },
-  { id: 'idle', sbloccata: () => stato.pot.idle > 0, nota: () => fmt(rateIdle(stato.pot.idle)) + '/s' },
+  { id: 'idle', sbloccata: () => true, nota: () => fmt(ricaricaGettoni(stato.pot.idle)) + '/s' },
   { id: 'torri', sbloccata: () => true, nota: () => 'bonus' },
   { id: 'audio', sbloccata: () => true, nota: () => (stato.audio ? 'ON' : 'OFF') }
 ];
@@ -1343,45 +1378,50 @@ let schedaAttiva = 'pot';
 
 function riga(o) {
   const massimo = !!o.max2;
-  const dis = (massimo || o.bloccato || stato.saldo < o.costo) ? 'disabled' : '';
-  const testo = massimo ? (o.etichettaMax || 'MAX') : (o.bloccato ? 'BLOCCATO' : 'ACQUISTA · L.' + o.costo);
+  const dis = (massimo || o.bloccato || stato.premi < o.costo) ? 'disabled' : '';
+  const testo = massimo ? (o.etichettaMax || '🏆 MAX') : (o.bloccato ? '🔒 BLOCCATO' : 'ACQUISTA · L.' + o.costo);
+  const prog = (o.lv !== undefined && o.max) ?
+    '<div class="prog"><i style="width:' + Math.round(o.lv / o.max * 100) + '%"></i>' +
+    '<span>LIVELLO ' + o.lv + ' / ' + o.max + '</span></div>' : '';
   return '<div class="voce' + (massimo ? ' max' : '') + '">' +
-    '<div><div class="nome">' + o.nome + (o.extra ? '<em>' + o.extra + '</em>' : '') + '</div>' +
-    '<div class="desc">' + o.desc + '</div>' +
-    (o.lv !== undefined ? '<div class="lv">LIVELLO ' + o.lv + (o.max !== undefined ? ' / ' + o.max : '') + '</div>' : '') +
-    '</div><button class="compra" data-id="' + o.id + '" ' + dis + '>' + testo + '</button></div>';
+    '<div><div class="nome"><span class="ico">' + (o.icona || '•') + '</span>' + o.nome +
+    (o.extra ? '<em>' + o.extra + '</em>' : '') + '</div>' +
+    '<div class="desc">' + o.desc + '</div>' + prog + '</div>' +
+    '<button class="compra" data-id="' + o.id + '" ' + dis + '>' + testo + '</button></div>';
 }
 
 function rendiNegozio() {
   const p = stato.pot;
   let html = '';
   if (schedaAttiva === 'pot') {
-    html += riga({ id: 'idle', nome: 'PRODUZIONE IDLE', extra: fmt(rateIdle(p.idle)) + ' lire/s',
-      desc: 'Lire generate da sole col passare del tempo: entrano nel saldo e le lanci quando vuoi. Ogni livello aumenta la produzione.',
+    html += riga({ id: 'idle', icona: '🪙', nome: 'RICARICA GETTONI',
+      extra: fmt(ricaricaGettoni(p.idle)) + '/s · cap ' + capCaricatore(p.idle),
+      desc: 'I gettoni da lanciare sono infiniti: il caricatore si ricarica da solo. Ogni livello ricarica più in fretta e aumenta la capacità.',
       lv: p.idle, max: LIVELLI_MAX.idle, costo: costoIdle(p.idle), max2: p.idle >= LIVELLI_MAX.idle });
-    html += riga({ id: 'forza', nome: 'FORZA DI LANCIO', extra: 'x' + fmt(fattoreForza(p.forza)),
+    html += riga({ id: 'forza', icona: '💪', nome: 'FORZA DI LANCIO', extra: 'x' + fmt(fattoreForza(p.forza)),
       desc: 'Le lire lanciate colpiscono più forte: all\'impatto spingono la pila verso il bordo di caduta.',
       lv: p.forza, max: LIVELLI_MAX.forza, costo: costoForza(p.forza), max2: p.forza >= LIVELLI_MAX.forza });
-    html += riga({ id: 'multi', nome: 'MULTI-LANCIO', extra: lirePerLancio(p.multi) + ' lire per click',
-      desc: 'Lancia più lire con un solo click (ognuna costa 1 lira dal saldo).',
+    html += riga({ id: 'multi', icona: '✨', nome: 'MULTI-LANCIO', extra: lirePerLancio(p.multi) + ' lire per click',
+      desc: 'Lancia più lire con un solo click (ognuna costa 1 gettone dal caricatore).',
       lv: p.multi, max: LIVELLI_MAX.multi, costo: costoMulti(p.multi), max2: p.multi >= LIVELLI_MAX.multi });
-    html += riga({ id: 'raffica', nome: 'RAFFICA',
+    html += riga({ id: 'raffica', icona: '⚡', nome: 'RAFFICA',
       extra: p.raffica > 0 ? rateRaffica(p.raffica).toFixed(0) + ' lire/s' : 'da sbloccare',
       desc: 'Tieni premuto il tasto sinistro e le lire partono una dietro l\'altra verso la pila, senza fermarti.',
       lv: p.raffica, max: LIVELLI_MAX.raffica, costo: costoRaffica(p.raffica), max2: p.raffica >= LIVELLI_MAX.raffica });
-    html += riga({ id: 'cannonePot', nome: 'POTENZA CANNONE',
+    html += riga({ id: 'cannonePot', icona: '💥', nome: 'POTENZA CANNONE',
       extra: stato.sbloccati.cannone ? 'x' + fmt(forzaCannone(p.cannonePot)) : 'da sbloccare',
-      desc: 'Rende più violento lo sparo: tieni premuto il tasto sinistro per caricare, rilascia per sparare.',
+      desc: 'Rende più violento lo sparo: tieni premuto il tasto destro per caricare, rilascia per sparare.',
       lv: p.cannonePot, max: LIVELLI_MAX.cannonePot, costo: costoCannonePot(p.cannonePot),
       max2: p.cannonePot >= LIVELLI_MAX.cannonePot, bloccato: !stato.sbloccati.cannone });
   } else if (schedaAttiva === 'sblocca') {
-    html += riga({ id: 'cannone', nome: 'CANNONE', extra: stato.sbloccati.cannone ? 'SBLOCCATO' : 'ABILITÀ NUOVA',
-      desc: 'Tieni premuto il tasto destro per caricare lo sparo che travolge la pila.',
+    html += riga({ id: 'cannone', icona: '🔫', nome: 'CANNONE', extra: stato.sbloccati.cannone ? 'SBLOCCATO' : 'ABILITÀ NUOVA',
+      desc: 'Tieni premuto il tasto destro: si carica lo sparo che travolge la pila di lire.',
       costo: COSTO_CANNONE, max2: stato.sbloccati.cannone });
     for (const s of ['argento', 'rubino', 'arcobaleno']) {
       const pos = stato.skinPossedute.includes(s);
       const inUso = pos && stato.sbloccati.skin === s;
-      html += riga({ id: 'skin_' + s, nome: 'LIRE ' + SKIN_LIRE[s].nome.toUpperCase(),
+      const iconeSkin = { argento: '🥈', rubino: '💎', arcobaleno: '🌈' };
+      html += riga({ id: 'skin_' + s, icona: iconeSkin[s], nome: 'LIRE ' + SKIN_LIRE[s].nome.toUpperCase(),
         extra: inUso ? 'IN USO' : (pos ? 'POSSEDUTE' : ''),
         desc: pos ? 'Skin sbloccata: clicca per applicarla a tutte le lire.' : 'Cambia l\'aspetto e la lucentezza di tutte le lire.',
         costo: PRESTIGIO[s], max2: inUso });
@@ -1389,7 +1429,8 @@ function rendiNegozio() {
     for (const f of ['blu', 'bordeaux', 'notte']) {
       const pos = stato.feltriPosseduti.includes(f);
       const inUso = pos && stato.sbloccati.feltro === f;
-      html += riga({ id: 'feltro_' + f, nome: 'FELTRO ' + NOME_FELTRO[f].toUpperCase(),
+      const iconeFeltro = { blu: '🔷', bordeaux: '🍷', notte: '🌌' };
+      html += riga({ id: 'feltro_' + f, icona: iconeFeltro[f], nome: 'FELTRO ' + NOME_FELTRO[f].toUpperCase(),
         extra: inUso ? 'IN USO' : (pos ? 'POSSEDUTO' : ''),
         desc: 'Nuovo colore del panno del tavolo della sala.',
         costo: COSTO_FELTRO[f], max2: inUso });
@@ -1400,7 +1441,7 @@ function rendiNegozio() {
       { id: 'raffica', nome: 'RAFFICA', desc: 'Tieni premuto e spari una lira dietro l\'altra (' + rateRaffica(p.raffica).toFixed(0) + '/s).', sbloccata: p.raffica > 0 },
       { id: 'forza', nome: 'FORZA DI LANCIO', desc: 'Ogni lira lanciata colpisce la pila spingendola verso il bordo.', sbloccata: p.forza > 0 },
       { id: 'multi', nome: 'MULTI-LANCIO', desc: 'Lancia più lire per click (ora ' + lirePerLancio(p.multi) + ').', sbloccata: p.multi > 0 },
-      { id: 'idle', nome: 'PRODUZIONE IDLE', desc: 'Lire generate da sole nel saldo (' + fmt(rateIdle(p.idle)) + '/s).', sbloccata: p.idle > 0 },
+      { id: 'idle', nome: '🪙 RICARICA GETTONI', desc: 'Il caricatore si riempie da solo (' + fmt(ricaricaGettoni(p.idle)) + '/s, cap ' + capCaricatore(p.idle) + '): i gettoni sono infiniti.', sbloccata: true },
       { id: 'torri', nome: 'BONUS TORRI', desc: 'Premio quando si formano torri di 3 o più lire.', sbloccata: true },
       { id: 'audio', nome: 'AUDIO', desc: 'Effetti sonori della sala, sintetizzati in tempo reale (nessun file esterno).', sbloccata: true }
     ];
@@ -1417,9 +1458,10 @@ function rendiNegozio() {
       'Lire vinte in totale: <b>' + stato.totVinte + '</b><br>' +
       'Lire lanciate: <b>' + stato.totLanci + '</b><br>' +
       'Torri costruite: <b>' + stato.totTorri + '</b><br>' +
+      'Lire spazzate dal tavolo pieno: <b>' + stato.totSpazzate + '</b><br>' +
       'Combo massima: <b>x' + stato.comboMax + '</b><br>' +
-      'Produzione idle: <b>' + fmt(rateIdle(p.idle)) + ' lire/s</b><br>' +
-      'Saldo attuale: <b>' + Math.floor(stato.saldo) + '</b>' +
+      'Ricarica gettoni: <b>' + fmt(ricaricaGettoni(p.idle)) + '/s</b> (cap ' + capCaricatore(p.idle) + ')<br>' +
+      'Premi attuali: <b>' + Math.floor(stato.premi) + '</b>' +
       '</div><button class="compra" data-id="azzera">AZZERA TUTTO</button></div>';
   }
   elVoci.innerHTML = html;
@@ -1430,8 +1472,8 @@ function rendiNegozio() {
 function compra(id) {
   const p = stato.pot;
   const paga = (c) => {
-    if (stato.saldo < c) { suono.errore(); return false; }
-    stato.saldo -= c;
+    if (stato.premi < c) { suono.errore(); return false; }
+    stato.premi -= c;
     return true;
   };
   if (id === 'idle' && p.idle < LIVELLI_MAX.idle) { if (paga(costoIdle(p.idle))) { p.idle++; suono.compra(); } }
@@ -1496,23 +1538,17 @@ function animate() {
   aggiornaFisica(dt);
   aggiornaParticelle(dt);
 
-  // --- produzione idle: lire che entrano da sole nel saldo (se l'abilità è ON) ---
-  const rate = stato.attivi.idle ? rateIdle(stato.pot.idle) : 0;
-  if (rate > 0) {
-    stato.idleAcc += rate * dt;
-    if (stato.idleAcc >= 1) {
-      const g = Math.floor(stato.idleAcc);
-      stato.idleAcc -= g;
-      stato.saldo += g;
-      aggiornaHUD();
-    }
+  // --- GETTONI INFINITI: il caricatore si ricarica sempre (se l'abilità è ON) ---
+  const capG = capCaricatore(stato.pot.idle);
+  if (stato.attivi.idle && stato.gettoni < capG) {
+    stato.gettoni = Math.min(capG, stato.gettoni + ricaricaGettoni(stato.pot.idle) * dt);
+    aggiornaHUD();
   }
-  elIdleBar.style.width = (stato.idleAcc * 100).toFixed(0) + '%';
 
   // --- RAFFICA: tieni premuto e le lire partono una dietro l'altra ---
   if (inRaffica) {
     const rr = stato.attivi.raffica ? rateRaffica(stato.pot.raffica) : 0;
-    if (rr <= 0 || stato.saldo <= 0 || !puntatore.dentro) {
+    if (rr <= 0 || stato.gettoni < 1 || !puntatore.dentro) {
       inRaffica = false;
       accRaffica = 0;
     } else {
@@ -1541,7 +1577,7 @@ function animate() {
     mirinoMat.color.setHex(stato.sbloccati.cannone && cooldownSparo <= 0 ? 0x7ef0c0 : 0xffd54a);
   }
   if (TATTILE) { // il pulsante SPARA si aggiorna solo quando cambia stato
-    const pronto = cooldownSparo <= 0 && stato.saldo > 0;
+    const pronto = cooldownSparo <= 0 && stato.gettoni >= 1;
     if (pronto !== sparaPronto) { sparaPronto = pronto; aggiornaSpara(); }
   }
 
@@ -1603,7 +1639,7 @@ function aggiornaSpara() {
   const mostralo = TATTILE && stato.sbloccati.cannone;
   elSpara.style.display = mostralo ? 'inline-flex' : 'none';
   if (mostralo) {
-    elSpara.disabled = cooldownSparo > 0 || stato.saldo <= 0;
+    elSpara.disabled = cooldownSparo > 0 || stato.gettoni < 1;
     elSpara.style.opacity = elSpara.disabled ? '.45' : '1';
   }
 }
@@ -1638,6 +1674,7 @@ addEventListener('beforeunload', salvaPartita);
 
 // ============ AVVIO ============
 tavoloMat.color.setHex(COLORE_FELTRI[stato.sbloccati.feltro] || COLORE_FELTRI.verde);
+stato.gettoni = Math.min(Math.max(stato.gettoni, 0), capCaricatore(stato.pot.idle));
 aggiornaHUD();
 aggiornaAbilita();
 aggiornaSpara();

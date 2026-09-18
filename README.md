@@ -3,24 +3,31 @@
 [![▶ GIOCA ORA](https://img.shields.io/badge/%E2%96%B6_GIOCA_ORA-DaProd_Coin_Dozer-ffd54a?style=for-the-badge&labelColor=1a1428)](https://cammo22.github.io/daprod-coin-dozer/)
 
 [![Pagina attiva](https://img.shields.io/badge/GitHub_Pages-attiva-success?style=flat-square)](https://cammo22.github.io/daprod-coin-dozer/)
+[![Changelog](https://img.shields.io/badge/📅_Changelog-mantenuto-ffab00?style=flat-square)](CHANGELOG.md)
 [![Made with Three.js](https://img.shields.io/badge/Three.js-r160-black?style=flat-square&logo=three.js)](https://threejs.org/)
 [![Un solo file](https://img.shields.io/badge/HTML-singolo_file-ffab00?style=flat-square)](index.html)
 [![Licenza MIT](https://img.shields.io/badge/Licenza-MIT-blue?style=flat-square)](LICENSE)
 
 Il **coin dozer della sala slot DaProd**: la piastra spinge la pila di lire verso il bordo, tu lanci le
-lire dall'alto e quelle che cadono sono le tue. Funziona **da telefono, tablet e desktop**, basta il browser.
+lire dall'alto e quelle che cadono diventano **premi**. I **gettoni da lanciare sono infiniti**: il
+caricatore si ricarica sempre da solo. Funziona **da telefono, tablet e desktop**, basta il browser.
 
 ## ▶ Come si gioca
 
 | Azione | Desktop | Telefono |
 | --- | --- | --- |
 | Lancia una lira | `click` nella zona illuminata | `tap` nella zona illuminata |
-| **Raffica** (tieni premuto e spara) | tieni premuto il **tasto sinistro** | tieni premuto il dito |
-| **Cannone** (sparo potente) | tieni premuto il **tasto destro** e rilascia | tieni premuto e rilascia, oppure il pulsante **◎ SPARA** |
+| **Raffica** ⚡ (tieni premuto e spara) | tieni premuto il **tasto sinistro** | tieni premuto il dito |
+| **Cannone** 💥 (sparo potente) | tieni premuto il **tasto destro** e rilascia | tieni premuto e rilascia, oppure il pulsante **◎ SPARA** |
 | Zoom | rotella del mouse | pizzica con due dita |
 
-Ogni lira lanciata costa **1 lira dal saldo**. Quando una lira cade oltre il bordo entra nel saldo.
-Gli **switch in basso** accendono e spengono ogni abilità (le voci non sbloccate restano **grigie**).
+**I gettoni sono infiniti** 🪙♾️: ogni lancio consuma 1 gettone dal caricatore, che si ricarica
+sempre da solo (vedi la barra nell'HUD). Quando una lira cade oltre il bordo vinci **PREMI** 🏆,
+che servono per comprare i potenziamenti. Se il tavolo si riempie, le lire più vicine al bordo
+vengono **spazzate e pagate**: niente sparizioni.
+
+Gli **switch in basso** accendono e spengono ogni abilità (le voci non sbloccate restano **grigie**);
+il negozio mostra per ogni potenziamento **icona, livello e tetto massimo** (`LIVELLO x / MAX`).
 
 ## ✨ Cosa c'è dentro
 
@@ -31,14 +38,14 @@ Gli **switch in basso** accendono e spengono ogni abilità (le voci non sbloccat
   impilano; zero rimbalzi, zero monete storte.
 - **Torri di lire**: le lire si centrano su quella sotto (pile ordinate) e a 3+ livelli scatta un
   **bonus torre** con suono e particelle. Massimo 4 di altezza: oltre, la pila cede.
-- **Potenziamenti** (salvati nel browser):
-  - **Produzione Idle** — lire generate da sole ogni secondo, anche mentre fai altro
-  - **Forza di lancio** — le lire colpiscono la pila spingendola verso il bordo
-  - **Multi-lancio** — più lire con un solo click
-  - **Raffica** — tieni premuto e spari una lira dietro l'altra
-  - **Potenza cannone** — sparo che travolge la pila
-- **Sbloccabili**: cannone, skin delle lire (argento, rubino, arcobaleno animato) e panni del tavolo
-  (blu, bordeaux, notte).
+- **Potenziamenti** (salvati nel browser, tutti con **tetto massimo** e barra di livello):
+  - 🪙 **Ricarica gettoni** — il caricatore si riempie più in fretta e trasporta più gettoni (infiniti)
+  - 💪 **Forza di lancio** — le lire colpiscono la pila spingendola verso il bordo
+  - ✨ **Multi-lancio** — più lire con un solo click
+  - ⚡ **Raffica** — tieni premuto e spari una lira dietro l'altra
+  - 💥 **Potenza cannone** — sparo che travolge la pila
+- **Sbloccabili** 🎁: cannone 🔫, skin delle lire (🥈 argento, 💎 rubino, 🌈 arcobaleno animato)
+  e panni del tavolo (🔷 blu, 🍷 bordeaux, 🌌 notte).
 - **Soddisfazione**: suoni sintetizzati in tempo reale con la Web Audio API (nessun file audio),
   particelle, testi volanti `+1`, **combo** con tono crescente, lampi e scossoni di camera sui colpi.
 - **Switch ON/OFF** per ogni abilità e per l'audio, più scorciatoie da tastiera:
@@ -46,8 +53,10 @@ Gli **switch in basso** accendono e spengono ogni abilità (le voci non sbloccat
 
 ## 💾 Salvataggio
 
-Saldo, potenziamenti, sbloccabili, abilità accese e audio si salvano da soli in `localStorage`
-(chiave `daprod_dozer_v1`). Nel negozio, scheda **STATISTICHE**, trovi il pulsante **AZZERA TUTTO**.
+Saldo premi, gettoni, potenziamenti, sbloccabili, abilità accese e audio si salvano da soli in
+`localStorage` (chiave `daprod_dozer_v2`). Nel negozio, scheda **📊 STATISTICHE**, trovi il
+pulsante **AZZERA TUTTO**. Le versioni del gioco sono raccontate nel [CHANGELOG](CHANGELOG.md)
+e nelle [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases).
 
 ## 🛠 Come è fatto
 
