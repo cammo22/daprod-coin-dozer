@@ -52,6 +52,11 @@
   .box.idle { min-width: 138px; }
   .box.idle b { font-size: 14px; margin-top: 2px; color: #7ef0c0;
     text-shadow: 0 0 12px rgba(90,255,190,.45); }
+  #taglioOra { position: fixed; left: 50%; transform: translateX(-50%); bottom: 96px; z-index: 8;
+    font: 800 10.5px/1 inherit; letter-spacing: 1.6px; color: #ffd54a;
+    background: rgba(12,9,22,.72); border: 1px solid rgba(255,213,74,.3);
+    padding: 7px 13px; border-radius: 999px; pointer-events: none;
+    text-shadow: 0 0 10px rgba(255,180,0,.5); }
   .box.premi { pointer-events: auto; cursor: pointer; }
   .box.premi:hover { border-color: var(--oro); }
   .box.premi:active { transform: scale(.98); }
@@ -252,6 +257,7 @@
       padding: 11px 12px; font-size: 10.5px; }
     #carica { width: 58vw; bottom: calc(max(8px, env(safe-area-inset-bottom)) + 112px); }
     #carica .track { height: 10px; }
+    #taglioOra { bottom: calc(max(8px, env(safe-area-inset-bottom)) + 146px); font-size: 9.5px; }
     #combo { font-size: 32px; top: 26%; }
     .floater { font-size: 20px; }
     .floater.torre { font-size: 17px; }
@@ -285,7 +291,7 @@
 <div id="hud">
   <div class="marchio">
     <div class="logo">DaProd</div>
-    <div class="sub">SALA SLOT · <span id="versione">v1.2.2</span></div>
+    <div class="sub">SALA SLOT · <span id="versione">v1.3.0</span></div>
   </div>
   <div class="stat">
     <div class="box premi" id="boxPremi" title="Tocca per aprire il negozio">🏆 PREMI<b id="premi">30</b></div>
@@ -296,15 +302,12 @@
 <div id="floaters"></div>
 <div id="combo"></div>
 <div id="carica"><div class="track"><i id="caricaBar"></i></div><span id="caricaTxt">CANNONE</span></div>
-<div id="hint"><kbd>click</kbd> lancia · <kbd>tieni premuto sx</kbd> raffica · <kbd>tieni premuto dx</kbd> cannone · <kbd>rotella</kbd> zoom</div>
+<div id="taglioOra">TAGLIO · L.100</div>
+<div id="hint"><kbd>click</kbd> lancia · <kbd>tieni premuto sx</kbd> ⚡ raffica · <kbd>tieni premuto dx</kbd> 💥 cannone · le lire si impilano fino a <b>30 piani</b></div>
 <button id="apriNegozio" class="tondo">▲ <span class="tLungo">POTENZIAMENTI</span><span class="tCorto">NEGOZIO</span></button>
 <div id="abilita">
-  <button class="chip" id="ch-cannone" title="Tieni premuto per caricare lo sparo"><span class="led"></span>💥 CANNONE</button>
-  <button class="chip" id="ch-raffica" title="Tieni premuto per sparare a raffica"><span class="led"></span>⚡ RAFFICA <small id="ch-raffica-v"></small></button>
-  <button class="chip" id="ch-forza" title="Le lire colpiscono la pila"><span class="led"></span>💪 FORZA</button>
-  <button class="chip" id="ch-multi" title="Più lire per click"><span class="led"></span>✨ MULTI <small id="ch-multi-v"></small></button>
-  <button class="chip" id="ch-idle" title="Ricarica automatica dei gettoni"><span class="led"></span>🪙 GETTONI</button>
-  <button class="chip" id="ch-torri" title="Bonus per le torri di lire"><span class="led"></span>🏗️ TORRI</button>
+  <button class="chip" id="ch-cannone" title="Tieni premuto il tasto destro per caricare lo sparo"><span class="led"></span>💥 CANNONE</button>
+  <button class="chip" id="ch-raffica" title="Tieni premuto il tasto sinistro per sparare a raffica"><span class="led"></span>⚡ RAFFICA <small id="ch-raffica-v"></small></button>
   <button class="chip audio" id="ch-audio" title="Audio ON/OFF"><span class="led"></span>🔊 AUDIO <small id="ch-audio-v">ON</small></button>
 </div>
 <button id="spara" class="tondo" title="Spara la lira-cannone (telefono)">◎ SPARA</button>
@@ -381,13 +384,12 @@ const stato = {
   totVinte: 0,
   totLanci: 0,
   totTorri: 0,
-  totSpazzate: 0,
   comboMax: 0,
-  pot: { idle: 0, forza: 0, multi: 0, cannonePot: 0, raffica: 0 },
-  attivi: { idle: true, forza: true, multi: true, cannone: true, raffica: true, torri: true },
+  pot: { idle: 0, forza: 0, multi: 0, cannonePot: 0, raffica: 0, taglio: 1 },
+  attivi: { cannone: true, raffica: false, audio: true },   // solo Cannone/Raffica: uno per volta
   audio: true,
-  sbloccati: { cannone: false, skin: 'oro', feltro: 'verde' },
-  skinPossedute: ['oro'],
+  torreRecord: 1,
+  sbloccati: { cannone: false, feltro: 'verde' },
   feltriPosseduti: ['verde'],
   ts: Date.now()
 };
@@ -396,13 +398,13 @@ function caricaPartita() {
     const r = JSON.parse(localStorage.getItem(CHIAVE_SALVATAGGIO) || 'null');
     if (r && typeof r === 'object') {
       Object.assign(stato, r);
-      stato.pot = Object.assign({ idle: 0, forza: 0, multi: 0, cannonePot: 0, raffica: 0 }, r.pot);
-      stato.attivi = Object.assign(
-        { idle: true, forza: true, multi: true, cannone: true, raffica: true, torri: true }, r.attivi);
+      stato.pot = Object.assign({ idle: 0, forza: 0, multi: 0, cannonePot: 0, raffica: 0, taglio: TAGLIO_PREDEFINITO }, r.pot);
+      stato.attivi = Object.assign({ cannone: true, raffica: false }, r.attivi);
+      if (stato.attivi.cannone && stato.attivi.raffica) stato.attivi.raffica = false; // uno solo alla volta
       stato.audio = r.audio !== false;
       if (typeof r.gettoni === 'number') stato.gettoni = r.gettoni; // salvato compatibile
-      stato.sbloccati = Object.assign({ cannone: false, skin: 'oro', feltro: 'verde' }, r.sbloccati);
-      stato.skinPossedute = Array.isArray(r.skinPossedute) ? r.skinPossedute : ['oro'];
+      if (typeof r.torreRecord === 'number') stato.torreRecord = r.torreRecord;
+      stato.sbloccati = Object.assign({ cannone: false, feltro: 'verde' }, r.sbloccati);
       stato.feltriPosseduti = Array.isArray(r.feltriPosseduti) ? r.feltriPosseduti : ['verde'];
     }
   } catch (e) { /* salvataggio corrotto: riparte pulito */ }
@@ -425,11 +427,12 @@ const costoRaffica = (n) => (n <= 0 ? COSTO_RAFFICA : Math.round(COSTO_RAFFICA *
 const rateRaffica = (n) => (n <= 0 ? 0 : 3 + 2 * n);      // lire al secondo a raffica
 const capCaricatore = (n) => 16 + 4 * n;                  // gettoni trasportabili nel caricatore
 const ricaricaGettoni = (n) => 1.2 + 0.55 * n;            // gettoni al secondo, sempre attivi
+const costoTaglio = (n) => (n <= 1 ? 900 : 6000);         // passaggio a L.500 e L.1000
+const nomeTaglio = (n) => TAGLI[Math.max(0, Math.min(TAGLI.length - 1, n))].nome;
 const fattoreForza = (n) => 1 + 0.25 * n;                 // moltiplicatore della spinta di lancio
 const lirePerLancio = (n) => 1 + n;                       // lire lanciate per click
 const forzaCannone = (n) => 1 + 0.5 * n;                  // potenza dello sparo
-const VERSIONE = 'v1.2.2';                                // mostrata nell'HUD per verificare gli aggiornamenti
-const PRESTIGIO = { argento: 400, rubino: 1200, arcobaleno: 4000 };
+const VERSIONE = 'v1.3.0';                                // mostrata nell'HUD per verificare gli aggiornamenti
 const COSTO_FELTRO = { blu: 250, bordeaux: 700, notte: 1500 };
 const NOME_FELTRO = { verde: 'Verde DaProd', blu: 'Blu Royal', bordeaux: 'Bordeaux', notte: 'Notte Neon' };
 const PRESTIGIO_CANNONE = 1;
@@ -755,38 +758,67 @@ let pusherZ = PUSHER_MAX;
 let pusherDir = -1;
 let pusherVel = 0;
 
-// ============ LIRE (faccia DaProd, skin sbloccabili) ============
-const COIN_R = 0.4;
-const COIN_H = 0.12;
-const coinGeo = new THREE.CylinderGeometry(COIN_R, COIN_R, COIN_H, 48, 1);
+// ============ LIRE: 4 TAGLI (tier) con dimensioni, colori e scritte proprie ============
+// Bronzo L.50 → Argento L.100 → Oro L.500 → Platino L.1000
+const TAGLI = [
+  { taglio: 50,   r: 0.27, h: 0.10, colore: 0xc07a3c, metalness: 0.85, roughness: 0.38, premio: 1,  scritta: 'L. 50',   nome: 'Bronzo L.50' },
+  { taglio: 100,  r: 0.33, h: 0.11, colore: 0xcfd8e6, metalness: 0.92, roughness: 0.24, premio: 2,  scritta: 'L. 100',  nome: 'Argento L.100' },
+  { taglio: 500,  r: 0.39, h: 0.12, colore: 0xffd54a, metalness: 0.95, roughness: 0.20, premio: 5,  scritta: 'L. 500',  nome: 'Oro L.500' },
+  { taglio: 1000, r: 0.45, h: 0.14, colore: 0xf2f6ff, metalness: 0.98, roughness: 0.13, premio: 10, scritta: 'L. 1000', nome: 'Platino L.1000' }
+];
+const TAGLIO_PREDEFINITO = 1;                       // si lanciano lire da L.100
+const LIVELLI_TORRE_MAX = 30;                       // TORRI FINO A 30 PIANI
+const LIRE_INIZIALI = 96;                            // pila iniziale mista, come nella macchina vera
+const MAX_LIRE = TATTILE ? 150 : 260;               // tetto di sicurezza (niente spazzate: si aspetta che il bordo si svuoti)
 
-const SKIN_LIRE = {
-  oro:        { nome: 'Oro DaProd', colore: 0xffd54a, metalness: 0.95, roughness: 0.22, emissive: 0x2a1c00 },
-  argento:    { nome: 'Argento',    colore: 0xdde7f5, metalness: 0.95, roughness: 0.16, emissive: 0x0d1520 },
-  rubino:     { nome: 'Rubino',     colore: 0xff6f92, metalness: 0.85, roughness: 0.20, emissive: 0x3d0a1a },
-  arcobaleno: { nome: 'Arcobaleno', colore: 0xffffff, metalness: 0.90, roughness: 0.14, emissive: 0x330066 }
-};
-const cacheMateriali = {};
-function materialiLira(skin) {
-  if (cacheMateriali[skin]) return cacheMateriali[skin];
-  const s = SKIN_LIRE[skin] || SKIN_LIRE.oro;
+// faccia della lira disegnata su canvas, con la scritta del taglio
+function creaFacciaLira(colore, scritta) {
+  return texCanvas(256, (g, s) => {
+    const r = s / 2;
+    const c = new THREE.Color(colore);
+    const chiaro = '#' + c.clone().offsetHSL(0, -0.15, 0.30).getHexString();
+    const medio = '#' + c.getHexString();
+    const scuro = '#' + c.clone().offsetHSL(0, 0.05, -0.34).getHexString();
+    const grad = g.createRadialGradient(r * 0.72, r * 0.6, r * 0.1, r, r, r);
+    grad.addColorStop(0, chiaro); grad.addColorStop(0.45, medio);
+    grad.addColorStop(0.82, scuro); grad.addColorStop(1, scuro);
+    g.fillStyle = grad; g.beginPath(); g.arc(r, r, r, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 6;
+    g.beginPath(); g.arc(r, r, r * 0.9, 0, Math.PI * 2); g.stroke();
+    g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 3;
+    g.beginPath(); g.arc(r, r, r * 0.78, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = 'rgba(20,14,4,.85)';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '900 30px -apple-system, Segoe UI, sans-serif';
+    g.fillText('DaProd', r, r - 62);
+    g.font = '900 62px -apple-system, Segoe UI, sans-serif';
+    g.fillText(scritta, r, r - 2);
+    g.font = '800 26px -apple-system, Segoe UI, sans-serif';
+    g.fillText('L I R E', r, r + 54);
+    g.font = '900 24px -apple-system, Segoe UI, sans-serif';
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      g.fillText('·', r + Math.cos(a) * r * 0.68, r + Math.sin(a) * r * 0.68);
+    }
+  });
+}
+
+// geometrie e materiali di ogni taglio (in cache: si creano una volta sola)
+const cacheTagli = {};
+function taglio(i) {
+  const t = TAGLI[Math.max(0, Math.min(TAGLI.length - 1, i))];
+  if (cacheTagli[t.taglio]) return cacheTagli[t.taglio];
+  const geo = new THREE.CylinderGeometry(t.r, t.r, t.h, 44, 1);
   const faccia = new THREE.MeshStandardMaterial({
-    map: texFaccia, color: s.colore, metalness: s.metalness,
-    roughness: s.roughness, emissive: s.emissive
+    map: creaFacciaLira(t.colore, t.scritta), metalness: t.metalness,
+    roughness: t.roughness, emissive: 0x140e04, emissiveIntensity: 0.5
   });
-  const bordo = new THREE.MeshStandardMaterial({
-    map: texBordo, color: s.colore, metalness: s.metalness, roughness: s.roughness + 0.12
-  });
-  cacheMateriali[skin] = [bordo, faccia, faccia]; // groups: lato, sopra, sotto
-  return cacheMateriali[skin];
+  const bordo = new THREE.MeshStandardMaterial({ map: texBordo, color: t.colore, metalness: t.metalness, roughness: t.roughness + 0.12 });
+  const voce = Object.assign({}, t, { geo, mats: [bordo, faccia, faccia], indice: TAGLI.indexOf(t) });
+  cacheTagli[t.taglio] = voce;
+  return voce;
 }
-let materialiCorrenti = materialiLira(stato.sbloccati.skin);
-function applicaSkin(skin) {
-  stato.sbloccati.skin = skin;
-  materialiCorrenti = materialiLira(skin);
-  for (const m of lire) m.mesh.material = materialiCorrenti;
-  salvaPartita();
-}
+TAGLI.forEach((t, i) => taglio(i)); // prepara tutti i tagli all'avvio
 
 // ============ ZONA DI LANCIO + MIRINO ============
 const ZONA = { minX: -3.8, maxX: 3.8, minZ: -4.8, maxZ: 3.8 };
@@ -811,21 +843,26 @@ mirino.rotation.x = -Math.PI / 2;
 mirino.position.y = 0.014;
 scene.add(mirino);
 
-const liraFantasma = new THREE.Mesh(coinGeo, new THREE.MeshBasicMaterial({
+const liraFantasma = new THREE.Mesh(taglio(TAGLIO_PREDEFINITO).geo, new THREE.MeshBasicMaterial({
   color: 0xffd54a, transparent: true, opacity: 0.35, depthWrite: false
 }));
 liraFantasma.visible = false;
 scene.add(liraFantasma);
+// aggiorna l'anteprima quando cambia il taglio lanciato
+function aggiornaFantasma() {
+  const t = taglio(stato.pot.taglio);
+  liraFantasma.geometry = t.geo;
+  liraFantasma.material.color.setHex(t.colore);
+}
 
 const puntatore = { x: 0, z: 0, dentro: false, visibile: false };
 
 const lire = [];
-const LIRE_INIZIALI = 90; // il tavolo tra piastra e bordo deve essere PIENO di lire, come nella macchina vera
 
-// Le lire NASCONO SDRAIATE in una pila compatta tra il bordo e la piastra (come nella macchina vera)
-const MAX_LIRE = TATTILE ? 130 : 200; // limite di sicurezza per la fluidità (meno lire sul telefono)
+// Le lire NASCONO SDRAIATE in una pila mista di tagli tra il bordo e la piastra
 function creaLira(x, y, z, opz = {}) {
-  const mesh = new THREE.Mesh(coinGeo, materialiCorrenti);
+  const t = taglio(opz.taglio !== undefined ? opz.taglio : TAGLIO_PREDEFINITO);
+  const mesh = new THREE.Mesh(t.geo, t.mats);
   mesh.position.set(x, y, z);
   mesh.rotation.y = Math.random() * Math.PI * 2; // solo rotazione su se stessa: la lira resta PIATTA
   mesh.castShadow = true;
@@ -834,13 +871,15 @@ function creaLira(x, y, z, opz = {}) {
   const inVolo = !!opz.volo;
   const m = {
     mesh,
+    r: t.r, h: t.h,               // dimensioni del taglio (la fisica le usa una per una)
+    taglio: t.taglio, premio: t.premio, colore: t.colore,
     vx: 0, vy: 0, vz: 0,
     rx: 0, rz: 0,       // inclinazione (deve tornare a 0 = sdraiata)
     wx: 0, wz: 0,       // capriole mentre vola
     aTerra: !inVolo,
     atterrata: !inVolo, // per far partire il suono solo all'atterraggio vero
     sotto: null,        // lira su cui poggia (serve per le torri)
-    torre: 0,           // livello di torre al momento
+    livello: 1,         // piano della torre (1 = a terra)
     torrePremiato: false, // bonus torre già assegnato
     proiettile: false,  // lira sparata dal cannone
     spinta: 0,          // potenza dell'impatto
@@ -849,41 +888,35 @@ function creaLira(x, y, z, opz = {}) {
     attiva: true
   };
   lire.push(m);
-  // tavolo pieno: spazza SOLO le lire già sul bordo di caduta (e le paga).
-  // Le lire del mucchio non vengono mai rimosse: il tavolo resta pieno.
-  if (lire.length > MAX_LIRE) {
-    const sulBordo = lire.filter(q => q.attiva && q !== m && q.mesh.position.z < -4.2)
-      .sort((a, b) => a.mesh.position.z - b.mesh.position.z);
-    let spazzate = 0;
-    for (const q of sulBordo) {
-      if (lire.filter(r => r.attiva).length - spazzate <= MAX_LIRE) break;
-      q.attiva = false;
-      scene.remove(q.mesh);
-      particelle(q.mesh.position.x, 0.25, q.mesh.position.z, 5, 0xffd54a, 0.8);
-      spazzate++;
-    }
-    if (spazzate > 0) {
-      stato.premi += spazzate;
-      stato.totSpazzate += spazzate;
-      suono.vinci(2);
-      avviso('SPAZZATA +' + spazzate + ' 🏆');
-      aggiornaHUD();
-    }
-  }
   return m;
 }
 
-// strato di base: file fitte di lire da vicino al bordo fino alla piastra
-for (let riga = 0; riga < 10 && lire.length < LIRE_INIZIALI; riga++) {
+// quante lire ci sono davvero sul tavolo (le attive)
+function lireSulTavolo() {
+  let n = 0;
+  for (const m of lire) if (m.attiva) n++;
+  return n;
+}
+const tavoloPieno = () => lireSulTavolo() >= MAX_LIRE;
+
+// strato di base: file fitte di lire MISTE (tagli diversi) da vicino al bordo fino alla piastra
+const TAGLIO_PILA = [0, 0, 1, 1, 1, 2, 2, 3];   // 50, 100, 500, 1000 → più piccole che grandi
+function taglioACasoDallaPila() {
+  return TAGLIO_PILA[Math.floor(Math.random() * TAGLIO_PILA.length)];
+}
+for (let riga = 0; riga < 8 && lire.length < LIRE_INIZIALI; riga++) {
   const zb = -4.5 + riga * 0.72;
   for (let k = 0; k < 9 && lire.length < LIRE_INIZIALI; k++) {
-    creaLira(-3.4 + k * 0.78 + (Math.random() - 0.5) * 0.15, 0.06, zb + (Math.random() - 0.5) * 0.12);
+    creaLira(-3.4 + k * 0.78 + (Math.random() - 0.5) * 0.15, 0.08, zb + (Math.random() - 0.5) * 0.12,
+      { taglio: taglioACasoDallaPila() });
   }
 }
-// alcune lire sopra le altre
+// alcune lire sopra le altre: la pila parte già a 2-3 piani
 while (lire.length < LIRE_INIZIALI) {
   const sotto = lire[Math.floor(Math.random() * lire.length)];
-  creaLira(sotto.mesh.position.x + (Math.random() - 0.5) * 0.2, sotto.mesh.position.y + COIN_H, sotto.mesh.position.z);
+  creaLira(sotto.mesh.position.x + (Math.random() - 0.5) * 0.18,
+    sotto.mesh.position.y + (sotto.h + 0.11) / 2, sotto.mesh.position.z,
+    { taglio: taglioACasoDallaPila() });
 }
 
 // ============ INPUT (mirino, lancio, sparo del cannone) ============
@@ -977,7 +1010,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
 // niente menu contestuale: il tasto destro serve per il cannone
 renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
 
-// lancio normale delle lire (multi-lancio potenziabile)
+// lancio normale delle lire (multi-lancio passivo: sempre attivo)
 function lanciaDalPuntatore(daRaffica = false) {
   if (!puntatore.visibile || !puntatore.dentro) {
     if (!daRaffica) { suono.errore(); avviso('Lancia dentro la zona illuminata'); }
@@ -985,8 +1018,12 @@ function lanciaDalPuntatore(daRaffica = false) {
   }
   const ora = performance.now();
   if (!daRaffica && ora - ultimoLancio < COOLDOWN) return;
-  const nMulti = stato.attivi.multi ? lirePerLancio(stato.pot.multi) : 1;
-  const n = Math.min(nMulti, Math.floor(stato.gettoni));
+  if (tavoloPieno()) {                       // NESSUNA spazzata: si aspetta che il bordo si svuoti
+    inRaffica = false;
+    if (!daRaffica) { suono.errore(); avviso('TAVOLO PIENO — il bordo si sta svuotando 🕐'); }
+    return;
+  }
+  const n = Math.min(lirePerLancio(stato.pot.multi), Math.floor(stato.gettoni));
   if (n <= 0) {
     if (!daRaffica) { suono.errore(); avviso('CARICATORE IN RICARICA…'); }
     inRaffica = false;
@@ -995,8 +1032,7 @@ function lanciaDalPuntatore(daRaffica = false) {
   const spargi = daRaffica ? 0.35 : 0.55;
   for (let i = 0; i < n; i++) {
     const m = lanciaLira(puntatore.x + (Math.random() - 0.5) * spargi, puntatore.z + (Math.random() - 0.5) * spargi);
-    // potenziamento FORZA DI LANCIO (se attivo): la lira colpisce la pila
-    m.spinta = (stato.attivi.forza ? 0.25 * stato.pot.forza : 0);
+    m.spinta = 0.25 * stato.pot.forza;        // FORZA: abilità passiva
   }
   stato.gettoni -= n;
   stato.totLanci += n;
@@ -1009,6 +1045,7 @@ function lanciaDalPuntatore(daRaffica = false) {
 // sparo del cannone: lira pesante che travolge la pila (costa 1 gettone)
 function sparaCannone(x, z, potenza) {
   if (stato.gettoni < 1) { suono.errore(); avviso('CARICATORE IN RICARICA…'); return; }
+  if (tavoloPieno()) { suono.errore(); avviso('TAVOLO PIENO — il bordo si sta svuotando '); return; }
   stato.gettoni -= 1;
   stato.totLanci += 1;
   const m = lanciaLira(x, z, true);
@@ -1025,7 +1062,9 @@ function sparaCannone(x, z, potenza) {
 }
 
 function lanciaLira(x, z, proiettile = false) {
-  const m = creaLira(x, proiettile ? 7.6 : 6, z, { volo: true });
+  // la lira lanciata è del TAGLIO scelto (potenziamento TAGLIO); il cannone usa un taglio più grande
+  const indice = proiettile ? Math.min(TAGLI.length - 1, stato.pot.taglio + 1) : stato.pot.taglio;
+  const m = creaLira(x, proiettile ? 7.6 : 6, z, { volo: true, taglio: indice });
   m.vx = (Math.random() - 0.5) * 0.4;
   m.vy = -1; // solo verso il basso, mai verso l'alto
   m.vz = (Math.random() - 0.5) * 0.4;
@@ -1074,38 +1113,37 @@ function aggiornaFisica(dt) {
 
     // 2) supporto: quanto in alto può stare ogni lira (dal basso verso l'alto)
     const ordinate = lire.filter(m => m.attiva).sort((a, b) => a.mesh.position.y - b.mesh.position.y);
-    const raggioSupporto = COIN_R * 1.6, rq = raggioSupporto * raggioSupporto;
     for (let i = 0; i < ordinate.length; i++) {
       const m = ordinate[i];
       const p = m.mesh.position;
-      let restY = 0.06; // superficie del tavolo
+      let restY = m.h / 2;               // superficie del tavolo (ogni taglio ha il suo spessore)
       let appoggio = null;
       // sopra la piastra le lire viaggiano con lei
-      if (Math.abs(p.x) < 3.95 && p.z > pusherZ - halfD && p.z < pusherZ + halfD) restY = 0.18;
+      if (Math.abs(p.x) < 3.95 && p.z > pusherZ - halfD && p.z < pusherZ + halfD) restY = 0.12 + m.h / 2;
       for (let j = 0; j < i; j++) {
         const o = ordinate[j];
         const oz = o.mesh.position.z;
-        if (p.z - oz >= raggioSupporto || oz - p.z >= raggioSupporto) continue; // scarto rapido
+        const rSup = (m.r + o.r) * 0.78;                      // ogni taglio ha il suo raggio
+        if (p.z - oz >= rSup || oz - p.z >= rSup) continue;    // scarto rapido
         const dx = p.x - o.mesh.position.x, dz = p.z - oz;
-        if (dx * dx + dz * dz < rq) {
-          // una torre non cresce all'infinito: oltre 4 lire la pila cede
-          if (Math.round((o.mesh.position.y - 0.06) / COIN_H) + 1 >= 4) continue;
-          const top = o.mesh.position.y + COIN_H;
+        if (dx * dx + dz * dz < rSup * rSup) {
+          if (o.livello >= LIVELLI_TORRE_MAX) continue;        // tetto della torre: 30 piani
+          const top = o.mesh.position.y + o.h;
           if (top > restY) { restY = top; appoggio = o; }
         }
       }
       // oltre il bordo anteriore: niente più supporto, la lira cade giù
       if (p.z < -5) restY = -100;
       m.sotto = appoggio;
+      m.livello = appoggio ? appoggio.livello + 1 : 1;         // piano della torre
 
       if (p.y <= restY) {
         p.y = restY;
         if (m.vy < 0) m.vy = 0; // NESSUN rimbalzo: si ferma e basta
         m.aTerra = true;
         if (!m.atterrata) { m.atterrata = true; suAtterraggio(m); } // suono ed effetti all'atterraggio
-        // --- TORRI: premiata una volta sola per lira (se l'abilità è ON) ---
-        const livello = appoggio ? Math.round((p.y - 0.06) / COIN_H) + 1 : 1;
-        if (livello >= 3 && !m.torrePremiato && stato.attivi.torri) { m.torrePremiato = true; suTorre(p, livello); }
+        // --- TORRI (abilità passiva): extra dal 4° piano in su, una volta per lira ---
+        if (m.livello >= 4 && !m.torrePremiato) { m.torrePremiato = true; suTorre(p, m.livello); }
       } else {
         m.aTerra = false;
       }
@@ -1137,15 +1175,15 @@ function aggiornaFisica(dt) {
       }
 
       // Piastra: TRASPORTA le lire che poggiano sopra, SPINGE la pila davanti a sé
-      const sopraPiastra = p.y > 0.10 && p.y < 0.60 &&
+      const sopraPiastra = p.y > 0.10 && p.y < 1.10 &&
         Math.abs(p.x) < 3.95 && p.z > pusherZ - halfD && p.z < pusherZ + halfD;
       if (sopraPiastra) {
         p.z += pusherVel * h;
         m.vz = pusherVel;
       } else if (pusherVel < 0 && p.y < 0.12 &&
-                 p.z > face - COIN_R && p.z < pusherZ + halfD) {
+                 p.z > face - m.r && p.z < pusherZ + halfD) {
         // la faccia spinge la pila lentamente in avanti
-        p.z = face - COIN_R;
+        p.z = face - m.r;
         m.vz = Math.min(m.vz, pusherVel);
       }
 
@@ -1156,7 +1194,6 @@ function aggiornaFisica(dt) {
     }
 
     // 4) collisione lira-lira (solo a pari altezza: chi sta sopra non viene spinto di lato)
-    const minD = COIN_R * 2 * 0.98;
     for (let i = 0; i < lire.length; i++) {
       const a = lire[i];
       if (!a.attiva) continue;
@@ -1165,8 +1202,9 @@ function aggiornaFisica(dt) {
         const b = lire[j];
         if (!b.attiva) continue;
         const bz = b.mesh.position.z;
+        const minD = (a.r + b.r) * 0.98;                  // ogni taglio ha il suo diametro
         if (az - bz >= minD || bz - az >= minD) continue; // scarto rapido (la maggior parte delle coppie)
-        if (Math.abs(ay - b.mesh.position.y) > 0.08) continue;
+        if (Math.abs(ay - b.mesh.position.y) > (a.h + b.h) * 0.34) continue;
         const dx = ax - b.mesh.position.x;
         const dz = az - bz;
         const dist = Math.sqrt(dx * dx + dz * dz);
@@ -1185,14 +1223,14 @@ function aggiornaFisica(dt) {
       }
     }
 
-    // 5) caduta dal bordo = lira vinta
+    // 5) caduta dal bordo = lira vinta (paga il valore del taglio)
     for (let i = lire.length - 1; i >= 0; i--) {
       const m = lire[i];
       if (!m.attiva) continue;
       if (m.mesh.position.z < -5 && m.mesh.position.y < -1.2) {
         m.attiva = false;
         scene.remove(m.mesh);
-        vinciLira(m.mesh.position);
+        vinciLira(m);
       }
     }
   }
@@ -1223,18 +1261,21 @@ function mostraCombo(n) {
 }
 
 // una lira è caduta dal bordo: paga, suona, festeggia
-function vinciLira(pos) {
+function vinciLira(m) {
+  const pos = m.mesh.position;
   const ora = performance.now();
   combo = (ora - comboScadenza < 2600) ? combo + 1 : 1;
   comboScadenza = ora + 2600;
   stato.comboMax = Math.max(stato.comboMax, combo);
-  const guadagno = 1 + Math.floor(combo / 5); // bonus combo ogni 5 di fila
+  // il valore dipende dal TAGLIO della lira vinta (50→1, 100→2, 500→5, 1000→10)
+  const guadagno = (m.premio || 1) + Math.floor(combo / 5);
   stato.premi += guadagno;
   stato.vinte += 1;
   stato.totVinte += 1;
   if (combo >= 3) mostraCombo(combo);
-  testoVolante(pos.x, 0.3, -4.6, '+' + guadagno + (guadagno > 1 ? ' BONUS' : ''), guadagno > 1 ? 'bonus' : '');
-  particelle(pos.x, 0.2, -4.9, 6 + Math.min(12, combo), 0xffd54a, 0.9);
+  testoVolante(pos.x, 0.3, -4.6, '+' + guadagno + (m.taglio >= 500 ? ' 💎' : '') + (guadagno > (m.premio || 1) ? ' COMBO' : ''),
+    m.taglio >= 500 ? 'bonus' : '');
+  particelle(pos.x, 0.2, -4.9, 6 + Math.min(12, combo) + (m.taglio >= 500 ? 8 : 0), m.colore || 0xffd54a, 0.9);
   suono.vinci(combo);
   if (combo >= 5) {
     const lampo = document.createElement('div');
@@ -1246,19 +1287,29 @@ function vinciLira(pos) {
   aggiornaHUD();
 }
 
-// torre di lire completata
+// torre di lire completata: il bonus cresce con il piano raggiunto (fino a 30)
 function suTorre(p, livello) {
-  const bonus = 1 + (livello - 3);
+  const bonus = 1 + Math.floor(livello / 5) + (livello >= 20 ? 3 : 0);
   stato.premi += bonus;
   stato.totTorri += 1;
-  testoVolante(p.x, p.y + 0.35, p.z, 'TORRE x' + livello + '  +' + bonus, 'torre');
-  particelle(p.x, p.y, p.z, 12 + livello * 2, 0x7ef0c0, 1);
+  const record = Math.max(stato.torreRecord || 1, livello);
+  const nuovoRecord = livello > (stato.torreRecord || 1);
+  stato.torreRecord = record;
+  testoVolante(p.x, p.y + 0.4, p.z, 'TORRE x' + livello + '  +' + bonus + (nuovoRecord ? '  NUOVO RECORD!' : ''), 'torre');
+  particelle(p.x, p.y, p.z, 10 + livello * 2, 0x7ef0c0, 1 + livello * 0.03);
   suono.torre();
+  if (livello >= 10) {                 // torre importante: festa
+    const lampo = document.createElement('div');
+    lampo.className = 'lampo';
+    document.body.appendChild(lampo);
+    setTimeout(() => lampo.remove(), 520);
+    scossa(0.25 + livello * 0.02);
+  }
   aggiornaHUD();
   // tutte le lire della torre pulsano
   for (const q of lire) {
     if (!q.attiva) continue;
-    if (Math.abs(q.mesh.position.x - p.x) < 0.25 && Math.abs(q.mesh.position.z - p.z) < 0.25) q.pulse = 1;
+    if (Math.abs(q.mesh.position.x - p.x) < 0.3 && Math.abs(q.mesh.position.z - p.z) < 0.3) q.pulse = 1;
   }
 }
 
@@ -1365,6 +1416,7 @@ const elPremi = document.getElementById('premi');
 const elVinte = document.getElementById('vinte');
 const elGettoniV = document.getElementById('gettoniV');
 const elGettoniBar = document.getElementById('gettoniBar');
+const elTaglioOra = document.getElementById('taglioOra');
 const elCarica = document.getElementById('carica');
 const elCaricaBar = document.getElementById('caricaBar');
 const elCaricaTxt = document.getElementById('caricaTxt');
@@ -1375,24 +1427,28 @@ function aggiornaHUD() {
   const cap = capCaricatore(stato.pot.idle);
   elGettoniV.textContent = Math.floor(stato.gettoni) + '/' + cap;
   elGettoniBar.style.width = Math.min(100, stato.gettoni / cap * 100).toFixed(0) + '%';
+  if (elTaglioOra) elTaglioOra.textContent = 'TAGLIO · ' + nomeTaglio(stato.pot.taglio).replace(/^\S+\s*/, '').toUpperCase() + ' · VALE ' + taglio(stato.pot.taglio).premio;
 }
 
-// ============ ABILITÀ: interruttori ON/OFF ============
+// ============ ABILITÀ ATTIVE (interruttori ON/OFF) ============
+// Solo due: CANNONE e RAFFICA. Una esclude l'altra. FORZA, GETTONI e TORRI sono PASSIVE.
 const chipAbilita = [
-  { id: 'cannone', sbloccata: () => stato.sbloccati.cannone, nota: () => 'carica' },
+  { id: 'cannone', sbloccata: () => stato.sbloccati.cannone, nota: () => 'carica dx' },
   { id: 'raffica', sbloccata: () => stato.pot.raffica > 0, nota: () => rateRaffica(stato.pot.raffica).toFixed(0) + '/s' },
-  { id: 'forza', sbloccata: () => stato.pot.forza > 0, nota: () => 'x' + fmt(fattoreForza(stato.pot.forza)) },
-  { id: 'multi', sbloccata: () => stato.pot.multi > 0, nota: () => lirePerLancio(stato.pot.multi) + 'x' },
-  { id: 'idle', sbloccata: () => true, sempre: true, nota: () => fmt(ricaricaGettoni(stato.pot.idle)) + '/s' },
-  { id: 'torri', sbloccata: () => true, nota: () => 'bonus' },
   { id: 'audio', sbloccata: () => true, nota: () => (stato.audio ? 'ON' : 'OFF') }
+];
+const PASSIVE = [
+  { nome: '💪 FORZA DI LANCIO', valore: () => 'x' + fmt(fattoreForza(stato.pot.forza)), desc: 'Ogni lira lanciata colpisce la pila e la spinge verso il bordo.' },
+  { nome: '✨ MULTI-LANCIO', valore: () => lirePerLancio(stato.pot.multi) + ' lire', desc: 'Più lire per click: si compra e resta sempre attiva.' },
+  { nome: '🪙 RICARICA GETTONI', valore: () => fmt(ricaricaGettoni(stato.pot.idle)) + '/s', desc: 'Il caricatore si riempie da solo: i gettoni sono infiniti.' },
+  { nome: '🏗️ TORRI DI LIRE', valore: () => 'record x' + (stato.torreRecord || 1), desc: 'Bonus automatico dal 4° piano fino a 30 piani.' }
 ];
 function aggiornaAbilita() {
   for (const c of chipAbilita) {
     const el = document.getElementById('ch-' + c.id);
     if (!el) continue;
     const sbloccata = c.sbloccata();
-    const acceso = c.sempre ? true : (c.id === 'audio' ? stato.audio : (sbloccata && !!stato.attivi[c.id]));
+    const acceso = c.id === 'audio' ? stato.audio : (sbloccata && !!stato.attivi[c.id]);
     el.classList.toggle('bloccata', !sbloccata);
     el.classList.toggle('on', acceso);
     el.classList.toggle('off', !acceso);
@@ -1408,10 +1464,15 @@ function cambiaAbilita(id) {
   } else {
     const c = chipAbilita.find(q => q.id === id);
     if (!c || !c.sbloccata()) { suono.errore(); avviso('Prima sbloccalo nel negozio'); return; }
-    if (c.sempre) { avviso('I gettoni si ricaricano sempre 🪙  ' + fmt(ricaricaGettoni(stato.pot.idle)) + '/s'); suono.compra(); return; }
-    stato.attivi[id] = !stato.attivi[id];
+    const acceso = !stato.attivi[id];
+    // CANNONE e RAFFICA si escludono a vicenda
+    stato.attivi.cannone = false;
+    stato.attivi.raffica = false;
+    stato.attivi[id] = acceso;
+    if (!acceso) stato.attivi.cannone = true;   // se spengo tutto, resta attivo il cannone
+    if (id === 'raffica' || !stato.attivi.raffica) { inRaffica = false; accRaffica = 0; colpiRaffica = 0; }
+    if (inCarica) { inCarica = false; elCarica.classList.remove('attiva'); carica = 0; }
   }
-  if (id === 'raffica') { inRaffica = false; accRaffica = 0; }
   suono.compra();
   aggiornaAbilita();
   aggiornaHUD();
@@ -1421,7 +1482,9 @@ function cambiaAbilita(id) {
 function collegaAbilita() {
   for (const c of chipAbilita) {
     const el = document.getElementById('ch-' + c.id);
-    if (el) el.onclick = () => cambiaAbilita(c.id);
+    if (!el) continue;
+    el.onclick = () => cambiaAbilita(c.id);
+    el.addEventListener('touchend', (e) => { e.preventDefault(); cambiaAbilita(c.id); }, { passive: false });
   }
   aggiornaAbilita();
 }
@@ -1449,15 +1512,21 @@ function rendiNegozio() {
   const p = stato.pot;
   let html = '';
   if (schedaAttiva === 'pot') {
-    html += riga({ id: 'idle', icona: '🪙', nome: 'RICARICA GETTONI',
+    html += riga({ id: 'taglio', icona: '🪙', nome: 'TAGLIO DI LANCIO',
+      extra: nomeTaglio(p.taglio) + (p.taglio < TAGLI.length - 1 ? ' → ' + nomeTaglio(p.taglio + 1) : ''),
+      desc: 'Il taglio delle lire che lanci: più è alto, più vale quando cade dal bordo e più è grande la monetina (L.50 → L.100 → L.500 → L.1000).',
+      lv: p.taglio + 1, max: TAGLI.length, costo: costoTaglio(p.taglio), max2: p.taglio >= TAGLI.length - 1 });
+    html += riga({ id: 'idle', icona: '🪙', nome: 'RICARICA GETTONI <em>PASSIVA</em>',
       extra: fmt(ricaricaGettoni(p.idle)) + '/s · cap ' + capCaricatore(p.idle),
-      desc: 'I gettoni da lanciare sono infiniti: il caricatore si ricarica da solo. Ogni livello ricarica più in fretta e aumenta la capacità.',
+      desc: 'I gettoni da lanciare sono infiniti: il caricatore si ricarica da solo, sempre. Ogni livello ricarica più in fretta e aumenta la capacità.',
       lv: p.idle, max: LIVELLI_MAX.idle, costo: costoIdle(p.idle), max2: p.idle >= LIVELLI_MAX.idle });
-    html += riga({ id: 'forza', icona: '💪', nome: 'FORZA DI LANCIO', extra: 'x' + fmt(fattoreForza(p.forza)),
-      desc: 'Le lire lanciate colpiscono più forte: all\'impatto spingono la pila verso il bordo di caduta.',
+    html += riga({ id: 'forza', icona: '💪', nome: 'FORZA DI LANCIO <em>PASSIVA</em>',
+      extra: 'x' + fmt(fattoreForza(p.forza)),
+      desc: 'Le lire lanciate colpiscono più forte: all\'impatto spingono la pila verso il bordo di caduta. Vale sempre, senza interruttori.',
       lv: p.forza, max: LIVELLI_MAX.forza, costo: costoForza(p.forza), max2: p.forza >= LIVELLI_MAX.forza });
-    html += riga({ id: 'multi', icona: '✨', nome: 'MULTI-LANCIO', extra: lirePerLancio(p.multi) + ' lire per click',
-      desc: 'Lancia più lire con un solo click (ognuna costa 1 gettone dal caricatore).',
+    html += riga({ id: 'multi', icona: '✨', nome: 'MULTI-LANCIO <em>PASSIVO</em>',
+      extra: lirePerLancio(p.multi) + ' lire per click',
+      desc: 'Lancia più lire con un solo click (ognuna costa 1 gettone dal caricatore). Vale sempre, senza interruttori.',
       lv: p.multi, max: LIVELLI_MAX.multi, costo: costoMulti(p.multi), max2: p.multi >= LIVELLI_MAX.multi });
     html += riga({ id: 'raffica', icona: '⚡', nome: 'RAFFICA',
       extra: p.raffica > 0 ? rateRaffica(p.raffica).toFixed(0) + ' lire/s' : 'da sbloccare',
@@ -1472,15 +1541,10 @@ function rendiNegozio() {
     html += riga({ id: 'cannone', icona: '🔫', nome: 'CANNONE', extra: stato.sbloccati.cannone ? 'SBLOCCATO' : 'ABILITÀ NUOVA',
       desc: 'Tieni premuto il tasto destro: si carica lo sparo che travolge la pila di lire.',
       costo: COSTO_CANNONE, max2: stato.sbloccati.cannone });
-    for (const s of ['argento', 'rubino', 'arcobaleno']) {
-      const pos = stato.skinPossedute.includes(s);
-      const inUso = pos && stato.sbloccati.skin === s;
-      const iconeSkin = { argento: '🥈', rubino: '💎', arcobaleno: '🌈' };
-      html += riga({ id: 'skin_' + s, icona: iconeSkin[s], nome: 'LIRE ' + SKIN_LIRE[s].nome.toUpperCase(),
-        extra: inUso ? 'IN USO' : (pos ? 'POSSEDUTE' : ''),
-        desc: pos ? 'Skin sbloccata: clicca per applicarla a tutte le lire.' : 'Cambia l\'aspetto e la lucentezza di tutte le lire.',
-        costo: PRESTIGIO[s], max2: inUso });
-    }
+    html += riga({ id: 'torriInfo', icona: '️', nome: 'TORRI FINO A 30 PIANI <em>PASSIVA</em>',
+      extra: 'record attuale x' + (stato.torreRecord || 1) + ' / 30',
+      desc: 'Le lire si impilano una sull\'altra fino a 30 piani! Dal 4° piano ogni torre paga un extra: più alta è, più premi regala.',
+      max2: true, etichettaMax: '🏗️ ATTIVA' });
     for (const f of ['blu', 'bordeaux', 'notte']) {
       const pos = stato.feltriPosseduti.includes(f);
       const inUso = pos && stato.sbloccati.feltro === f;
@@ -1494,30 +1558,27 @@ function rendiNegozio() {
     const vociAb = [
       { id: 'cannone', nome: 'CANNONE', desc: 'Tieni premuto il tasto destro per caricare lo sparo che travolge la pila.', sbloccata: stato.sbloccati.cannone },
       { id: 'raffica', nome: 'RAFFICA', desc: 'Tieni premuto e spari una lira dietro l\'altra (' + rateRaffica(p.raffica).toFixed(0) + '/s).', sbloccata: p.raffica > 0 },
-      { id: 'forza', nome: 'FORZA DI LANCIO', desc: 'Ogni lira lanciata colpisce la pila spingendola verso il bordo.', sbloccata: p.forza > 0 },
-      { id: 'multi', nome: 'MULTI-LANCIO', desc: 'Lancia più lire per click (ora ' + lirePerLancio(p.multi) + ').', sbloccata: p.multi > 0 },
-      { id: 'idle', nome: '🪙 RICARICA GETTONI', desc: 'Sempre attiva: il caricatore si riempie da solo (' + fmt(ricaricaGettoni(p.idle)) + '/s, cap ' + capCaricatore(p.idle) + '). Non si può spegnere: i gettoni sono infiniti.', sbloccata: true, sempre: true },
-      { id: 'torri', nome: 'BONUS TORRI', desc: 'Premio quando si formano torri di 3 o più lire.', sbloccata: true },
       { id: 'audio', nome: 'AUDIO', desc: 'Effetti sonori della sala, sintetizzati in tempo reale (nessun file esterno).', sbloccata: true }
     ];
     html = vociAb.map(v => {
-      const acceso = v.sempre ? true : (v.id === 'audio' ? stato.audio : (v.sbloccata && !!stato.attivi[v.id]));
-      const disabilitato = v.sempre || !v.sbloccata;
-      const etichetta = v.sempre ? 'SEMPRE' : (acceso ? 'ON' : 'OFF');
-      const statoTesto = v.sempre ? 'SEMPRE ATTIVA' : (v.sbloccata ? (acceso ? 'ATTIVA' : 'DISATTIVATA') : 'DA SBLOCCARE NEL NEGOZIO');
+      const acceso = v.id === 'audio' ? stato.audio : (v.sbloccata && !!stato.attivi[v.id]);
+      const statoTesto = v.sbloccata ? (acceso ? 'ATTIVA' : 'DISATTIVATA') : 'DA SBLOCCARE NEL NEGOZIO';
       return '<div class="voce"><div><div class="nome">' + v.nome + '</div>' +
         '<div class="desc">' + v.desc + '</div>' +
         '<div class="lv">' + statoTesto + '</div></div>' +
-        '<button class="inter' + (acceso ? ' acceso' : '') + '" data-ab="' + v.id + '"' + (disabilitato ? ' disabled' : '') + '>' +
-        '<span class="pallino"></span>' + etichetta + '</button></div>';
+        '<button class="inter' + (acceso ? ' acceso' : '') + '" data-ab="' + v.id + '"' + (v.sbloccata ? '' : ' disabled') + '>' +
+        '<span class="pallino"></span>' + (acceso ? 'ON' : 'OFF') + '</button></div>';
     }).join('');
+    html += '<div class="voce"><div class="riepilogo"><b>ABILITÀ PASSIVE</b> — sempre attive, non si spengono:<br><br>' +
+      PASSIVE.map(v => v.nome + ' · <b>' + v.valore() + '</b><br><span style="opacity:.72">' + v.desc + '</span>').join('<br><br>') +
+      '</div></div>';
   } else {
     html = '<div class="voce"><div class="riepilogo">' +
       'Lire vinte in totale: <b>' + stato.totVinte + '</b><br>' +
       'Lire lanciate: <b>' + stato.totLanci + '</b><br>' +
-      'Torri costruite: <b>' + stato.totTorri + '</b><br>' +
-      'Lire spazzate dal tavolo pieno: <b>' + stato.totSpazzate + '</b><br>' +
+      'Torri costruite: <b>' + stato.totTorri + '</b> · record <b>x' + (stato.torreRecord || 1) + '/30</b><br>' +
       'Combo massima: <b>x' + stato.comboMax + '</b><br>' +
+      'Taglio in uso: <b>' + nomeTaglio(p.taglio) + '</b><br>' +
       'Ricarica gettoni: <b>' + fmt(ricaricaGettoni(p.idle)) + '/s</b> (cap ' + capCaricatore(p.idle) + ')<br>' +
       'Premi attuali: <b>' + Math.floor(stato.premi) + '</b>' +
       '</div><button class="compra" data-id="azzera">AZZERA TUTTO</button></div>';
@@ -1547,8 +1608,10 @@ function compra(id) {
   else if (id === 'raffica' && p.raffica < LIVELLI_MAX.raffica) {
     if (paga(costoRaffica(p.raffica))) {
       p.raffica++;
+      // appena comprata si attiva, spegnendo il cannone (una sola abilità attiva)
       stato.attivi.raffica = true;
-      if (p.raffica === 1) { suono.sblocco(); avviso('RAFFICA SBLOCCATA!'); }
+      stato.attivi.cannone = false;
+      if (p.raffica === 1) { suono.sblocco(); avviso('RAFFICA SBLOCCATA! ⚡'); }
       else suono.compra();
     }
   }
@@ -1558,15 +1621,22 @@ function compra(id) {
   else if (id === 'cannone' && !stato.sbloccati.cannone) {
     if (paga(COSTO_CANNONE)) {
       stato.sbloccati.cannone = true;
+      // appena sbloccato si attiva, spegnendo la raffica (una sola abilità attiva)
+      stato.attivi.cannone = true;
+      stato.attivi.raffica = false;
       suono.sblocco();
       particelle(0, 0.6, 0, 34, 0xffd54a, 2);
-      avviso('CANNONE SBLOCCATO!');
+      avviso('CANNONE SBLOCCATO! 💥');
     }
   }
-  else if (id.indexOf('skin_') === 0) {
-    const s = id.slice(5);
-    if (stato.skinPossedute.includes(s)) { applicaSkin(s); suono.compra(); }
-    else if (paga(PRESTIGIO[s])) { stato.skinPossedute.push(s); applicaSkin(s); suono.sblocco(); }
+  else if (id === 'taglio' && p.taglio < TAGLI.length - 1) {
+    if (paga(costoTaglio(p.taglio))) {
+      p.taglio++;
+      aggiornaFantasma();
+      suono.sblocco();
+      avviso('NUOVO TAGLIO: ' + nomeTaglio(p.taglio).toUpperCase() + ' ');
+      particelle(0, 1.2, 0, 30, taglio(p.taglio).colore, 1.8);
+    }
   }
   else if (id.indexOf('feltro_') === 0) {
     const f = id.slice(7);
@@ -1667,15 +1737,7 @@ function animate() {
   zonaMat.opacity = 0.34 + (Math.sin(t * 1.9) * 0.5 + 0.5) * 0.28;
   zonaMesh.scale.setScalar(1 + Math.sin(t * 1.9) * 0.005);
 
-  // --- skin arcobaleno: la tinta gira nel tempo ---
-  const matArc = cacheMateriali.arcobaleno;
-  if (matArc && stato.sbloccati.skin === 'arcobaleno') {
-    const hue = (t * 0.1) % 1;
-    matArc[1].emissive.setHSL(hue, 0.9, 0.3);
-    matArc[1].color.setHSL(hue, 0.5, 0.9);
-    matArc[0].color.setHSL(hue, 0.8, 0.6);
-  }
-
+  // --- i bordi delle lire brillano di riflesso (taglio più alto = bordo più vivo) ---
   if (combo > 0 && now > comboScadenza) combo = 0;
 
   // --- camera: zoom (utente + arretramento in verticale) + scossa ---
@@ -1770,6 +1832,7 @@ tavoloMat.color.setHex(COLORE_FELTRI[stato.sbloccati.feltro] || COLORE_FELTRI.ve
 const elVersione = document.getElementById('versione');
 if (elVersione) elVersione.textContent = VERSIONE;
 stato.gettoni = Math.min(Math.max(stato.gettoni, 0), capCaricatore(stato.pot.idle));
+aggiornaFantasma();          // l'anteprima usa il taglio scelto
 aggiornaHUD();
 aggiornaAbilita();
 aggiornaSpara();

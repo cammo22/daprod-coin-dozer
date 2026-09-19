@@ -23,11 +23,14 @@ caricatore si ricarica sempre da solo. Funziona **da telefono, tablet e desktop*
 
 **I gettoni sono infiniti** 🪙♾️: ogni lancio consuma 1 gettone dal caricatore, che si ricarica
 sempre da solo (vedi la barra nell'HUD). Quando una lira cade oltre il bordo vinci **PREMI** 🏆,
-che servono per comprare i potenziamenti. Se il tavolo si riempie, le lire più vicine al bordo
-vengono **spazzate e pagate**: niente sparizioni.
+**in base al suo taglio** (L.50 → 1, L.100 → 2, L.500 → 5, L.1000 → 10), che servono per comprare
+i potenziamenti. Le lire si impilano **fino a 30 piani**: più la torre è alta, più premi regala.
 
-Gli **switch in basso** accendono e spengono ogni abilità (le voci non sbloccate restano **grigie**);
-il negozio mostra per ogni potenziamento **icona, livello e tetto massimo** (`LIVELLO x / MAX`).
+Nella barra in basso ci sono solo le **abilità attive**: 💥 **CANNONE** e  **RAFFICA**, e
+**una esclude l'altra**. 💪 Forza, ✨ Multi-lancio, 🪙 Ricarica gettoni e 🏗️ Torri sono
+**abilità passive**: si comprano e restano sempre attive, senza interruttori.
+
+Il negozio mostra per ogni potenziamento **icona, livello e tetto massimo** (`LIVELLO x / MAX`).
 
 ## ✨ Cosa c'è dentro
 
@@ -36,16 +39,19 @@ il negozio mostra per ogni potenziamento **icona, livello e tetto massimo** (`LI
 - **Zona di lancio illuminata** con bordo tratteggiato pulsante, mirino e moneta fantasma.
 - **Fisica vera 2,5D**: le lire cadono sempre verso il basso, si appiattiscono all'atterraggio e si
   impilano; zero rimbalzi, zero monete storte.
-- **Torri di lire**: le lire si centrano su quella sotto (pile ordinate) e a 3+ livelli scatta un
-  **bonus torre** con suono e particelle. Massimo 4 di altezza: oltre, la pila cede.
+- **Torri di lire**: le lire si centrano su quella sotto (pile ordinate) e si impilano **fino a 30 piani**;
+  dal 4° piano scatta un **bonus torre** con suono e particelle, e il record resta salvato.
 - **Potenziamenti** (salvati nel browser, tutti con **tetto massimo** e barra di livello):
-  - 🪙 **Ricarica gettoni** — il caricatore si riempie più in fretta e trasporta più gettoni (infiniti)
-  - 💪 **Forza di lancio** — le lire colpiscono la pila spingendola verso il bordo
-  - ✨ **Multi-lancio** — più lire con un solo click
+  - 🪙 **Taglio di lancio** — decidi se lanci lire da L.100, L.500 o **L.1000** (valgono di più!)
+  - 🪙 **Ricarica gettoni** *(passiva)* — il caricatore si riempie più in fretta e trasporta più gettoni (infiniti)
+  - 💪 **Forza di lancio** *(passiva)* — le lire colpiscono la pila spingendola verso il bordo
+  - ✨ **Multi-lancio** *(passivo)* — più lire con un solo click
   - ⚡ **Raffica** — tieni premuto e spari una lira dietro l'altra
   - 💥 **Potenza cannone** — sparo che travolge la pila
-- **Sbloccabili** 🎁: cannone 🔫, skin delle lire (🥈 argento, 💎 rubino, 🌈 arcobaleno animato)
-  e panni del tavolo (🔷 blu, 🍷 bordeaux, 🌌 notte).
+- **Tagli delle lire**: 🥉 Bronzo L.50 · 🥈 Argento L.100 · 🟡 Oro L.500 · ⚪ Platino L.1000,
+  ognuno con **grandezza, colore e scritta** propri, incisi sulla monetina.
+- **Torri fino a 30 piani** con bonus crescente, festa dai 10 piani e record salvato.
+- **Sbloccabili** 🎁: cannone 🔫 e i panni del tavolo (🔷 blu, 🍷 bordeaux, 🌌 notte).
 - **Soddisfazione**: suoni sintetizzati in tempo reale con la Web Audio API (nessun file audio),
   particelle, testi volanti `+1`, **combo** con tono crescente, lampi e scossoni di camera sui colpi.
 - **Switch ON/OFF** per ogni abilità e per l'audio, più scorciatoie da tastiera:

@@ -4,6 +4,35 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [1.3.0] — 2026-09-18 · Tagli, torri da 30 piani e skill passive 🪙🏗️
+
+### Aggiunto
+- **4 TAGLI di lira** con dimensione, colore e scritta propri, incisi sulla faccina:
+  - 🥉 **Bronzo L.50** (piccola, paga 1)
+  - 🥈 **Argento L.100** (media, paga 2)
+  - 🟡 **Oro L.500** (grande, paga 5)
+  - ⚪ **Platino L.1000** (extra-large, paga 10)
+- **Potenziamento TAGLIO DI LANCIO**: cambi il taglio che lanci (L.100 → L.500 → L.1000) e
+  ogni lira vinta paga il **valore del suo taglio**. HUD e moneta fantasma mostrano il taglio in uso.
+- **Torri fino a 30 PIANI** (prima max 4): le lire si impilano una sull'altra, con bonus crescente
+  dal 4° piano, festa dai 10 piani e **record torre** salvato e mostrato nel negozio.
+- La pila iniziale (96 lire) è **mista**, come nelle macchine vere: tante piccole, alcune grandi.
+
+### Cambiato
+- **ABILITÀ ATTIVE**: nella barra restano solo **💥 CANNONE** e **⚡ RAFFICA**, e
+  **una esclude l'altra** (accendendo una si spegne l'altra). Di serie è attivo il cannone.
+- **ABILITÀ PASSIVE** (sempre attive, senza interruttore): 💪 Forza di lancio, ✨ Multi-lancio,
+  🪙 Ricarica gettoni, 🏗️ Torri. Sono elencate nella scheda 🎚️ ABILITÀ e marcate `PASSIVA` nel negozio.
+- **Rimossa la SPAZZATA**: non si eliminano più lire dal tavolo (né dal mucchio né dal bordo).
+  Se il tavolo è pieno il lancio viene semplicemente rifiutato con un avviso, e riprende appena
+  il bordo si svuota. Tetto di sicurezza alzato a 260 lire (150 su telefono).
+- **Rimosse le skin** Oro/Argento/Rubino/Arcobaleno: sostituite dai tagli, che ora distinguono
+  davvero le lire (dimensione + colore + valore scritto).
+- Statistiche aggiornate: torre record x/30, taglio in uso, niente più "lire spazzate".
+
+### Risolto
+- Comprare un'abilità la attiva spegnendo l'altra (prima potevano risultare attive entrambe).
+
 ## [1.2.2] — 2026-09-18 · Gettoni sempre in ricarica 🪙♾️
 
 ### Risolto
