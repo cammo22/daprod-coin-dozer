@@ -181,37 +181,63 @@
     border-radius: 14px; cursor: pointer; transition: all .18s; }
   .tab button.sel { color: #14101f; background: linear-gradient(180deg, #ffe89a, var(--oro2));
     border-color: transparent; box-shadow: 0 8px 22px rgba(255,170,0,.3); }
-  .voci { padding: 14px 22px 22px; overflow-y: auto; display: grid; gap: 12px;
+  .voci { padding: 16px 20px 24px; overflow-y: auto; display: grid; gap: 12px;
     flex: 1 1 auto; min-height: 0; -webkit-overflow-scrolling: touch; }
-  .voce { display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; align-items: center;
-    background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.09);
-    border-radius: 18px; padding: 14px 16px; transition: border-color .2s, transform .15s; }
+  .titolo-sezione { font: 900 10.5px/1 inherit; letter-spacing: 2.4px; color: #8f86a8;
+    margin: 6px 2px 0; }
+  .saldo-bar { position: sticky; top: -16px; z-index: 2; margin: -4px 0 2px;
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center;
+    background: rgba(12,9,22,.92); border: 1px solid rgba(255,213,74,.22);
+    border-radius: 14px; padding: 9px 14px; font: 800 11px/1 inherit; letter-spacing: 1.4px;
+    color: #cbbf9a; backdrop-filter: blur(6px); }
+  .saldo-bar b { color: var(--oro); font-size: 14px; margin-left: 4px; }
+  .voce { display: grid; grid-template-columns: 1fr auto; gap: 8px 14px; align-items: center;
+    background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.035));
+    border: 1px solid rgba(255,255,255,.13);
+    border-left: 4px solid rgba(255,255,255,.12);
+    border-radius: 18px; padding: 15px 16px; transition: border-color .2s, transform .15s, background .2s; }
   .voce:hover { border-color: var(--bordo); transform: translateY(-1px); }
-  .voce .nome { font-weight: 800; font-size: 14px; letter-spacing: .6px; }
-  .voce .nome em { font-style: normal; color: #7ef0c0; font-size: 11px;
-    letter-spacing: 1.4px; margin-left: 8px; }
-  .voce .desc { font-size: 12px; color: #a79fbd; margin-top: 4px; line-height: 1.45; }
-  .voce .lv { font-size: 10px; letter-spacing: 1.6px; color: var(--oro); font-weight: 800; margin-top: 5px; }
+  /* quello che puoi permetterti si illumina: si capisce subito cosa comprare */
+  .voce.ok { border-left-color: var(--oro); background: linear-gradient(180deg, rgba(255,213,74,.11), rgba(255,255,255,.035)); }
+  .voce.max { border-left-color: #7ef0c0; }
+  .voce .nome { font-weight: 900; font-size: 14.5px; letter-spacing: .5px; color: #fff;
+    display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .voce .nome em { font-style: normal; color: #7ef0c0; font-size: 9.5px; font-weight: 800;
+    letter-spacing: 1.6px; background: rgba(126,240,192,.13); border: 1px solid rgba(126,240,192,.3);
+    padding: 3px 7px; border-radius: 999px; }
+  .voce .desc { font-size: 12.5px; color: #bdb4d2; margin-top: 6px; line-height: 1.5; }
+  .voce .lv { font-size: 10.5px; letter-spacing: 1.6px; color: var(--oro); font-weight: 900; margin-top: 7px; }
+  .voce .manca { color: #ff9ec4; font-weight: 800; letter-spacing: .6px; }
   .voce .ico { display: inline-flex; align-items: center; justify-content: center;
-    width: 27px; height: 27px; border-radius: 10px; margin-right: 7px;
-    background: rgba(255,213,74,.13); border: 1px solid rgba(255,213,74,.28);
-    font-size: 13px; vertical-align: -7px; }
-  .prog { position: relative; height: 15px; border-radius: 999px; overflow: hidden;
-    background: rgba(255,255,255,.10); margin-top: 7px; max-width: 240px; }
+    width: 34px; height: 34px; border-radius: 12px; margin-right: 4px; flex: none;
+    background: linear-gradient(180deg, rgba(255,213,74,.22), rgba(255,213,74,.08));
+    border: 1px solid rgba(255,213,74,.38); font-size: 17px; }
+  .voce.max .ico { background: linear-gradient(180deg, rgba(126,240,192,.22), rgba(126,240,192,.08));
+    border-color: rgba(126,240,192,.4); }
+  .prog { position: relative; height: 18px; border-radius: 999px; overflow: hidden;
+    background: rgba(0,0,0,.42); border: 1px solid rgba(255,255,255,.13);
+    margin-top: 9px; max-width: 300px; }
   .prog i { display: block; height: 100%; border-radius: 999px;
-    background: linear-gradient(90deg, #ffe89a, var(--oro2)); }
+    background: linear-gradient(90deg, #ffe89a, var(--oro2));
+    box-shadow: 0 0 12px rgba(255,180,0,.45); }
   .prog span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    font: 800 8.5px/1 inherit; letter-spacing: 1.4px; color: #fff;
-    text-shadow: 0 1px 2px rgba(0,0,0,.65); }
-  .compra { border: 1px solid rgba(255,255,255,.14); border-radius: 14px; cursor: pointer;
+    font: 900 9.5px/1 inherit; letter-spacing: 1.6px; color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,.85); }
+  .compra { border: 1px solid rgba(255,255,255,.16); border-radius: 15px; cursor: pointer;
     background: linear-gradient(180deg, #ffe89a, var(--oro2)); color: #171024;
-    font: 900 12px/1 inherit; letter-spacing: 1.2px; padding: 13px 16px; min-width: 122px;
-    transition: transform .12s, filter .2s; }
-  .compra:hover { transform: translateY(-2px); filter: brightness(1.08); }
-  .compra:disabled { background: rgba(255,255,255,.08); color: #857e95; cursor: not-allowed;
-    transform: none; filter: none; border-color: rgba(255,255,255,.08); }
-  .voce.max .compra { background: rgba(126,240,192,.16); color: #7ef0c0; border-color: transparent; }
-  .riepilogo { font-size: 12.5px; color: #cdc4de; line-height: 1.95; }
+    font: 900 12.5px/1.15 inherit; letter-spacing: 1px; padding: 14px 16px; min-width: 138px;
+    display: inline-flex; flex-direction: column; align-items: center; gap: 4px;
+    box-shadow: 0 10px 22px rgba(255,170,0,.22);
+    transition: transform .12s, filter .2s, box-shadow .2s; }
+  .compra b { font-size: 17px; letter-spacing: .4px; }
+  .compra i { font-style: normal; font-size: 9.5px; letter-spacing: 1.4px; opacity: .78; font-weight: 800; }
+  .compra:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 14px 28px rgba(255,170,0,.35); }
+  .compra:disabled { background: rgba(255,255,255,.07); color: #948ca8; cursor: not-allowed;
+    transform: none; filter: none; border-color: rgba(255,255,255,.1); box-shadow: none; }
+  .compra:disabled b { color: #cfc7de; }
+  .voce.max .compra { background: rgba(126,240,192,.18); color: #7ef0c0;
+    border-color: transparent; box-shadow: none; }
+  .riepilogo { font-size: 13px; color: #d3cbe4; line-height: 2.05; }
   .riepilogo b { color: var(--oro); }
   .nav { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 
@@ -270,18 +296,28 @@
     .tab { padding: 11px 15px 0; gap: 6px; }
     .tab button { padding: 10px 4px; font-size: 9.5px; letter-spacing: .8px; border-radius: 11px; }
     .voci { padding: 11px 15px 16px; gap: 9px; }
-    .voce { padding: 11px 12px; border-radius: 15px; gap: 8px 12px; }
-    .voce .nome { font-size: 12.5px; }
-    .voce .desc { font-size: 11px; }
-    .voce .ico { width: 24px; height: 24px; margin-right: 5px; font-size: 11px; }
-    .compra { padding: 11px 12px; min-width: 92px; font-size: 10.5px; border-radius: 12px; }
+    .voce { padding: 12px 13px; border-radius: 15px; gap: 8px 10px; border-left-width: 4px; }
+    .voce .nome { font-size: 13px; }
+    .voce .desc { font-size: 12px; color: #c6bddb; }
+    .voce .ico { width: 30px; height: 30px; font-size: 15px; border-radius: 10px; }
+    .voce .lv { font-size: 10px; }
+    .prog { height: 16px; max-width: none; }
+    .prog span { font-size: 9px; }
+    .saldo-bar { font-size: 10px; padding: 8px 11px; gap: 7px; top: -16px; }
+    .saldo-bar b { font-size: 12.5px; }
+    .titolo-sezione { font-size: 9.5px; letter-spacing: 1.8px; }
+    .compra { padding: 12px 12px; min-width: 108px; font-size: 11.5px; border-radius: 13px; }
+    .compra b { font-size: 15.5px; }
+    .compra i { font-size: 8.5px; letter-spacing: 1px; }
     .inter { min-width: 78px; padding: 10px 11px; font-size: 10px; }
   }
   @media (max-width: 430px) {
     .chip { padding: 8px 4px; font-size: 8.5px; }
     #abilita { right: 150px; }
-    .voce { grid-template-columns: 1fr; }   /* righe a colonna singola: più leggibile */
+    /* righe a colonna singola: prezzo grande e facile da premere col pollice */
+    .voce { grid-template-columns: 1fr; }
     .compra, .inter { width: 100%; }
+    .compra { flex-direction: row; justify-content: space-between; padding: 14px 16px; }
     .prog { max-width: none; }
   }
 </style>
@@ -291,7 +327,7 @@
 <div id="hud">
   <div class="marchio">
     <div class="logo">DaProd</div>
-    <div class="sub">SALA SLOT · <span id="versione">v1.3.1</span></div>
+    <div class="sub">SALA SLOT · <span id="versione">v1.3.2</span></div>
   </div>
   <div class="stat">
     <div class="box premi" id="boxPremi" title="Tocca per aprire il negozio">🏆 PREMI<b id="premi">30</b></div>
@@ -449,7 +485,7 @@ const nomeTaglio = (n) => TAGLI[Math.max(0, Math.min(TAGLI.length - 1, n))].nome
 const fattoreForza = (n) => 1 + 0.25 * n;                 // moltiplicatore della spinta di lancio
 const lirePerLancio = (n) => 1 + n;                       // lire lanciate per click
 const forzaCannone = (n) => 1 + 0.5 * n;                  // potenza dello sparo
-const VERSIONE = 'v1.3.1';                                // mostrata nell'HUD per verificare gli aggiornamenti
+const VERSIONE = 'v1.3.2';                                // mostrata nell'HUD per verificare gli aggiornamenti
 const COSTO_FELTRO = { blu: 250, bordeaux: 700, notte: 1500 };
 const NOME_FELTRO = { verde: 'Verde DaProd', blu: 'Blu Royal', bordeaux: 'Bordeaux', notte: 'Notte Neon' };
 const PRESTIGIO_CANNONE = 1;
@@ -1513,27 +1549,39 @@ let schedaAttiva = 'pot';
 
 function riga(o) {
   const massimo = !!o.max2;
-  const dis = (massimo || o.bloccato || stato.premi < o.costo) ? 'disabled' : '';
-  const testo = massimo ? (o.etichettaMax || '🏆 MAX') : (o.bloccato ? '🔒 BLOCCATO' : 'ACQUISTA · L.' + o.costo);
+  const manca = o.costo !== undefined ? Math.max(0, o.costo - Math.floor(stato.premi)) : 0;
+  const accessibile = !massimo && !o.bloccato && manca === 0;
+  const dis = (massimo || o.bloccato || manca > 0) ? 'disabled' : '';
+  const etichetta = massimo ? (o.etichettaMax || ' MASSIMO')
+    : (o.bloccato ? '🔒 BLOCCATO' : ' ' + o.costo);
+  const sotto = massimo ? (o.sottoMax || 'attiva') : (o.bloccato ? 'nel negozio' : (manca > 0 ? 'mancano ' + manca : 'compra ora'));
   const prog = (o.lv !== undefined && o.max) ?
     '<div class="prog"><i style="width:' + Math.round(o.lv / o.max * 100) + '%"></i>' +
     '<span>LIVELLO ' + o.lv + ' / ' + o.max + '</span></div>' : '';
-  return '<div class="voce' + (massimo ? ' max' : '') + '">' +
+  const avvisoManca = (manca > 0 && !massimo) ?
+    '<div class="lv manca">TI MANCANO ' + manca + ' PREMI 🏆</div>' : '';
+  return '<div class="voce' + (massimo ? ' max' : '') + (accessibile ? ' ok' : '') + '">' +
     '<div><div class="nome"><span class="ico">' + (o.icona || '•') + '</span>' + o.nome +
     (o.extra ? '<em>' + o.extra + '</em>' : '') + '</div>' +
-    '<div class="desc">' + o.desc + '</div>' + prog + '</div>' +
-    '<button class="compra" data-id="' + o.id + '" ' + dis + '>' + testo + '</button></div>';
+    '<div class="desc">' + o.desc + '</div>' + prog + avvisoManca +
+    '</div><button class="compra" data-id="' + o.id + '" ' + dis + '>' +
+    '<b>' + etichetta + '</b><i>' + sotto + '</i></button></div>';
 }
 
 function rendiNegozio() {
   const p = stato.pot;
-  let html = '';
+  const titolo = (t) => '<div class="titolo-sezione">' + t + '</div>';
+  let html = '<div class="saldo-bar">🏆 PREMI <b>' + Math.floor(stato.premi) + '</b>' +
+    '<span>·</span> 🪙 GETTONI <b>' + Math.floor(stato.gettoni) + '/' + capCaricatore(p.idle) + '</b>' +
+    '<span>·</span> 🪙 TAGLIO <b>' + nomeTaglio(p.taglio).replace(/^\S+\s*/, '') + '</b></div>';
   if (schedaAttiva === 'pot') {
+    html += titolo('🪙 LIRE E TAGLI');
     html += riga({ id: 'taglio', icona: '🪙', nome: 'TAGLIO DI LANCIO',
       extra: nomeTaglio(p.taglio) + (p.taglio < TAGLI.length - 1 ? ' → ' + nomeTaglio(p.taglio + 1) : ''),
       desc: 'Il taglio delle lire che lanci: più è alto, più vale quando cade dal bordo e più è grande la monetina (L.50 → L.100 → L.500 → L.1000).',
       lv: p.taglio + 1, max: TAGLI.length, costo: costoTaglio(p.taglio), max2: p.taglio >= TAGLI.length - 1 });
-    html += riga({ id: 'idle', icona: '🪙', nome: 'RICARICA GETTONI <em>PASSIVA</em>',
+    html += titolo('🔋 PASSIVI · sempre attivi');
+    html += riga({ id: 'idle', icona: '🔋', nome: 'RICARICA GETTONI <em>PASSIVA</em>',
       extra: fmt(ricaricaGettoni(p.idle)) + '/s · cap ' + capCaricatore(p.idle),
       desc: 'I gettoni da lanciare sono infiniti: il caricatore si ricarica da solo, sempre. Ogni livello ricarica più in fretta e aumenta la capacità.',
       lv: p.idle, max: LIVELLI_MAX.idle, costo: costoIdle(p.idle), max2: p.idle >= LIVELLI_MAX.idle });
@@ -1545,6 +1593,7 @@ function rendiNegozio() {
       extra: lirePerLancio(p.multi) + ' lire per click',
       desc: 'Lancia più lire con un solo click (ognuna costa 1 gettone dal caricatore). Vale sempre, senza interruttori.',
       lv: p.multi, max: LIVELLI_MAX.multi, costo: costoMulti(p.multi), max2: p.multi >= LIVELLI_MAX.multi });
+    html += titolo('💥 ATTIVE · una per volta');
     html += riga({ id: 'raffica', icona: '⚡', nome: 'RAFFICA',
       extra: p.raffica > 0 ? rateRaffica(p.raffica).toFixed(0) + ' lire/s' : 'da sbloccare',
       desc: 'Tieni premuto il tasto sinistro e le lire partono una dietro l\'altra verso la pila, senza fermarti.',
@@ -1558,10 +1607,11 @@ function rendiNegozio() {
     html += riga({ id: 'cannone', icona: '🔫', nome: 'CANNONE', extra: stato.sbloccati.cannone ? 'SBLOCCATO' : 'ABILITÀ NUOVA',
       desc: 'Tieni premuto il tasto destro: si carica lo sparo che travolge la pila di lire.',
       costo: COSTO_CANNONE, max2: stato.sbloccati.cannone });
-    html += riga({ id: 'torriInfo', icona: '️', nome: 'TORRI FINO A 30 PIANI <em>PASSIVA</em>',
+    html += riga({ id: 'torriInfo', icona: '🏗️', nome: 'TORRI FINO A 30 PIANI <em>PASSIVA</em>',
       extra: 'record attuale x' + (stato.torreRecord || 1) + ' / 30',
       desc: 'Le lire si impilano una sull\'altra fino a 30 piani! Dal 4° piano ogni torre paga un extra: più alta è, più premi regala.',
-      max2: true, etichettaMax: '🏗️ ATTIVA' });
+      max2: true, etichettaMax: '🏗️ ATTIVA', sottoMax: 'bonus automatico' });
+    html += titolo('🎨 PANNI DEL TAVOLO');
     for (const f of ['blu', 'bordeaux', 'notte']) {
       const pos = stato.feltriPosseduti.includes(f);
       const inUso = pos && stato.sbloccati.feltro === f;

@@ -4,6 +4,22 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [1.3.2] — 2026-09-19 · Negozio molto più leggibile 🛠️✨
+
+### Migliorato
+- **Righe del negozio ridisegnate**: icone grandi in una targhetta colorata, nome in bianco pieno,
+  descrizione più chiara, **barra di livello con scritta dentro** e **pulsante del prezzo grande**
+  (importo in evidenza + "compra ora" / "mancano N").
+- **Si vede subito cosa puoi comprare**: le righe accessibili si **illuminano** (bordo e sfondo dorati),
+  quelle al massimo diventano verdi, quelle troppo care dicono **"TI MANCANO N PREMI 🏆"**.
+- **Barra di stato in cima al negozio** (sticky): 🏆 PREMI · 🪙 GETTONI · 🪙 TAGLIO in uso.
+- **Sezioni con titolo** per orientarsi: `🪙 LIRE E TAGLI`, `🔋 PASSIVI · sempre attivi`,
+  `💥 ATTIVE · una per volta`, `🔓 ABILITÀ E BONUS`, `🎨 PANNI DEL TAVOLO`.
+- **Telefono**: testi più grandi, icone 30px, prezzo a tutta larghezza e allineato, niente più
+  righe minuscole e illeggibili.
+- Controlli automatici nuovi sulla resa del negozio (barra di stato, sezioni, icone, barre, avvisi).
+
+## [1.3.1] — 2026-09-19 · Fix schermo nero 🛠️🚑
 ## [1.3.1] — 2026-09-19 · Fix schermo nero 🛠️🚑
 
 ### Risolto
