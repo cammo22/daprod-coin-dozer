@@ -4,6 +4,59 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [1.5.0] — 2026-09-19 · Il dozer funziona come quello vero 🪙⚙️
+
+### Come si gioca adesso
+- **Si sceglie solo la COLONNA**: tocchi (anche davanti, dove ti è comodo) e conta solo la
+  posizione **orizzontale**. La profondità non si sceglie più: la lira scende **sempre dalla
+  fessura in fondo**, sopra al ripiano. Una guida verticale mostra la colonna scelta.
+- **Il ripiano è diventato un vero ripiano**: rialzato di un gradino e **lungo fino in fondo alla
+  macchina**, così dietro non resta mai scoperto (è la zona che avevi cerchiato in rosso).
+  Dietro c'è anche un **ripiano fisso** che chiude il fondo fino al muro.
+- **Il meccanismo vero**: quando il ripiano avanza si porta dietro le lire; quando torna indietro
+  **sfila via da sotto** e le lire **cadono giù sul campo**, dove la faccia del ripiano le spinge
+  verso il bordo dei premi. Esattamente il ciclo di una macchina da sala.
+
+### Risolto
+- **Le lire si "univano" fra loro**: qualsiasi lira che sfiorava un'altra le saltava sopra (bastava
+  il 78% del raggio) e poi ci scivolava sopra al 10% a fotogramma, come una calamita. Ora ci si
+  appoggia solo se si è **davvero sopra** (62%), chi poggia sul bordo **scivola giù** e chi è ben
+  centrata si assesta piano.
+- **Le lire finivano sempre troppo avanti**: sul ripiano si sommavano *velocità* e *spostamento*,
+  quindi correvano al **doppio** della velocità del ripiano e superavano il punto dove le avevi
+  lasciate. Ora viaggiano esattamente alla sua velocità.
+- **Le lire si accumulavano davanti lasciando vuoto il fondo**: il pusher spingeva solo fra
+  z 1,15 e 3,9, cioè **dietro alla pila** (che sta fra -5 e 1): non la toccava mai. Ora la corsa
+  attraversa il campo e spinge davvero la pila.
+- **La spinta non arrivava al bordo**: l'attrito del tavolo era così forte che una lira spinta si
+  fermava dopo pochi centimetri. Ora l'attrito è più basso e la separazione fra lire viene
+  ripetuta 3 volte per passo, così la spinta **attraversa la pila** di lira in lira.
+- **La pila era troppo rada** perché la spinta viaggiasse: la pila iniziale passa da 96 a
+  **150 lire**, fitte come in una macchina vera.
+- La scritta della zona di lancio e il logo sul feltro si leggevano **capovolti**.
+
+### Equilibrio
+- La **combo si azzera a ogni corsa del ripiano**: con il flusso continuo non si azzerava mai e
+  regalava il bonus massimo su ogni singola lira. Ora premia l'**ondata** (misurato tenendo premuta
+  la raffica: da 5,5 a 4,6 premi per lira). Finestra della combo da 2,6 s a 1,5 s.
+- Misurato su 6 minuti di gioco continuo: il tavolo si **stabilizza da solo** attorno a 100 lire in
+  scena, con quello che entra uguale a quello che esce, e la pila resta appoggiata al bordo dei premi.
+
+### Interfaccia
+- **Muro di fondo** della macchina, con filo di luce sul bordo alto: chiude la scena e nasconde la
+  coda del ripiano che entra ed esce da sotto.
+- **Targa DaProd alzata** sopra il muro, come l'insegna di una macchina da sala.
+- Il ripiano non è più una lastra grigia: **acciaio spazzolato** con le frecce del senso di marcia.
+- Il faro punta sulla **pila** invece che sul ripiano, e il logo sul feltro è stato spostato dove
+  si vede davvero.
+- La fessura di lancio è una **striscia luminosa** in fondo, con la scritta dritta.
+
+### Test
+- I controlli automatici salgono a **75** e coprono la nuova meccanica: la lira scende sempre dalla
+  fessura, la colonna scelta viene rispettata e limitata, si atterra sul ripiano rialzato, il ripiano
+  porta avanti le lire e poi le lascia cadere, nessuna lira resta intrappolata dietro, e giocando
+  90 secondi le lire cadono davvero dal bordo con la pila che non cresce all'infinito.
+
 ## [1.4.0] — 2026-09-19 · Lire davvero infinite, gioco più fluido, abilità spegnibili ♻️⚡
 
 ### Risolto
