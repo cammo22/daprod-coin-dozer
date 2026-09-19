@@ -258,6 +258,8 @@
   .seg button.sel { background: linear-gradient(180deg, #ffe89a, var(--oro2)); color: #171024;
     border-color: transparent; box-shadow: 0 8px 20px rgba(255,170,0,.22); }
   .box.fps b { color: #7ef0c0; text-shadow: 0 0 12px rgba(90,255,190,.4); }
+  .box.carte { border-color: rgba(185,140,255,.45); }
+  .box.carte b { color: #d7b6ff; text-shadow: 0 0 12px rgba(185,140,255,.5); }
   .riepilogo { font-size: 13px; color: #d3cbe4; line-height: 2.05; }
   .riepilogo b { color: var(--oro); }
   .nav { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
@@ -351,12 +353,13 @@
 <div id="hud">
   <div class="marchio">
     <div class="logo">DaProd</div>
-    <div class="sub">SALA SLOT · <span id="versione">v1.5.0</span></div>
+    <div class="sub">SALA SLOT · <span id="versione">v1.6.0</span></div>
   </div>
   <div class="stat">
     <div class="box premi" id="boxPremi" title="Tocca per aprire il negozio">🏆 PREMI<b id="premi">30</b></div>
     <div class="box">🏅 VINTE<b id="vinte">0</b></div>
     <div class="box idle">🪙 GETTONI<b id="gettoniV">12/12</b><span class="barra"><i id="gettoniBar"></i></span></div>
+    <div class="box carte" id="boxCarte" style="display:none">♠ CARTE<b id="carteV">0</b></div>
     <div class="box fps" id="boxFps" style="display:none">🏞 FPS<b id="fps">60</b></div>
   </div>
 </div>
@@ -367,11 +370,11 @@
 <div id="hint"><kbd>tocca</kbd> scegli la <b>colonna</b>: la lira scende sempre dalla fessura in fondo, sul ripiano che la porta avanti</div>
 <button id="apriNegozio" class="tondo">▲ <span class="tLungo">POTENZIAMENTI</span><span class="tCorto">NEGOZIO</span></button>
 <div id="abilita">
-  <button class="chip" id="ch-cannone" title="Tieni premuto il tasto destro per caricare lo sparo"><span class="led"></span>💥 CANNONE <small id="ch-cannone-v"></small></button>
+  <button class="chip" id="ch-cannone" title="Accendi per mirare la meteora dove vuoi sul tavolo"><span class="led"></span>💥 CANNONE <small id="ch-cannone-v"></small></button>
   <button class="chip" id="ch-raffica" title="Tieni premuto il tasto sinistro per sparare a raffica"><span class="led"></span>⚡ RAFFICA <small id="ch-raffica-v"></small></button>
   <button class="chip audio" id="ch-audio" title="Audio ON/OFF"><span class="led"></span>🔊 AUDIO <small id="ch-audio-v">ON</small></button>
 </div>
-<button id="spara" class="tondo" title="Spara la lira-cannone (telefono)">◎ SPARA</button>
+<button id="spara" class="tondo" title="Fai cadere la meteora dove hai mirato">☄️ METEORA</button>
 <div id="negozio" class="chiuso">
   <div class="pannello">
     <header>
@@ -464,11 +467,15 @@ const stato = {
   totLanci: 0,
   totTorri: 0,
   comboMax: 0,
-  pot: { idle: 0, forza: 0, multi: 0, cannonePot: 0, raffica: 0, taglio: 1 },
+  pot: { idle: 0, forza: 0, multi: 0, cannonePot: 0, raffica: 0, taglio: 0 },   // 0 = L.100, vedi TAGLIO_PREDEFINITO
   attivi: { cannone: true, raffica: false, audio: true },   // solo Cannone/Raffica: uno per volta
   audio: true,
   torreRecord: 1,
   totRiciclate: 0,
+  carte: 0,                 // carte speciali collezionate (serviranno per i premi)
+  carteTipi: {},
+  cannonePronto: 0,         // quando la meteora torna disponibile (millisecondi epoch)
+  totMeteore: 0,
   // OPZIONI GRAFICHE: si adattano al dispositivo e si cambiano dalla scheda ⚙️ OPZIONI
   grafica: { ombre: !TATTILE, effetti: 1, auto: true, fps: false },
   sbloccati: { cannone: false, feltro: 'verde' },
@@ -480,7 +487,7 @@ function caricaPartita() {
     const r = JSON.parse(localStorage.getItem(CHIAVE_SALVATAGGIO) || 'null');
     if (r && typeof r === 'object') {
       Object.assign(stato, r);
-      stato.pot = Object.assign({ idle: 0, forza: 0, multi: 0, cannonePot: 0, raffica: 0, taglio: 1 }, r.pot);
+      stato.pot = Object.assign({ idle: 0, forza: 0, multi: 0, cannonePot: 0, raffica: 0, taglio: 0 }, r.pot);
       stato.attivi = Object.assign({ cannone: true, raffica: false }, r.attivi);
       if (stato.attivi.cannone && stato.attivi.raffica) stato.attivi.raffica = false; // uno solo alla volta
       stato.audio = r.audio !== false;
@@ -488,6 +495,10 @@ function caricaPartita() {
       if (typeof r.torreRecord === 'number') stato.torreRecord = r.torreRecord;
       stato.grafica = Object.assign({ ombre: !TATTILE, effetti: 1, auto: true, fps: false }, r.grafica);
       stato.totRiciclate = Math.max(0, parseInt(r.totRiciclate, 10) || 0);
+      stato.carte = Math.max(0, parseInt(r.carte, 10) || 0);
+      stato.carteTipi = (r.carteTipi && typeof r.carteTipi === 'object') ? r.carteTipi : {};
+      stato.cannonePronto = Math.max(0, parseInt(r.cannonePronto, 10) || 0);
+      stato.totMeteore = Math.max(0, parseInt(r.totMeteore, 10) || 0);
       stato.sbloccati = Object.assign({ cannone: false, feltro: 'verde' }, r.sbloccati);
       stato.feltriPosseduti = Array.isArray(r.feltriPosseduti) ? r.feltriPosseduti : ['verde'];
     }
@@ -516,12 +527,13 @@ const COMBO_BONUS_MAX = 5;                                // tetto al bonus comb
 const COMBO_FINESTRA = 1500;
 const capCaricatore = (n) => 16 + 4 * n;                  // gettoni trasportabili nel caricatore
 const ricaricaGettoni = (n) => 1.2 + 0.55 * n;            // gettoni al secondo, sempre attivi
-const costoTaglio = (n) => (n <= 1 ? 900 : 6000);         // passaggio a L.500 e L.1000
+// 7 tagli: ogni salto costa ~3,4 volte il precedente e paga ~2,5 volte di piu'
+const costoTaglio = (n) => Math.round(800 * Math.pow(3.4, n));
 const nomeTaglio = (n) => TAGLI[Math.max(0, Math.min(TAGLI.length - 1, n))].nome;
 const fattoreForza = (n) => 1 + 0.25 * n;                 // moltiplicatore della spinta di lancio
 const lirePerLancio = (n) => 1 + n;                       // lire lanciate per click
 const forzaCannone = (n) => 1 + 0.5 * n;                  // potenza dello sparo
-const VERSIONE = 'v1.5.0';                                // mostrata nell'HUD per verificare gli aggiornamenti
+const VERSIONE = 'v1.6.0';                                // mostrata nell'HUD per verificare gli aggiornamenti
 const COSTO_FELTRO = { blu: 250, bordeaux: 700, notte: 1500 };
 const NOME_FELTRO = { verde: 'Verde DaProd', blu: 'Blu Royal', bordeaux: 'Bordeaux', notte: 'Notte Neon' };
 const PRESTIGIO_CANNONE = 1;
@@ -682,6 +694,50 @@ const texRipiano = texCanvas(512, (g, s) => {
   g.fillText('DaProd', s / 2, s / 2);
 });
 
+// CARTE SPECIALI: ogni tanto ne scende una dalla fessura. Si accumulano sul tavolo
+// e quando cadono dal bordo le collezioni: serviranno a riscattare premi.
+const CARTE = [
+  { id: 'jolly',  nome: 'JOLLY',  simbolo: '★', colore: '#ffd54a', sfondo: '#2a1d4a', rara: true },
+  { id: 'picche', nome: 'PICCHE', simbolo: '♠', colore: '#e8ecf6', sfondo: '#141a2e' },
+  { id: 'cuori',  nome: 'CUORI',  simbolo: '♥', colore: '#ff6b8a', sfondo: '#2a1220' },
+  { id: 'quadri', nome: 'QUADRI', simbolo: '♦', colore: '#ff9e5e', sfondo: '#2a1b12' },
+  { id: 'fiori',  nome: 'FIORI',  simbolo: '♣', colore: '#7ef0c0', sfondo: '#122a22' }
+];
+function texCarta(c) {
+  return texCanvasWH(256, 360, (g, w, h) => {
+    const r = 26;
+    g.fillStyle = c.sfondo;
+    g.beginPath(); g.roundRect(0, 0, w, h, r); g.fill();
+    g.strokeStyle = c.colore; g.lineWidth = 7;
+    g.beginPath(); g.roundRect(9, 9, w - 18, h - 18, r - 6); g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.16)'; g.lineWidth = 2;
+    g.beginPath(); g.roundRect(22, 22, w - 44, h - 44, r - 12); g.stroke();
+    g.fillStyle = c.colore;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '900 132px -apple-system, Segoe UI, sans-serif';
+    g.fillText(c.simbolo, w / 2, h / 2 - 6);
+    g.font = '900 25px -apple-system, Segoe UI, sans-serif';
+    g.fillText(c.nome, w / 2, h - 52);
+    g.font = '800 18px -apple-system, Segoe UI, sans-serif';
+    g.fillStyle = 'rgba(255,255,255,.5)';
+    g.fillText('DaProd', w / 2, 44);
+  });
+}
+const texCarte = CARTE.map(texCarta);
+const texDorso = texCanvasWH(256, 360, (g, w, h) => {
+  const r = 26;
+  g.fillStyle = '#1a1230';
+  g.beginPath(); g.roundRect(0, 0, w, h, r); g.fill();
+  g.strokeStyle = 'rgba(255,213,74,.55)'; g.lineWidth = 6;
+  g.beginPath(); g.roundRect(10, 10, w - 20, h - 20, r - 6); g.stroke();
+  g.strokeStyle = 'rgba(255,213,74,.18)'; g.lineWidth = 5;
+  for (let i = -h; i < w + h; i += 26) { g.beginPath(); g.moveTo(i, h); g.lineTo(i + h, 0); g.stroke(); }
+  g.fillStyle = 'rgba(255,213,74,.75)';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '900 34px -apple-system, Segoe UI, sans-serif';
+  g.fillText('DaProd', w / 2, h / 2);
+});
+
 // logo inciso sul feltro
 const texLogoFeltro = texCanvas(512, (g, s) => {
   g.clearRect(0, 0, s, s);
@@ -818,6 +874,11 @@ const rim2 = new THREE.PointLight(0x4488ff, 20, 20);
 rim2.position.set(6, 5, -4);
 scene.add(rim2);
 
+// luce sulla camera di carico: senza, le lire appena scese restavano al buio
+const luceCarico = new THREE.PointLight(0xbfe6ff, 26, 12);
+luceCarico.position.set(0, 3.4, 4.2);
+scene.add(luceCarico);
+
 // ============ TAVOLO (spigoli arrotondati) ============
 const COLORE_FELTRI = { verde: 0x1a5c3a, blu: 0x1b3a6b, bordeaux: 0x5c1a2e, notte: 0x241a3a };
 const tavoloMat = new THREE.MeshStandardMaterial({
@@ -899,7 +960,8 @@ const FRONTE_INDIETRO = 1.6;    // dove torna la faccia (corsa = 2,2)
 const PUSHER_MIN = FRONTE_AVANTI + PLATE_D / 2;
 const PUSHER_MAX = FRONTE_INDIETRO + PLATE_D / 2;
 // le lire scendono SEMPRE qui dietro: il ripiano copre questa fascia in ogni momento
-const Z_LANCIO = 2.5;
+// Le lire scendono in FONDO A TUTTO, sulla camera di carico fissa (non più a metà ripiano).
+const Z_LANCIO = 3.95;
 const X_LANCIO_MAX = 3.5;       // si sceglie solo la posizione orizzontale
 const limitaX = (x) => Math.max(-X_LANCIO_MAX, Math.min(X_LANCIO_MAX, x));
 
@@ -909,7 +971,16 @@ const pusherMat = new THREE.MeshStandardMaterial({
 });
 // RIPIANO FISSO: la parte di fondo non si muove mai, così dietro alla fessura non
 // resta mai un buco scoperto. Il ripiano mobile entra ed esce da sotto di lui.
+// CAMERA DI CARICO: il ripiano fisso in fondo dove cadono le lire. Non si muove:
+// le lire ci si posano, scivolano in avanti e passano sotto al muro.
 const DECK_Z0 = 3.0, DECK_Z1 = 5.06, ALTEZZA_DECK = ALTEZZA_PIASTRA + 0.02;
+// MURO (quasi) INVISIBILE davanti alla camera di carico, con un TAGLIO in basso:
+// una lira che sta ancora rimbalzando o volando resta dentro, e solo quando si è
+// posata piatta passa dalla fessura ed entra in gioco. Niente più lire che schizzano
+// sul campo appena toccano terra.
+const MURO_Z = DECK_Z0;
+const MURO_TAGLIO = ALTEZZA_DECK + 0.26;   // quota massima per passare sotto al muro
+const MURO_ALTEZZA = 1.7;
 const ripianoFisso = new THREE.Mesh(
   new THREE.BoxGeometry(7.9, ALTEZZA_DECK, DECK_Z1 - DECK_Z0),
   new THREE.MeshStandardMaterial({ map: texRipiano, color: 0x6a7181, roughness: 0.5, metalness: 0.7 })
@@ -917,6 +988,22 @@ const ripianoFisso = new THREE.Mesh(
 ripianoFisso.position.set(0, ALTEZZA_DECK / 2, (DECK_Z0 + DECK_Z1) / 2);
 ripianoFisso.receiveShadow = true;
 scene.add(ripianoFisso);
+
+// il muro è un vetro appena accennato: si intuisce, non copre la scena
+const vetroMuro = new THREE.Mesh(
+  new THREE.PlaneGeometry(7.9, MURO_ALTEZZA - (MURO_TAGLIO - ALTEZZA_DECK)),
+  new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.055,
+    depthWrite: false, side: THREE.DoubleSide })
+);
+vetroMuro.position.set(0, (MURO_TAGLIO + MURO_ALTEZZA) / 2, MURO_Z);
+scene.add(vetroMuro);
+// filo di luce sul bordo del taglio: si vede da dove passano le lire
+const filoTaglio = new THREE.Mesh(
+  new THREE.BoxGeometry(7.9, 0.035, 0.05),
+  new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.5 })
+);
+filoTaglio.position.set(0, MURO_TAGLIO, MURO_Z);
+scene.add(filoTaglio);
 
 const pusher = new THREE.Mesh(pusherGeo, pusherMat);
 pusher.position.set(0, ALTEZZA_PIASTRA, PUSHER_MAX);
@@ -939,12 +1026,15 @@ let pusherVel = 0;
 // ============ LIRE: 4 TAGLI (tier) con dimensioni, colori e scritte proprie ============
 // Bronzo L.50 → Argento L.100 → Oro L.500 → Platino L.1000
 const TAGLI = [
-  { taglio: 50,   r: 0.27, h: 0.10, colore: 0xc07a3c, metalness: 0.85, roughness: 0.38, premio: 1,  scritta: 'L. 50',   nome: 'Bronzo L.50' },
-  { taglio: 100,  r: 0.33, h: 0.11, colore: 0xcfd8e6, metalness: 0.92, roughness: 0.24, premio: 2,  scritta: 'L. 100',  nome: 'Argento L.100' },
-  { taglio: 500,  r: 0.39, h: 0.12, colore: 0xffd54a, metalness: 0.95, roughness: 0.20, premio: 5,  scritta: 'L. 500',  nome: 'Oro L.500' },
-  { taglio: 1000, r: 0.45, h: 0.14, colore: 0xf2f6ff, metalness: 0.98, roughness: 0.13, premio: 10, scritta: 'L. 1000', nome: 'Platino L.1000' }
+  { taglio: 100,      r: 0.29, h: 0.10, colore: 0xc07a3c, metalness: 0.85, roughness: 0.38, premio: 1,   scritta: 'L.100',   nome: 'Rame L.100' },
+  { taglio: 500,      r: 0.32, h: 0.11, colore: 0xcfd8e6, metalness: 0.92, roughness: 0.24, premio: 3,   scritta: 'L.500',   nome: 'Argento L.500' },
+  { taglio: 1000,     r: 0.35, h: 0.12, colore: 0xffd54a, metalness: 0.95, roughness: 0.20, premio: 6,   scritta: 'L.1000',  nome: 'Oro L.1.000' },
+  { taglio: 10000,    r: 0.38, h: 0.13, colore: 0xf2f6ff, metalness: 0.98, roughness: 0.13, premio: 15,  scritta: 'L.10K',   nome: 'Platino L.10.000' },
+  { taglio: 100000,   r: 0.41, h: 0.14, colore: 0x3fd9a0, metalness: 0.95, roughness: 0.16, premio: 40,  scritta: 'L.100K',  nome: 'Smeraldo L.100.000' },
+  { taglio: 500000,   r: 0.44, h: 0.15, colore: 0xb98cff, metalness: 0.96, roughness: 0.14, premio: 100, scritta: 'L.500K',  nome: 'Ametista L.500.000' },
+  { taglio: 1000000,  r: 0.47, h: 0.16, colore: 0xff6b8a, metalness: 0.98, roughness: 0.11, premio: 250, scritta: 'L.1 MLN', nome: 'Rubino L.1.000.000' }
 ];
-const TAGLIO_PREDEFINITO = 1;                       // si lanciano lire da L.100
+const TAGLIO_PREDEFINITO = 0;                       // si parte dalle lire da L.100
 const LIVELLI_TORRE_MAX = 30;                       // TORRI FINO A 30 PIANI
 // Pila FITTA: in una macchina vera il campo è pieno di monete appoggiate una all'altra,
 // ed è proprio quella densità che fa viaggiare la spinta del ripiano fino al bordo.
@@ -1011,10 +1101,10 @@ const zonaMat = new THREE.MeshBasicMaterial({
   map: texZona, transparent: true, opacity: 0.55, depthWrite: false,
   blending: THREE.AdditiveBlending
 });
-const zonaMesh = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 1.2), zonaMat);
+const zonaMesh = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 1.5), zonaMat);
 // rotazione di 180° nel proprio piano: altrimenti la scritta si legge capovolta
 zonaMesh.rotation.set(-Math.PI / 2, 0, Math.PI);
-zonaMesh.position.set(0, ALTEZZA_PIASTRA + 0.03, Z_LANCIO);
+zonaMesh.position.set(0, ALTEZZA_DECK + 0.03, Z_LANCIO);
 scene.add(zonaMesh);
 
 // guida verticale: mostra la COLONNA in cui cadrà la lira
@@ -1023,16 +1113,17 @@ const guidaMat = new THREE.MeshBasicMaterial({
   blending: THREE.AdditiveBlending, side: THREE.DoubleSide
 });
 const guida = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 4.2), guidaMat);
-guida.position.set(0, ALTEZZA_PIASTRA + 2.1, Z_LANCIO);
+guida.position.set(0, ALTEZZA_DECK + 2.1, Z_LANCIO);
 scene.add(guida);
 
 const mirinoMat = new THREE.MeshBasicMaterial({
   color: 0x7ef0c0, transparent: true, opacity: 0.95,
-  depthWrite: false, side: THREE.DoubleSide
+  depthWrite: false, depthTest: false, side: THREE.DoubleSide
 });
 const mirino = new THREE.Mesh(new THREE.RingGeometry(0.46, 0.56, 48), mirinoMat);
 mirino.rotation.x = -Math.PI / 2;
-mirino.position.set(0, ALTEZZA_PIASTRA + 0.05, Z_LANCIO);
+mirino.position.set(0, ALTEZZA_DECK + 0.05, Z_LANCIO);
+mirino.renderOrder = 6;         // si disegna sopra a tutto: si vede sempre dove miri
 scene.add(mirino);
 
 const liraFantasma = new THREE.Mesh(taglio(TAGLIO_PREDEFINITO).geo, new THREE.MeshBasicMaterial({
@@ -1083,6 +1174,57 @@ function creaLira(x, y, z, opz = {}) {
   return m;
 }
 
+// ---------- CARTE SPECIALI ----------
+const CARTE_MAX_TAVOLO = 5;        // mai piu' di 5 carte insieme sul tavolo
+const PROB_CARTA = 0.025;          // ogni tanto, al posto del nulla, scende una carta
+const CARTA_L = 0.66, CARTA_P = 0.96, CARTA_H = 0.035;
+const geoCarta = new THREE.BoxGeometry(CARTA_L, CARTA_H, CARTA_P);
+const matDorso = new THREE.MeshStandardMaterial({ map: texDorso, roughness: 0.62, metalness: 0.08 });
+const matBordoCarta = new THREE.MeshStandardMaterial({ color: 0x241a3a, roughness: 0.7, metalness: 0.05 });
+const matCarte = CARTE.map((c, i) => new THREE.MeshStandardMaterial({
+  map: texCarte[i], roughness: 0.5, metalness: 0.12, emissive: 0x120c1e, emissiveIntensity: 0.6
+}));
+const carteSulTavolo = () => {
+  let n = 0;
+  // ATTENZIONE: il jolly ha indice 0, quindi qui serve il confronto con undefined.
+  // Con un semplice "if (m.carta)" i jolly non venivano contati e il tetto saltava.
+  for (const m of lire) if (m.attiva && m.carta !== undefined) n++;
+  return n;
+};
+// una carta e' una "lira" speciale: stessa fisica, ma non paga premi e si colleziona
+function creaCarta(x, z, indice) {
+  const i = indice !== undefined ? indice : sceltaCarta();
+  const mats = [matBordoCarta, matBordoCarta, matCarte[i], matDorso, matBordoCarta, matBordoCarta];
+  const mesh = new THREE.Mesh(geoCarta, mats);
+  mesh.position.set(x, 6.4, z);
+  mesh.rotation.y = (Math.random() - 0.5) * 0.7;
+  mesh.castShadow = !!stato.grafica.ombre;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  const m = {
+    mesh, r: 0.47, h: CARTA_H, taglio: 0, premio: 0, colore: 0xffd54a,
+    carta: i,
+    vx: 0, vy: -1, vz: 0, rx: 0, rz: 0, wx: 0, wz: 0,
+    aTerra: false, atterrata: false, sotto: null, livello: 1, torrePremiato: true,
+    proiettile: false, spinta: 0, impulso: 0, pulse: 0, attiva: true
+  };
+  lire.push(m);
+  return m;
+}
+// il jolly e' piu' raro degli altri semi
+function sceltaCarta() {
+  return Math.random() < 0.12 ? 0 : 1 + Math.floor(Math.random() * (CARTE.length - 1));
+}
+// ogni lancio ha una piccola probabilita' di far scendere anche una carta
+function forseUnaCarta(x) {
+  if (carteSulTavolo() >= CARTE_MAX_TAVOLO) return null;
+  if (Math.random() >= PROB_CARTA) return null;
+  const c = creaCarta(limitaX(x + (Math.random() - 0.5) * 1.2), Z_LANCIO + (Math.random() - 0.5) * 0.5);
+  suono.sblocco();
+  avviso('♠ CARTA IN ARRIVO!');
+  return c;
+}
+
 // quante lire ci sono davvero sul tavolo (le attive)
 function lireSulTavolo() {
   let n = 0;
@@ -1123,6 +1265,7 @@ function riciclaEccesso() {
       if (!m.attiva) continue;
       if (!ripiego || m.mesh.position.z > ripiego.mesh.position.z) ripiego = m;
       if (!m.aTerra || m.proiettile) continue;
+      if (m.carta !== undefined) continue;          // le carte non si ritirano mai
       // mai quelle appena scese sul ripiano: sparirebbero sotto gli occhi del giocatore
       if (m.mesh.position.y > ALTEZZA_PIASTRA - 0.05) continue;
       if (!scelta || m.mesh.position.z > scelta.mesh.position.z) scelta = m;
@@ -1138,7 +1281,7 @@ function riciclaEccesso() {
 }
 
 // strato di base: file fitte di lire MISTE (tagli diversi) da vicino al bordo fino alla piastra
-const TAGLIO_PILA = [0, 0, 1, 1, 1, 2, 2, 3];   // 50, 100, 500, 1000 → più piccole che grandi
+const TAGLIO_PILA = [0, 0, 0, 1, 1, 1, 2, 2, 3];   // la pila di casa e' fatta di tagli bassi
 function taglioACasoDallaPila() {
   return TAGLIO_PILA[Math.floor(Math.random() * TAGLIO_PILA.length)];
 }
@@ -1166,7 +1309,6 @@ let inCarica = false;
 let inRaffica = false;     // tieni premuto: spara a raffica
 let accRaffica = 0;        // accumulatore della raffica
 let colpiRaffica = 0;      // quanti spari ha fatto la raffica in corso (per distinguere il tap)
-let cooldownSparo = 0;     // secondi di ricarica del cannone
 const COOLDOWN = 240;      // ms tra due lanci normali
 const SPARO_MAX = 1.1;     // secondi per caricare al massimo
 
@@ -1179,15 +1321,23 @@ function aggiornaPuntatore(e) {
   mouse.y = -(e.clientY / innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
   const p = raycaster.ray.intersectPlane(pianoMira, puntoMira);
-  if (p && isFinite(p.x)) {
-    puntatore.x = limitaX(p.x);
-    puntatore.z = Z_LANCIO;
-    puntatore.visibile = true;
-    // margine generoso: basta toccare vicino alla macchina, la colonna viene limitata
-    puntatore.dentro = Math.abs(p.x) < X_LANCIO_MAX + 1.4 && p.z > -7 && p.z < 9;
-  } else {
+  if (!p || !isFinite(p.x)) {
     puntatore.visibile = false;
     puntatore.dentro = false;
+    return;
+  }
+  puntatore.visibile = true;
+  if (cannoneAcceso()) {
+    // METEORA: si mira DOVE VUOI sul tavolo, profondità compresa (il vecchio sistema)
+    puntatore.x = Math.max(-3.6, Math.min(3.6, p.x));
+    puntatore.z = Math.max(-4.7, Math.min(DECK_Z1 - 0.3, p.z));
+    puntatore.dentro = Math.abs(p.x) < 5.2 && p.z > -6.4 && p.z < 6.4;
+  } else {
+    // LIRE: conta solo la colonna, la profondità è sempre la fessura in fondo
+    puntatore.x = limitaX(p.x);
+    puntatore.z = Z_LANCIO;
+    // margine generoso: basta toccare vicino alla macchina, la colonna viene limitata
+    puntatore.dentro = Math.abs(p.x) < X_LANCIO_MAX + 1.4 && p.z > -7 && p.z < 9;
   }
 }
 
@@ -1199,7 +1349,7 @@ const cannoneAcceso = () => !!stato.attivi.cannone && !!stato.sbloccati.cannone;
 const rafficaAccesa = () => !!stato.attivi.raffica && stato.pot.raffica > 0;
 function modoAttuale() {
   if (rafficaAccesa()) return 'RAFFICA';
-  if (cannoneAcceso()) return 'CANNONE';
+  if (cannoneAcceso()) return 'METEORA · MIRA LIBERA';
   return 'TIRO SEMPLICE';
 }
 
@@ -1208,15 +1358,14 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
   audioOn();
   aggiornaPuntatore(e);
   if (!puntatore.dentro) return;
-  // Tasto destro: CANNONE (solo se è l'abilità accesa)
-  if (e.button === 2) {
-    if (cannoneAcceso() && cooldownSparo <= 0) {
-      inCarica = true;
-      carica = 0;
-      elCarica.classList.add('attiva');
-    }
+  // CANNONE acceso: si punta la METEORA e NON si lanciano lire, né col destro né col sinistro
+  if (cannoneAcceso()) {
+    inCarica = true;
+    carica = 0;
+    elCarica.classList.add('attiva');
     return;
   }
+  if (e.button === 2) return;               // tasto destro senza cannone: non fa nulla
   // RAFFICA accesa: tieni premuto il tasto sinistro e spara una lira dietro l'altra
   if (rafficaAccesa() && stato.gettoni >= 1) {
     inRaffica = true;
@@ -1224,45 +1373,27 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
     colpiRaffica = 0;
     return;
   }
-  // CANNONE acceso: anche il tasto sinistro carica lo sparo (comodo su telefono)
-  if (cannoneAcceso() && cooldownSparo <= 0) {
-    inCarica = true;
-    carica = 0;
-    elCarica.classList.add('attiva');
-  }
   // nessuna abilità accesa: il lancio parte al rilascio (tiro semplice)
 });
 
 renderer.domElement.addEventListener('pointerup', (e) => {
   if (e.button !== 0 && e.button !== 2) return;
-  if (e.button === 2) {
-    if (inCarica) {
-      inCarica = false;
-      elCarica.classList.remove('attiva');
-      const potenza = carica;
-      carica = 0;
-      if (potenza > 0.12 && puntatore.dentro) sparaCannone(puntatore.x, potenza);
-    }
+  if (inCarica) {
+    inCarica = false;
+    elCarica.classList.remove('attiva');
+    const potenza = carica;
+    carica = 0;
+    // la meteora parte sempre: anche un tocco veloce la lancia, al minimo della potenza
+    if (puntatore.dentro) lanciaMeteora(puntatore.x, puntatore.z, Math.max(0.25, potenza));
     return;
   }
+  if (e.button === 2) return;
   if (inRaffica) {
     // tap veloce senza colpi: vale come un lancio singolo (comodo su telefono)
     if (colpiRaffica === 0 && puntatore.dentro) lanciaDalPuntatore();
     inRaffica = false;
     accRaffica = 0;
     colpiRaffica = 0;
-    return;
-  }
-  if (inCarica) {
-    inCarica = false;
-    elCarica.classList.remove('attiva');
-    const potenza = carica;
-    carica = 0;
-    // tocco veloce: invece di non fare nulla, parte un lancio normale
-    if (puntatore.dentro) {
-      if (potenza > 0.12) sparaCannone(puntatore.x, potenza);
-      else lanciaDalPuntatore();
-    }
     return;
   }
   lanciaDalPuntatore();
@@ -1296,6 +1427,7 @@ function lanciaDalPuntatore(daRaffica = false) {
     // trasformarsi in una valanga che butta giù mezzo tavolo in un colpo solo.
     m.spinta = 0.25 * stato.pot.forza * (daRaffica ? 0.45 : 1);
   }
+  forseUnaCarta(puntatore.x);
   stato.gettoni -= n;
   stato.totLanci += n;
   ultimoLancio = ora;
@@ -1305,23 +1437,81 @@ function lanciaDalPuntatore(daRaffica = false) {
   salvaPartita();
 }
 
-// sparo del cannone: lira pesante che travolge la pila (costa 1 gettone)
-function sparaCannone(x, potenza) {
-  if (stato.gettoni < 1) { suono.errore(); avviso('CARICATORE IN RICARICA…'); return; }
-  riciclaEccesso();                          // il tavolo fa spazio da solo: lo sparo non si rifiuta mai
-  stato.gettoni -= 1;
-  stato.totLanci += 1;
-  const m = lanciaLira(x, true);
-  m.proiettile = true;
-  m.spinta = forzaCannone(stato.pot.cannonePot) * (0.7 + potenza);
-  m.vy = -6 - 12 * potenza;
-  cooldownSparo = 2.6;
+// ============ METEORA (il cannone) ============
+// Non lancia più una lira: fa piombare una METEORA dove vuoi tu, anche in mezzo alla
+// pila. Serve a smuovere il tavolo quando si impunta. Si ricarica in 5 minuti e, una
+// volta usata, il cannone si spegne da solo: si torna subito a mettere le lire.
+const RICARICA_METEORA = 300;                 // secondi: 5 minuti
+const ricaricaMeteora = (n) => Math.max(150, RICARICA_METEORA - 15 * n);  // il potenziamento accorcia l'attesa
+const meteoreVolo = [];
+const geoMeteora = new THREE.IcosahedronGeometry(0.46, 1);
+const matMeteora = new THREE.MeshStandardMaterial({
+  color: 0x5a2a12, emissive: 0xff5a1e, emissiveIntensity: 1.5, roughness: 0.85, metalness: 0.1
+});
+const meteoraPronta = () => Date.now() >= (stato.cannonePronto || 0);
+const meteoraMancano = () => Math.max(0, Math.ceil(((stato.cannonePronto || 0) - Date.now()) / 1000));
+const tempoBreve = (sec) => Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+
+function lanciaMeteora(x, z, potenza) {
+  if (!meteoraPronta()) { suono.errore(); avviso('METEORA IN RICARICA · ' + tempoBreve(meteoraMancano())); return; }
+  const mesh = new THREE.Mesh(geoMeteora, matMeteora);
+  mesh.position.set(x, 9.5, z + 1.4);
+  mesh.castShadow = !!stato.grafica.ombre;
+  scene.add(mesh);
+  const scala = 0.85 + 0.9 * potenza;
+  mesh.scale.setScalar(scala);
+  meteoreVolo.push({ mesh, x, z, potenza, vy: -11 - 9 * potenza, vz: -2.2, scala, spin: 2 + Math.random() * 3 });
+  // usata: il cannone si spegne da solo e riparte la ricarica
+  stato.cannonePronto = Date.now() + ricaricaMeteora(stato.pot.cannonePot) * 1000;
+  stato.attivi.cannone = false;
+  stato.totMeteore = (stato.totMeteore || 0) + 1;
   suono.cannone();
-  scossa(0.5 + 0.6 * potenza);
-  particelle(x, ALTEZZA_PIASTRA + 0.4, Z_LANCIO, 14, 0xffc857, 1.4);
-  avviso('CANNONE ' + Math.round(potenza * 100) + '%');
+  avviso('☄️ METEORA ' + Math.round(potenza * 100) + '%');
+  aggiornaAbilita();
   aggiornaHUD();
   salvaPartita();
+}
+
+function aggiornaMeteore(dt) {
+  for (let i = meteoreVolo.length - 1; i >= 0; i--) {
+    const q = meteoreVolo[i];
+    q.vy -= 22 * dt;
+    q.mesh.position.y += q.vy * dt;
+    q.mesh.position.z += q.vz * dt;
+    q.mesh.rotation.x += q.spin * dt;
+    q.mesh.rotation.y += q.spin * 0.7 * dt;
+    if (Math.random() < 0.7) particelle(q.mesh.position.x, q.mesh.position.y, q.mesh.position.z, 1, 0xff8a2e, 0.5);
+    const suolo = (q.z > MURO_Z ? ALTEZZA_DECK : (q.z > pusherZ - PLATE_D / 2 && q.z < pusherZ + PLATE_D / 2 ? ALTEZZA_PIASTRA : 0)) + 0.3;
+    if (q.mesh.position.y <= suolo) {
+      impattoMeteora(q.mesh.position.x, q.mesh.position.z, q.potenza, suolo);
+      scene.remove(q.mesh);
+      meteoreVolo.splice(i, 1);
+    }
+  }
+}
+
+// l'impatto scuote il tavolo e spinge in avanti tutto quello che trova attorno
+function impattoMeteora(x, z, potenza, suolo) {
+  const forza = forzaCannone(stato.pot.cannonePot) * (1.4 + 1.9 * potenza);
+  const raggio = 2.4 + 1.1 * potenza;
+  for (const q of lire) {
+    if (!q.attiva) continue;
+    const dx = q.mesh.position.x - x, dz = q.mesh.position.z - z;
+    const d2 = dx * dx + dz * dz;
+    if (d2 > raggio * raggio) continue;
+    const d = Math.max(0.3, Math.sqrt(d2));
+    const k = (1 - d / raggio) * forza;
+    q.vz -= k * 2.4;                       // soprattutto verso il bordo dei premi
+    q.vx += (dx / d) * k * 1.1;
+    q.vy = Math.max(q.vy, Math.min(1.4, 0.5 * k));
+    q.pulse = 1;
+  }
+  particelle(x, suolo, z, 34, 0xff8a2e, 2.4);
+  particelle(x, suolo + 0.2, z, 18, 0xffe08a, 1.6);
+  lampo();
+  scossa(1.2 + 0.8 * potenza);
+  suono.cannone();
+  suono.torre();
 }
 
 function lanciaLira(x, proiettile = false) {
@@ -1459,7 +1649,9 @@ function aggiornaFisica(dt) {
         m.aTerra = true;
         if (!m.atterrata) { m.atterrata = true; suAtterraggio(m); } // suono ed effetti all'atterraggio
         // --- TORRI (abilità passiva): extra dal 4° piano in su, una volta per lira ---
-        if (m.livello >= 4 && !m.torrePremiato) { m.torrePremiato = true; suTorre(p, m.livello); }
+        // Le torri contano solo in gioco: nella camera di carico le lire si
+        // accatastano solo perche' fanno la fila, e pagarle sarebbe un regalo.
+        if (m.livello >= 4 && !m.torrePremiato && p.z < MURO_Z) { m.torrePremiato = true; suTorre(p, m.livello); }
       } else {
         m.aTerra = false;
       }
@@ -1506,7 +1698,9 @@ function aggiornaFisica(dt) {
       // Sul RIPIANO FISSO non spinge nessuno: senza un filo di pendenza una lira
       // finita lì dietro (un rimbalzo, un colpo di cannone) ci restava per sempre.
       // Così invece scivola da sola sul ripiano mobile e rientra in gioco.
-      if (m.aTerra && p.z >= DECK_Z0 && p.y > ALTEZZA_PIASTRA - 0.05) m.vz -= 4.0 * h;
+      // La camera di carico è in pendenza: le lire posate scivolano piano verso il
+      // taglio del muro ed entrano in gioco da sole, in fila.
+      if (m.aTerra && p.z >= DECK_Z0 && p.y > ALTEZZA_PIASTRA - 0.05) m.vz -= 2.6 * h;
 
       // ---- IL MECCANISMO DEL DOZER ----
       // Sul RIPIANO: quando avanza se le porta dietro; quando torna indietro il ripiano
@@ -1530,6 +1724,13 @@ function aggiornaFisica(dt) {
         // sul tavolo: la faccia del ripiano spinge la pila verso il bordo dei premi
         p.z = fronteRipiano - m.r;
         m.vz = Math.min(m.vz, pusherVel);
+      }
+
+      // MURO INVISIBILE della camera di carico: chi non si è ancora posato piatto
+      // resta dentro; si esce solo strisciando dal taglio in basso.
+      if (p.z > MURO_Z - m.r && p.z < MURO_Z + 1.4 && p.y > MURO_TAGLIO) {
+        p.z = MURO_Z + m.r;
+        if (m.vz < 0) m.vz = 0;
       }
 
       // Sponde
@@ -1612,6 +1813,21 @@ function mostraCombo(n) {
 // una lira è caduta dal bordo: paga, suona, festeggia
 function vinciLira(m) {
   const pos = m.mesh.position;
+  // CARTA: non paga premi, si colleziona. Servira' a riscattare i premi speciali.
+  if (m.carta !== undefined) {
+    const c = CARTE[m.carta];
+    stato.carte = (stato.carte || 0) + 1;
+    stato.carteTipi[c.id] = (stato.carteTipi[c.id] || 0) + 1;
+    testoVolante(pos.x, 0.5, -4.6, '♠ ' + c.nome + ' PRESA!', 'bonus');
+    particelle(pos.x, 0.3, -4.9, 26, 0xffd54a, 1.8);
+    suono.sblocco();
+    lampo();
+    scossa(0.5);
+    aggiornaHUD();
+    if (!elNegozio.classList.contains('chiuso')) rendiNegozio();
+    salvaPartita();
+    return;
+  }
   const ora = performance.now();
   combo = (ora - comboScadenza < COMBO_FINESTRA) ? combo + 1 : 1;
   comboScadenza = ora + COMBO_FINESTRA;
@@ -1796,13 +2012,15 @@ const elTaglioTxt = document.getElementById('taglioTxt');
 const elModoTxt = document.getElementById('modoTxt');
 const elFps = document.getElementById('fps');
 const elBoxFps = document.getElementById('boxFps');
+const elCarteV = document.getElementById('carteV');
+const elBoxCarte = document.getElementById('boxCarte');
 const elCarica = document.getElementById('carica');
 const elCaricaBar = document.getElementById('caricaBar');
 const elCaricaTxt = document.getElementById('caricaTxt');
 const fmt = (n) => (Math.round(n * 10) / 10).toString().replace('.', ',');
 // L'HUD veniva riscritto a ogni fotogramma (la ricarica dei gettoni lo chiamava sempre):
 // ogni scrittura nel DOM costa. Ora si tocca solo quello che è davvero cambiato.
-const memoHUD = { premi: null, vinte: null, gettoni: null, barra: null, taglio: null, modo: null };
+const memoHUD = { premi: null, vinte: null, gettoni: null, barra: null, taglio: null, modo: null, carte: null };
 function aggiornaHUD() {
   const premi = Math.floor(stato.premi);
   if (premi !== memoHUD.premi) { memoHUD.premi = premi; elPremi.textContent = premi; }
@@ -1815,6 +2033,12 @@ function aggiornaHUD() {
   const tg = 'TAGLIO · ' + nomeTaglio(stato.pot.taglio).replace(/^\S+\s*/, '').toUpperCase() +
     ' · VALE ' + taglio(stato.pot.taglio).premio;
   if (elTaglioTxt && tg !== memoHUD.taglio) { memoHUD.taglio = tg; elTaglioTxt.textContent = tg; }
+  const carte = stato.carte || 0;
+  if (carte !== memoHUD.carte) {
+    memoHUD.carte = carte;
+    if (elCarteV) elCarteV.textContent = carte;
+    if (elBoxCarte) elBoxCarte.style.display = carte > 0 ? '' : 'none';
+  }
   const modo = modoAttuale();
   if (elModoTxt && modo !== memoHUD.modo) {
     memoHUD.modo = modo;
@@ -1826,8 +2050,8 @@ function aggiornaHUD() {
 // ============ ABILITÀ ATTIVE (interruttori ON/OFF) ============
 // Solo due: CANNONE e RAFFICA. Una esclude l'altra. FORZA, GETTONI e TORRI sono PASSIVE.
 const chipAbilita = [
-  { id: 'cannone', sbloccata: () => stato.sbloccati.cannone,
-    nota: () => (stato.attivi.cannone ? 'ON · carica' : 'OFF') },
+  { id: 'cannone', sbloccata: () => stato.sbloccati.cannone && (meteoraPronta() || stato.attivi.cannone),
+    nota: () => (stato.attivi.cannone ? 'MIRA' : (meteoraPronta() ? 'PRONTA' : tempoBreve(meteoraMancano()))) },
   { id: 'raffica', sbloccata: () => stato.pot.raffica > 0,
     nota: () => (stato.attivi.raffica ? 'ON · ' + rateRaffica(stato.pot.raffica).toFixed(1).replace('.', ',') + '/s' : 'OFF') },
   { id: 'audio', sbloccata: () => true, nota: () => (stato.audio ? 'ON' : 'OFF') }
@@ -1868,7 +2092,9 @@ function cambiaAbilita(id) {
     // in ogni caso interrompo subito quello che era in corso
     inRaffica = false; accRaffica = 0; colpiRaffica = 0;
     if (inCarica) { inCarica = false; elCarica.classList.remove('attiva'); carica = 0; }
-    avviso(acceso ? (id === 'raffica' ? 'RAFFICA ACCESA ⚡' : 'CANNONE ACCESO 💥') : 'TIRO SEMPLICE 🪙');
+    avviso(acceso
+      ? (id === 'raffica' ? 'RAFFICA ACCESA ⚡' : 'MIRA LA METEORA ☄️ · dove vuoi sul tavolo')
+      : 'TIRO SEMPLICE 🪙');
   }
   suono.compra();
   aggiornaAbilita();
@@ -1931,7 +2157,7 @@ function rendiNegozio() {
     html += titolo('🪙 LIRE E TAGLI');
     html += riga({ id: 'taglio', icona: '🪙', nome: 'TAGLIO DI LANCIO',
       extra: nomeTaglio(p.taglio) + (p.taglio < TAGLI.length - 1 ? ' → ' + nomeTaglio(p.taglio + 1) : ''),
-      desc: 'Il taglio delle lire che lanci: più è alto, più vale quando cade dal bordo e più è grande la monetina (L.50 → L.100 → L.500 → L.1000).',
+      desc: 'Il taglio delle lire che lanci: più è alto, più vale quando cade dal bordo e più è grande la monetina. Sette tagli: L.100 → L.500 → L.1.000 → L.10.000 → L.100.000 → L.500.000 → L.1 MILIONE.',
       lv: p.taglio + 1, max: TAGLI.length, costo: costoTaglio(p.taglio), max2: p.taglio >= TAGLI.length - 1 });
     html += titolo('🔋 PASSIVI · sempre attivi');
     html += riga({ id: 'idle', icona: '🔋', nome: 'RICARICA GETTONI <em>PASSIVA</em>',
@@ -1951,19 +2177,33 @@ function rendiNegozio() {
       extra: p.raffica > 0 ? rateRaffica(p.raffica).toFixed(0) + ' lire/s' : 'da sbloccare',
       desc: 'Tieni premuto e le lire scendono dalla fessura una dietro l\'altra, senza fermarti.',
       lv: p.raffica, max: LIVELLI_MAX.raffica, costo: costoRaffica(p.raffica), max2: p.raffica >= LIVELLI_MAX.raffica });
-    html += riga({ id: 'cannonePot', icona: '💥', nome: 'POTENZA CANNONE',
-      extra: stato.sbloccati.cannone ? 'x' + fmt(forzaCannone(p.cannonePot)) : 'da sbloccare',
-      desc: 'Rende più violento lo sparo: la lira piomba sul ripiano e butta giù sul campo quelle che trova. Tieni premuto per caricare, rilascia per sparare.',
+    html += riga({ id: 'cannonePot', icona: '☄️', nome: 'POTENZA METEORA',
+      extra: stato.sbloccati.cannone ? 'x' + fmt(forzaCannone(p.cannonePot)) + ' · ricarica ' + tempoBreve(ricaricaMeteora(p.cannonePot)) : 'da sbloccare',
+      desc: 'Meteora più devastante e ricarica più corta (da 5:00 fino a 2:30). Ogni livello toglie 15 secondi di attesa.',
       lv: p.cannonePot, max: LIVELLI_MAX.cannonePot, costo: costoCannonePot(p.cannonePot),
       max2: p.cannonePot >= LIVELLI_MAX.cannonePot, bloccato: !stato.sbloccati.cannone });
   } else if (schedaAttiva === 'sblocca') {
-    html += riga({ id: 'cannone', icona: '🔫', nome: 'CANNONE', extra: stato.sbloccati.cannone ? 'SBLOCCATO' : 'ABILITÀ NUOVA',
-      desc: 'Tieni premuto il tasto destro: si carica uno sparo che piomba sul ripiano e travolge le lire che ci trova.',
+    html += riga({ id: 'cannone', icona: '☄️', nome: 'CANNONE · METEORA', extra: stato.sbloccati.cannone ? 'SBLOCCATO' : 'ABILITÀ NUOVA',
+      desc: 'Accendi il cannone e miri DOVE VUOI sul tavolo, profondità compresa: cade una meteora che smuove la pila. Mentre è acceso non si lanciano lire; dopo il colpo si spegne da solo e si ricarica in 5 minuti.',
       costo: COSTO_CANNONE, max2: stato.sbloccati.cannone });
     html += riga({ id: 'torriInfo', icona: '🏗️', nome: 'TORRI FINO A 30 PIANI <em>PASSIVA</em>',
       extra: 'record attuale x' + (stato.torreRecord || 1) + ' / 30',
       desc: 'Le lire si impilano una sull\'altra fino a 30 piani! Dal 4° piano ogni torre paga un extra: più alta è, più premi regala. Ora chi poggia storta scivola giù: le torri si guadagnano.',
       max2: true, etichettaMax: '🏗️ ATTIVA', sottoMax: 'bonus automatico' });
+    html += titolo('♠ CARTE SPECIALI');
+    const carteTot = stato.carte || 0;
+    const elenco = CARTE.map(c => {
+      const n = (stato.carteTipi && stato.carteTipi[c.id]) || 0;
+      return '<span style="display:inline-block;margin:3px 10px 3px 0;color:' + c.colore +
+        ';font-weight:900">' + c.simbolo + ' ' + c.nome + ' <b style="color:#fff">×' + n + '</b></span>';
+    }).join('');
+    html += '<div class="voce"><div><div class="nome"><span class="ico">♠</span>LE TUE CARTE' +
+      '<em>' + carteTot + ' raccolte</em></div>' +
+      '<div class="desc">Ogni tanto dalla fessura scende una <b>carta</b> invece di una lira: non paga premi, ' +
+      'ma quando cade dal bordo te la tieni. Sul tavolo ce ne possono stare al massimo <b>' + CARTE_MAX_TAVOLO + '</b> alla volta.<br><br>' +
+      elenco + '</div>' +
+      '<div class="lv">🎁 I PREMI DA RISCATTARE ARRIVANO PROSSIMAMENTE</div></div>' +
+      '<button class="compra" disabled><b>♠ ' + carteTot + '</b><i>in collezione</i></button></div>';
     html += titolo('🎨 PANNI DEL TAVOLO');
     for (const f of ['blu', 'bordeaux', 'notte']) {
       const pos = stato.feltriPosseduti.includes(f);
@@ -1976,7 +2216,10 @@ function rendiNegozio() {
     }
   } else if (schedaAttiva === 'abilita') {
     const vociAb = [
-      { id: 'cannone', nome: 'CANNONE', desc: 'Tieni premuto il tasto destro per caricare lo sparo che piomba sul ripiano.', sbloccata: stato.sbloccati.cannone },
+      { id: 'cannone', nome: 'CANNONE · METEORA',
+        desc: 'Mira dove vuoi sul tavolo e fai cadere una meteora. Mentre è acceso non si lanciano lire. ' +
+          (stato.sbloccati.cannone ? (meteoraPronta() ? 'Adesso è PRONTA.' : 'Ricarica: ' + tempoBreve(meteoraMancano()) + '.') : ''),
+        sbloccata: stato.sbloccati.cannone && (meteoraPronta() || stato.attivi.cannone) },
       { id: 'raffica', nome: 'RAFFICA', desc: 'Tieni premuto e spari una lira dietro l\'altra (' + rateRaffica(p.raffica).toFixed(0) + '/s).', sbloccata: p.raffica > 0 },
       { id: 'audio', nome: 'AUDIO', desc: 'Effetti sonori della sala, sintetizzati in tempo reale (nessun file esterno).', sbloccata: true }
     ];
@@ -2033,8 +2276,11 @@ function rendiNegozio() {
       'Lire ritirate dal tavolo ♻️: <b>' + stato.totRiciclate + '</b><br>' +
       'Torri costruite: <b>' + stato.totTorri + '</b> · record <b>x' + (stato.torreRecord || 1) + '/30</b><br>' +
       'Combo massima: <b>x' + stato.comboMax + '</b> (bonus max +' + COMBO_BONUS_MAX + ')<br>' +
+      'Carte raccolte ♠: <b>' + (stato.carte || 0) + '</b> (sul tavolo ora: ' + carteSulTavolo() + '/' + CARTE_MAX_TAVOLO + ')<br>' +
+      'Meteore lanciate ☄️: <b>' + (stato.totMeteore || 0) + '</b>' +
+      (stato.sbloccati.cannone ? ' · ' + (meteoraPronta() ? '<b>pronta</b>' : 'ricarica ' + tempoBreve(meteoraMancano())) : '') + '<br>' +
       'Modalità in uso: <b>' + modoAttuale() + '</b><br>' +
-      'Taglio in uso: <b>' + nomeTaglio(p.taglio) + '</b><br>' +
+      'Taglio in uso: <b>' + nomeTaglio(p.taglio) + '</b> (vale ' + taglio(p.taglio).premio + ')<br>' +
       'Ricarica gettoni: <b>' + fmt(ricaricaGettoni(p.idle)) + '/s</b> (cap ' + capCaricatore(p.idle) + ')<br>' +
       'Premi attuali: <b>' + Math.floor(stato.premi) + '</b>' +
       '</div></div>';
@@ -2109,12 +2355,13 @@ function compra(id) {
   else if (id === 'cannone' && !stato.sbloccati.cannone) {
     if (paga(COSTO_CANNONE)) {
       stato.sbloccati.cannone = true;
-      // appena sbloccato si attiva, spegnendo la raffica (una sola abilità attiva)
+      // appena comprato la meteora è già carica: si prova subito
+      stato.cannonePronto = 0;
       stato.attivi.cannone = true;
       stato.attivi.raffica = false;
       suono.sblocco();
       particelle(0, 0.6, 0, 34, 0xffd54a, 2);
-      avviso('CANNONE SBLOCCATO! 💥');
+      avviso('METEORA SBLOCCATA! ☄️');
     }
   }
   else if (id === 'taglio' && p.taglio < TAGLI.length - 1) {
@@ -2151,6 +2398,7 @@ const bersaglioCamera = new THREE.Vector3();   // riusato: niente allocazioni a 
 let tempoSalvataggio = 0;
 let t = 0;
 let sparaPronto = true;
+let ultimoConto = -1;     // secondi di ricarica gia' mostrati sul chip
 
 // --- contafotogrammi e qualità automatica ---
 let fpsTempo = 0, fpsConta = 0;
@@ -2171,6 +2419,7 @@ function animate() {
 
   aggiornaFisica(dt);
   riciclaEccesso();          // ♻️ il tavolo fa spazio da solo: il lancio non si rifiuta mai
+  aggiornaMeteore(dt);
   aggiornaParticelle(dt);
 
   fpsConta++; fpsTempo += dt;
@@ -2210,40 +2459,49 @@ function animate() {
     }
   } else accRaffica = 0;
 
-  // --- cannone: carica, ricarica, colore del mirino ---
+  // --- carica della meteora ---
+  const mira = cannoneAcceso();
   if (inCarica) {
     carica = Math.min(1, carica + dt / SPARO_MAX);
     elCaricaBar.style.width = (carica * 100).toFixed(0) + '%';
-    elCaricaTxt.textContent = 'CANNONE ' + Math.round(carica * 100) + '%';
-    mirinoMat.color.setHex(0xff9a3c);
-    mirino.scale.setScalar(1 + carica * 0.6);
+    elCaricaTxt.textContent = 'METEORA ' + Math.round(carica * 100) + '%';
+    mirinoMat.color.setHex(0xff6a2e);
+    mirino.scale.setScalar(1.4 + carica * 0.9);
   } else {
-    if (cooldownSparo > 0) cooldownSparo = Math.max(0, cooldownSparo - dt);
-    mirino.scale.setScalar(1);
-    mirinoMat.color.setHex(stato.sbloccati.cannone && cooldownSparo <= 0 ? 0x7ef0c0 : 0xffd54a);
+    mirino.scale.setScalar(mira ? 1.7 + Math.sin(t * 5) * 0.12 : 1);
+    mirinoMat.color.setHex(mira ? 0xff9a3c : 0x7ef0c0);
+  }
+  // la ricarica scorre: aggiorno il chip una volta al secondo
+  if (stato.sbloccati.cannone) {
+    const restano = meteoraMancano();
+    if (restano !== ultimoConto) { ultimoConto = restano; aggiornaAbilita(); }
   }
   if (TATTILE) { // il pulsante SPARA si aggiorna solo quando cambia stato
-    const pronto = cooldownSparo <= 0 && stato.gettoni >= 1;
+    const pronto = mira && meteoraPronta();
     if (pronto !== sparaPronto) { sparaPronto = pronto; aggiornaSpara(); }
   }
 
-  // --- mirino, guida e lira fantasma: seguono solo la COLONNA scelta ---
+  // --- mirino, guida e anteprima ---
   if (puntatore.visibile) {
     mirino.visible = true;
     mirino.position.x = puntatore.x;
+    // con la meteora si mira dove si vuole, lire e guida spariscono
+    mirino.position.z = mira ? puntatore.z : Z_LANCIO;
+    mirino.position.y = (mira ? 0.06 : ALTEZZA_DECK + 0.05);
     mirinoMat.opacity = puntatore.dentro ? 0.95 : 0.3;
-    guida.visible = puntatore.dentro;
+    guida.visible = puntatore.dentro && !mira;
     guida.position.x = puntatore.x;
     guida.lookAt(camera.position.x, guida.position.y, camera.position.z);
     guidaMat.opacity = 0.18 + (Math.sin(t * 3.2) * 0.5 + 0.5) * 0.18;
-    liraFantasma.visible = puntatore.dentro;
-    liraFantasma.position.set(puntatore.x, ALTEZZA_PIASTRA + 1.3 + Math.sin(t * 2.6) * 0.18, Z_LANCIO);
+    liraFantasma.visible = puntatore.dentro && !mira;
+    liraFantasma.position.set(puntatore.x, ALTEZZA_DECK + 1.3 + Math.sin(t * 2.6) * 0.18, Z_LANCIO);
     liraFantasma.rotation.y = t * 0.9;
   } else {
     mirino.visible = false;
     guida.visible = false;
     liraFantasma.visible = false;
   }
+  zonaMat.visible = !mira;
 
   // --- fessura di lancio pulsante ---
   zonaMat.opacity = 0.38 + (Math.sin(t * 1.9) * 0.5 + 0.5) * 0.3;
@@ -2272,16 +2530,16 @@ function animate() {
 // sparo dal pulsante dedicato (telefono): parte già carico al massimo
 const elSpara = document.getElementById('spara');
 elSpara.onclick = () => {
-  if (!stato.sbloccati.cannone || !stato.attivi.cannone || cooldownSparo > 0) { suono.errore(); return; }
-  if (!puntatore.visibile || !puntatore.dentro) { suono.errore(); avviso('Tocca il tavolo per scegliere la colonna'); return; }
-  sparaCannone(puntatore.x, 1);
+  if (!cannoneAcceso() || !meteoraPronta()) { suono.errore(); return; }
+  if (!puntatore.visibile || !puntatore.dentro) { suono.errore(); avviso('Tocca il tavolo per mirare la meteora'); return; }
+  lanciaMeteora(puntatore.x, puntatore.z, 1);
 };
 function aggiornaSpara() {
   if (!elSpara) return;
-  const mostralo = TATTILE && stato.sbloccati.cannone && !!stato.attivi.cannone;
+  const mostralo = TATTILE && cannoneAcceso();
   elSpara.style.display = mostralo ? 'inline-flex' : 'none';
   if (mostralo) {
-    elSpara.disabled = cooldownSparo > 0 || stato.gettoni < 1;
+    elSpara.disabled = !meteoraPronta();
     elSpara.style.opacity = elSpara.disabled ? '.45' : '1';
   }
 }
@@ -2347,6 +2605,12 @@ const elVersione = document.getElementById('versione');
 if (elVersione) elVersione.textContent = VERSIONE;
 stato.gettoni = Math.min(Math.max(stato.gettoni, 0), capCaricatore(stato.pot.idle));
 stato.grafica.effetti = [0, 0.5, 1].indexOf(stato.grafica.effetti) >= 0 ? stato.grafica.effetti : 1;
+// salvataggi vecchi: 4 tagli invece di 7, niente carte, niente meteora
+if (!stato.carteTipi || typeof stato.carteTipi !== 'object') stato.carteTipi = {};
+stato.carte = Math.max(0, parseInt(stato.carte, 10) || 0);
+stato.cannonePronto = Math.max(0, parseInt(stato.cannonePronto, 10) || 0);
+// una ricarica salvata molto nel futuro (orologio spostato) non deve bloccare il gioco
+if (stato.cannonePronto > Date.now() + RICARICA_METEORA * 1000) stato.cannonePronto = 0;
 stato.totRiciclate = Math.max(0, parseInt(stato.totRiciclate, 10) || 0);
 aggiornaFantasma();          // l'anteprima usa il taglio scelto
 applicaGrafica();            // ombre, effetti e contafotogrammi come li ha scelti il giocatore
@@ -2358,10 +2622,13 @@ rendiNegozio();
 // ponte di controllo: serve ai controlli automatici e per vedere dal vivo che cosa
 // sta facendo il tavolo (quante lire, che modalità, quante ne ha ritirate).
 window.DOZER = {
-  stato, lire, MAX_LIRE, VERSIONE, Z_LANCIO, X_LANCIO_MAX, ALTEZZA_PIASTRA,
-  FRONTE_AVANTI, FRONTE_INDIETRO, PLATE_D,
+  stato, lire, MAX_LIRE, VERSIONE, Z_LANCIO, X_LANCIO_MAX, ALTEZZA_PIASTRA, ALTEZZA_DECK,
+  FRONTE_AVANTI, FRONTE_INDIETRO, PLATE_D, TAGLI, CARTE, CARTE_MAX_TAVOLO,
+  MURO_Z, MURO_TAGLIO, DECK_Z0, DECK_Z1, meteoreVolo, carteSulTavolo, creaCarta,
+  lanciaMeteora, meteoraPronta, meteoraMancano, aggiornaMeteore, ricaricaMeteora,
   lireSulTavolo, riciclaEccesso, modoAttuale, cambiaAbilita, cambiaOpzione, aggiornaAbilita,
   pusherAvanti: () => pusherZ < PUSHER_MIN + 0.12,   // a che punto della corsa e' il ripiano
+  comboOra: () => combo,
   creaLira, lanciaLira, aggiornaFisica, aggiornaHUD, rendiNegozio
 };
 

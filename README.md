@@ -20,14 +20,16 @@ carico ritira da solo le lire in fondo ♻️. Funziona **da telefono, tablet e 
 | --- | --- | --- |
 | Scegli la **colonna** e lancia | `click` (anche davanti: conta solo la posizione orizzontale) | `tap` |
 | **Raffica** ⚡ (tieni premuto e spara) | tieni premuto il **tasto sinistro** | tieni premuto il dito |
-| **Cannone** 💥 (sparo potente) | tieni premuto il **tasto destro** e rilascia | tieni premuto e rilascia, oppure il pulsante **◎ SPARA** |
+| **Meteora** ☄️ (col cannone acceso) | miri **dove vuoi** e tieni premuto per caricare | tieni premuto, oppure il pulsante **☄️ METEORA** |
 | **Spegnere un'abilità** | `click` sul chip già acceso | `tap` sul chip già acceso |
 | Zoom | rotella del mouse | pizzica con due dita |
 
 ### ⚙️ Come funziona la macchina
 
 1. **Scegli solo la colonna**: tocchi dove vuoi sul tavolo, conta la posizione **orizzontale**.
-   La lira scende **sempre dalla fessura in fondo**, sopra al ripiano — la profondità non si sceglie.
+   La lira scende **sempre dalla fessura in fondo a tutto**, nella **camera di carico**.
+   Davanti alla camera c'è un **muro invisibile con un taglio in basso**: si entra in gioco solo
+   quando ci si è posati piatti, così nessuna lira schizza sul campo.
 2. **Il ripiano la porta avanti**: quando avanza si porta dietro le lire appoggiate sopra.
 3. **Quando torna indietro sfila via da sotto** e le lire **cadono giù sul campo**.
 4. **La faccia del ripiano spinge la pila** verso il bordo: quello che cade è tuo 🏆.
@@ -67,16 +69,24 @@ e nella scheda **⚙️ OPZIONI** ci sono audio, **ombre**, **effetti** (pieni /
 - **Torri di lire**: le lire si centrano su quella sotto (pile ordinate) e si impilano **fino a 30 piani**;
   dal 4° piano scatta un **bonus torre** con suono e particelle, e il record resta salvato.
 - **Potenziamenti** (salvati nel browser, tutti con **tetto massimo** e barra di livello):
-  - 🪙 **Taglio di lancio** — decidi se lanci lire da L.100, L.500 o **L.1000** (valgono di più!)
+  - 🪙 **Taglio di lancio** — **sette tagli**: L.100 → L.500 → L.1.000 → L.10.000 →
+    L.100.000 → L.500.000 → **L.1 MILIONE** (paga 250 contro 1)
   - 🪙 **Ricarica gettoni** *(passiva)* — il caricatore si riempie più in fretta e trasporta più gettoni (infiniti)
   - 💪 **Forza di lancio** *(passiva)* — le lire colpiscono la pila spingendola verso il bordo
   - ✨ **Multi-lancio** *(passivo)* — più lire con un solo click
   - ⚡ **Raffica** — tieni premuto e spari una lira dietro l'altra
-  - 💥 **Potenza cannone** — sparo che travolge la pila
-- **Tagli delle lire**: 🥉 Bronzo L.50 · 🥈 Argento L.100 · 🟡 Oro L.500 · ⚪ Platino L.1000,
-  ognuno con **grandezza, colore e scritta** propri, incisi sulla monetina.
+  - ☄️ **Potenza meteora** — impatto più violento e ricarica più corta
+- **Sette tagli di lira**: 🟤 Rame L.100 · ⚪ Argento L.500 · 🟡 Oro L.1.000 · ⚪ Platino L.10.000 ·
+  🟢 Smeraldo L.100.000 · 🟣 Ametista L.500.000 · 🔴 **Rubino L.1.000.000**, ognuno con
+  **grandezza, colore e scritta** propri, incisi sulla monetina.
+- **♠ Carte speciali**: ogni tanto dalla fessura ne scende una (jolly, picche, cuori, quadri,
+  fiori). Non pagano premi: quando cadono dal bordo **te le tieni** e serviranno a riscattare
+  premi. Sul tavolo al massimo **5 alla volta**.
+- **☄️ Meteora**: accendi il cannone, miri **dove vuoi** sul tavolo e la fai cadere per smuovere
+  la pila. Mentre è acceso non si lanciano lire; dopo il colpo si spegne da solo e si ricarica
+  in **5 minuti** (anche a gioco chiuso).
 - **Torri fino a 30 piani** con bonus crescente, festa dai 10 piani e record salvato.
-- **Sbloccabili** 🎁: cannone 🔫 e i panni del tavolo (🔷 blu, 🍷 bordeaux, 🌌 notte).
+- **Sbloccabili** 🎁: meteora ☄️ e i panni del tavolo (🔷 blu, 🍷 bordeaux, 🌌 notte).
 - **Soddisfazione**: suoni sintetizzati in tempo reale con la Web Audio API (nessun file audio),
   particelle, testi volanti `+1`, **combo** con tono crescente, lampi e scossoni di camera sui colpi.
 - **Switch ON/OFF** per ogni abilità attiva e per l'audio, più scorciatoie da tastiera:
@@ -105,11 +115,12 @@ python -m http.server 8080     # poi apri http://localhost:8080
 
 ### ✅ Controlli automatici
 
-Nel repository ci sono **75 prove** che aprono il gioco in un browser vero (desktop, telefono e
+Nel repository ci sono **94 prove** che aprono il gioco in un browser vero (desktop, telefono e
 con un salvataggio di una versione vecchia) e controllano che parta senza errori, che il tavolo
-non si riempia mai, che la lira scenda sempre dalla fessura in fondo, che il ripiano la porti avanti
-e la lasci cadere, che nessuna lira resti intrappolata, che le abilità si spengano, che la raffica
-non regali premi fuori scala e che il negozio funzioni anche al tocco:
+non si riempia mai, che la lira scenda sempre dalla fessura in fondo, che il muro trattenga chi non
+si è posato, che i 7 tagli crescano bene, che le carte non superino le 5 sul tavolo e non paghino
+premi, che la meteora spinga la pila e non riparta prima dei 5 minuti, che le abilità si spengano
+e che il negozio funzioni anche al tocco:
 
 ```bash
 npm i -D playwright three

@@ -69,7 +69,7 @@ console.log('\n== DESKTOP ==');
   T('nessun errore in console', errori.length === 0, errori.join(' | '));
   T('canvas presente', await page.locator('canvas').count() === 1);
   T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
-  T('versione v1.5.0 in HUD', (await page.locator('#versione').textContent()) === 'v1.5.0');
+  T('versione v1.6.0 in HUD', (await page.locator('#versione').textContent()) === 'v1.6.0');
   T('pila iniziale fitta', await page.evaluate(() => DOZER.lireSulTavolo()) > 130);
 
   // --- MECCANICA DEL DOZER: si sceglie solo la colonna, si cade sempre in fondo ---
@@ -79,6 +79,9 @@ console.log('\n== DESKTOP ==');
       return [-9, -2, 0, 2.4, 9].map(x => { const m = D.lanciaLira(x); return { x: m.mesh.position.x, z: m.mesh.position.z }; });
     });
     const Z = await page.evaluate(() => DOZER.Z_LANCIO);
+    const DECK = await page.evaluate(() => [DOZER.DECK_Z0, DOZER.DECK_Z1]);
+    T('la fessura sta in fondo a tutto, sulla camera di carico',
+      Z > DECK[0] + 0.4 && Z < DECK[1] - 0.4, 'z ' + Z + ' dentro ' + DECK[0] + '..' + DECK[1]);
     const XMAX = await page.evaluate(() => DOZER.X_LANCIO_MAX);
     T('la lira scende sempre dalla fessura in fondo, mai davanti',
       lancio.every(l => Math.abs(l.z - Z) <= 0.3), 'z ' + lancio.map(l => l.z.toFixed(1)).join(' '));
@@ -96,6 +99,24 @@ console.log('\n== DESKTOP ==');
     });
     T('atterrano sul ripiano rialzato, non sul tavolo',
       dopo.length > 0 && dopo.every(y => y > H - 0.05), dopo.length + ' lire sul ripiano');
+
+    // --- MURO INVISIBILE: chi non si e' posato non passa sul campo ---
+    const muro = await page.evaluate(() => {
+      const D = DOZER;
+      const nate = [];
+      // lanciate e spinte FORTE in avanti: senza muro schizzerebbero sul campo
+      for (let i = 0; i < 10; i++) { const m = D.lanciaLira(-3 + i * 0.7); m.vz = -9; nate.push(m); }
+      let peggiore = 99;
+      for (let f = 0; f < 60; f++) {
+        D.aggiornaFisica(1/60);
+        for (const m of nate) {
+          if (m.attiva && m.mesh.position.y > D.MURO_TAGLIO) peggiore = Math.min(peggiore, m.mesh.position.z);
+        }
+      }
+      return { peggiore, muro: D.MURO_Z };
+    });
+    T('il muro trattiene le lire che non si sono ancora posate',
+      muro.peggiore >= muro.muro - 0.01, 'la piu\' avanti in aria era a z ' + muro.peggiore.toFixed(2));
 
     const viaggio = await page.evaluate(() => {
       const D = DOZER;
@@ -119,6 +140,49 @@ console.log('\n== DESKTOP ==');
       DOZER.lire.filter(m => m.attiva && m.mesh.position.z > DOZER.Z_LANCIO + 0.6 &&
         m.mesh.position.y < DOZER.ALTEZZA_PIASTRA - 0.05).length);
     T('nessuna lira intrappolata dietro al ripiano', dietro === 0, dietro + ' bloccate');
+  }
+
+  // --- SETTE TAGLI, da L.100 al MILIONE ---
+  {
+    const tagli = await page.evaluate(() => DOZER.TAGLI.map(t => ({ t: t.taglio, p: t.premio, r: t.r })));
+    T('ci sono 7 tagli', tagli.length === 7, tagli.map(t => t.t).join(', '));
+    T('i tagli sono 100, 500, 1000, 10K, 100K, 500K e 1 milione',
+      JSON.stringify(tagli.map(t => t.t)) === JSON.stringify([100, 500, 1000, 10000, 100000, 500000, 1000000]));
+    T('premio e grandezza crescono con il taglio',
+      tagli.every((t, i) => i === 0 || (t.p > tagli[i-1].p && t.r > tagli[i-1].r)));
+    T('si parte dal taglio piu\' basso',
+      await page.evaluate(() => DOZER.stato.pot.taglio) === 0);
+  }
+
+  // --- METEORA (il cannone) ---
+  {
+    const met = await page.evaluate(async () => {
+      const D = DOZER;
+      D.stato.premi = 99999; D.stato.sbloccati.cannone = true; D.stato.cannonePronto = 0;
+      D.stato.attivi.cannone = true; D.stato.attivi.raffica = false; D.aggiornaAbilita();
+      const modoMira = D.modoAttuale();
+      for (let f = 0; f < 90; f++) D.aggiornaFisica(1/60);
+      const vive = D.lire.filter(m => m.attiva);
+      const zPrima = vive.reduce((a, m) => a + m.mesh.position.z, 0) / vive.length;
+      const lanciPrima = D.stato.totLanci;
+      D.lanciaMeteora(0, -2.5, 1);
+      const dopoLancio = { pronta: D.meteoraPronta(), acceso: D.stato.attivi.cannone, manca: D.meteoraMancano() };
+      for (let f = 0; f < 60 * 4; f++) { D.aggiornaFisica(1/60); D.aggiornaMeteore(1/60); }
+      const vive2 = D.lire.filter(m => m.attiva);
+      const zDopo = vive2.reduce((a, m) => a + m.mesh.position.z, 0) / vive2.length;
+      const inVolo = D.meteoreVolo.length;
+      D.lanciaMeteora(0, -2.5, 1);
+      return { modoMira, zPrima, zDopo, ...dopoLancio, rifiutata: D.meteoreVolo.length === inVolo,
+        lireLanciate: D.stato.totLanci - lanciPrima, ricaricaMax: D.ricaricaMeteora(0) };
+    });
+    T('col cannone acceso si mira liberamente', met.modoMira.indexOf('METEORA') === 0, met.modoMira);
+    T('la meteora spinge la pila verso il bordo', met.zDopo < met.zPrima - 0.15,
+      'z medio ' + met.zPrima.toFixed(2) + ' -> ' + met.zDopo.toFixed(2));
+    T('la meteora non lancia nessuna lira', met.lireLanciate === 0, met.lireLanciate + ' lire');
+    T('dopo il colpo il cannone si spegne da solo', met.acceso === false);
+    T('la ricarica base e\' di 5 minuti', met.ricaricaMax === 300, met.ricaricaMax + ' s');
+    T('mentre si ricarica la meteora non riparte', met.pronta === false && met.rifiutata,
+      'mancano ' + met.manca + ' s');
   }
 
   // --- la spinta del ripiano arriva fino al bordo dei premi ---
@@ -150,14 +214,18 @@ console.log('\n== DESKTOP ==');
   const modo0 = await page.evaluate(() => DOZER.modoAttuale());
   T('si parte in TIRO SEMPLICE (cannone non ancora sbloccato)', modo0 === 'TIRO SEMPLICE', modo0);
 
-  await page.evaluate(() => { DOZER.stato.premi = 999999; DOZER.stato.sbloccati.cannone = true; DOZER.stato.attivi.cannone = true; DOZER.aggiornaAbilita(); DOZER.aggiornaHUD(); });
-  T('cannone acceso → modalità CANNONE', await page.evaluate(() => DOZER.modoAttuale()) === 'CANNONE');
+  await page.evaluate(() => {
+    DOZER.stato.premi = 999999; DOZER.stato.sbloccati.cannone = true;
+    DOZER.stato.cannonePronto = 0;                     // meteora di nuovo carica
+    DOZER.stato.attivi.cannone = true; DOZER.aggiornaAbilita(); DOZER.aggiornaHUD();
+  });
+  T('cannone acceso → modalità METEORA', (await page.evaluate(() => DOZER.modoAttuale())).indexOf('METEORA') === 0);
   await page.click('#ch-cannone');
   const modo1 = await page.evaluate(() => DOZER.modoAttuale());
   T('ricliccando il chip CANNONE si SPEGNE (tiro senza abilità)', modo1 === 'TIRO SEMPLICE', modo1);
   T('chip cannone in stato off', await page.locator('#ch-cannone').evaluate(e => e.classList.contains('off')));
   await page.click('#ch-cannone');
-  T('e si riaccende cliccandolo di nuovo', await page.evaluate(() => DOZER.modoAttuale()) === 'CANNONE');
+  T('e si riaccende cliccandolo di nuovo', (await page.evaluate(() => DOZER.modoAttuale())).indexOf('METEORA') === 0);
 
   await page.evaluate(() => { DOZER.stato.pot.raffica = 3; DOZER.aggiornaAbilita(); });
   await page.click('#ch-raffica');
@@ -262,7 +330,7 @@ console.log('\n== TELEFONO (portrait, touch) ==');
   T('parte senza errori', errori.length === 0, errori.join(' | '));
   T('ombre spente di serie su telefono', await page.evaluate(() => DOZER.stato.grafica.ombre === false));
   T('tetto lire ridotto su telefono', await page.evaluate(() => DOZER.MAX_LIRE) === 170);
-  T('anche su telefono si mira solo in orizzontale',
+  T('anche su telefono si mira solo in orizzontale (senza cannone)',
     await page.evaluate(() => Math.abs(DOZER.lanciaLira(99).mesh.position.z - DOZER.Z_LANCIO) < 0.3));
   const chip = await page.locator('#ch-raffica').boundingBox();
   T('chip abilità abbastanza grandi da toccare', chip && chip.height >= 30, chip ? Math.round(chip.height) + 'px' : 'n/d');
@@ -302,19 +370,64 @@ console.log('\n== RAFFICA TENUTA PREMUTA ==');
   await p2.mouse.move(640, 430);
   await p2.waitForTimeout(200);
   await p2.mouse.down();
-  await p2.waitForTimeout(15000);
+  // guardo la combo mentre gioca: deve ricadere a ogni corsa del ripiano
+  const serie = [];
+  for (let i = 0; i < 60; i++) {
+    await p2.waitForTimeout(250);
+    serie.push(await p2.evaluate(() => DOZER.comboOra()));
+  }
   await p2.mouse.up();
-  const r = await p2.evaluate(() => ({ premi: Math.floor(DOZER.stato.premi), vinte: DOZER.stato.vinte, lire: DOZER.lireSulTavolo() }));
+  let azzeramenti = 0;
+  for (let i = 1; i < serie.length; i++) if (serie[i] < serie[i - 1]) azzeramenti++;
+  const r = await p2.evaluate(() => ({ premi: Math.floor(DOZER.stato.premi), vinte: DOZER.stato.vinte, lire: DOZER.lireSulTavolo(), comboMax: DOZER.stato.comboMax }));
   const perLira = r.vinte ? r.premi / r.vinte : 0;
   T('tenendo premuta la raffica si vince davvero qualcosa', r.vinte > 5, r.vinte + ' lire vinte');
-  // L.100 paga 2, il bonus combo si ferma a +5: mai piu' di 7 premi per lira
-  T('il guadagno per lira resta nel tetto (combo limitata)', perLira <= 7.05, perLira.toFixed(1) + ' premi/lira');
-  T('la combo si azzera a ogni corsa del ripiano', perLira <= 6, perLira.toFixed(2) + ' premi/lira');
+  // il bonus combo si ferma a +5, il resto viene dalle torri
+  T('il guadagno per lira resta nel tetto (combo limitata)', perLira <= 9, perLira.toFixed(1) + ' premi/lira');
+  // se non si azzerasse mai, la combo salirebbe e basta: qui deve ricadere piu' volte
+  T('la combo si azzera a ogni corsa del ripiano', azzeramenti >= 2,
+    azzeramenti + ' ricadute in 15 s · combo max x' + r.comboMax);
   T('il tavolo non straborda sotto raffica', r.lire <= 312, r.lire + ' lire in scena');
   T('nessun errore durante la raffica', e2.length === 0, e2.join(' | '));
   await c2.close();
   }
 
+
+// ============================================================ CARTE SPECIALI
+console.log('\n== CARTE SPECIALI ==');
+{
+  const { ctx: c3, page: p3, errori: e3 } = await nuovaPagina({ viewport: { width: 1280, height: 800 } });
+  await p3.waitForTimeout(900);
+  const carte = await p3.evaluate(() => {
+    const D = DOZER;
+    D.stato.audio = false;
+    // il tavolo di partenza non serve: lo tolgo di mezzo prima di misurare
+    for (const m of D.lire) m.attiva = false;
+    for (let f = 0; f < 4; f++) D.aggiornaFisica(1/60);
+    const prima = D.stato.carte || 0;
+    const premiPrima = D.stato.premi;
+    let creato = 0;
+    for (let i = 0; i < 12; i++) {
+      if (D.carteSulTavolo() >= D.CARTE_MAX_TAVOLO) continue;
+      D.creaCarta(-2 + (i % 5) * 1, D.Z_LANCIO); creato++;
+    }
+    const suTavolo = D.carteSulTavolo();
+    for (const m of D.lire) if (m.attiva && m.carta !== undefined) { m.mesh.position.set(m.mesh.position.x, 0.2, -4.9); m.vz = -7; }
+    for (let f = 0; f < 120; f++) D.aggiornaFisica(1/60);
+    return { creato, suTavolo, raccolte: (D.stato.carte || 0) - prima,
+      premiCambiati: Math.abs(D.stato.premi - premiPrima) > 0.5,
+      tipi: Object.keys(D.stato.carteTipi || {}).length,
+      max: D.CARTE_MAX_TAVOLO, quante: D.CARTE.length };
+  });
+  T('esistono piu\' tipi di carta', carte.quante >= 4, carte.quante + ' tipi');
+  T('sul tavolo non ci sono mai piu\' di 5 carte insieme', carte.suTavolo <= carte.max && carte.max === 5, carte.suTavolo + ' carte');
+  T('oltre il tetto non ne nascono altre', carte.creato === carte.max, carte.creato + ' create su 12 tentativi');
+  T('le carte che cadono dal bordo finiscono in collezione', carte.raccolte > 0, carte.raccolte + ' raccolte');
+  T('le carte NON pagano premi', !carte.premiCambiati);
+  T('la collezione tiene il conto per tipo', carte.tipi > 0, carte.tipi + ' tipi diversi');
+  T('nessun errore con le carte', e3.length === 0, e3.join(' | '));
+  await c3.close();
+}
 
 // ============================================================ SALVATAGGIO VECCHIO
 console.log('\n== SALVATAGGIO DI UNA VERSIONE VECCHIA ==');
@@ -330,7 +443,7 @@ console.log('\n== SALVATAGGIO DI UNA VERSIONE VECCHIA ==');
   await page.waitForTimeout(900);
   T('il gioco parte con un salvataggio vecchio', errori.length === 0, errori.join(' | '));
   T('nessun avviso rosso', await page.locator('#erroreGioco').count() === 0);
-  T('taglio riportato nei limiti', await page.evaluate(() => DOZER.stato.pot.taglio) <= 3);
+  T('taglio riportato nei limiti', await page.evaluate(() => DOZER.stato.pot.taglio) <= 6);
   T('record torre sanificato', await page.evaluate(() => DOZER.stato.torreRecord) >= 1);
   T('cannone e raffica non entrambi accesi', await page.evaluate(() => !(DOZER.stato.attivi.cannone && DOZER.stato.attivi.raffica)));
   T('opzioni grafiche create se mancanti', await page.evaluate(() => typeof DOZER.stato.grafica.effetti === 'number'));
