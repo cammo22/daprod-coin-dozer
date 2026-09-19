@@ -8,20 +8,29 @@
 [![Un solo file](https://img.shields.io/badge/HTML-singolo_file-ffab00?style=flat-square)](index.html)
 [![Licenza MIT](https://img.shields.io/badge/Licenza-MIT-blue?style=flat-square)](LICENSE)
 
-Il **coin dozer della sala slot DaProd**: la piastra spinge la pila di lire verso il bordo, tu lanci le
-lire dall'alto e quelle che cadono diventano **premi**. I **gettoni da lanciare sono infiniti**: il
-caricatore si ricarica sempre da solo e **il tavolo non si riempie mai** — quando è troppo carico
-ritira da solo le lire in fondo ♻️. Funziona **da telefono, tablet e desktop**, basta il browser.
+Il **coin dozer della sala slot DaProd**, con la meccanica di quelli veri: scegli la **colonna**,
+la lira scende dalla **fessura in fondo** sul ripiano che scorre, il ripiano la porta avanti e poi
+la lascia **cadere sul campo**, dove spinge la pila verso il bordo. Quello che cade dal bordo
+diventa **premi**. I **gettoni sono infiniti** e **il tavolo non si riempie mai** — quando è troppo
+carico ritira da solo le lire in fondo ♻️. Funziona **da telefono, tablet e desktop**, basta il browser.
 
 ## ▶ Come si gioca
 
 | Azione | Desktop | Telefono |
 | --- | --- | --- |
-| Lancia una lira | `click` nella zona illuminata | `tap` nella zona illuminata |
+| Scegli la **colonna** e lancia | `click` (anche davanti: conta solo la posizione orizzontale) | `tap` |
 | **Raffica** ⚡ (tieni premuto e spara) | tieni premuto il **tasto sinistro** | tieni premuto il dito |
 | **Cannone** 💥 (sparo potente) | tieni premuto il **tasto destro** e rilascia | tieni premuto e rilascia, oppure il pulsante **◎ SPARA** |
 | **Spegnere un'abilità** | `click` sul chip già acceso | `tap` sul chip già acceso |
 | Zoom | rotella del mouse | pizzica con due dita |
+
+### ⚙️ Come funziona la macchina
+
+1. **Scegli solo la colonna**: tocchi dove vuoi sul tavolo, conta la posizione **orizzontale**.
+   La lira scende **sempre dalla fessura in fondo**, sopra al ripiano — la profondità non si sceglie.
+2. **Il ripiano la porta avanti**: quando avanza si porta dietro le lire appoggiate sopra.
+3. **Quando torna indietro sfila via da sotto** e le lire **cadono giù sul campo**.
+4. **La faccia del ripiano spinge la pila** verso il bordo: quello che cade è tuo 🏆.
 
 ### 🪨 Le abilità si accendono **e si spengono**
 
@@ -49,7 +58,10 @@ e nella scheda **⚙️ OPZIONI** ci sono audio, **ombre**, **effetti** (pieni /
 
 - **Marchio DaProd** ovunque: logo nell'HUD, targa neon sul retro della macchina, logo inciso sul
   panno e **incisione "DaProd · L. 100 · LIRE"** su ogni monetina 3D.
-- **Zona di lancio illuminata** con bordo tratteggiato pulsante, mirino e moneta fantasma.
+- **Fessura di lancio illuminata** in fondo alla macchina, con guida verticale della colonna,
+  mirino e moneta fantasma.
+- **Ripiano scorrevole** rialzato in acciaio spazzolato, **ripiano fisso** che chiude il fondo,
+  **muro di fondo** con filo di luce e **targa DaProd** in alto, come l'insegna di una sala.
 - **Fisica vera 2,5D**: le lire cadono sempre verso il basso, si appiattiscono all'atterraggio e si
   impilano; zero rimbalzi, zero monete storte.
 - **Torri di lire**: le lire si centrano su quella sotto (pile ordinate) e si impilano **fino a 30 piani**;
@@ -93,10 +105,11 @@ python -m http.server 8080     # poi apri http://localhost:8080
 
 ### ✅ Controlli automatici
 
-Nel repository ci sono **62 prove** che aprono il gioco in un browser vero (desktop, telefono e
+Nel repository ci sono **75 prove** che aprono il gioco in un browser vero (desktop, telefono e
 con un salvataggio di una versione vecchia) e controllano che parta senza errori, che il tavolo
-non si riempia mai, che le abilità si spengano, che la raffica non regali premi fuori scala e che
-il negozio funzioni anche al tocco:
+non si riempia mai, che la lira scenda sempre dalla fessura in fondo, che il ripiano la porti avanti
+e la lasci cadere, che nessuna lira resti intrappolata, che le abilità si spengano, che la raffica
+non regali premi fuori scala e che il negozio funzioni anche al tocco:
 
 ```bash
 npm i -D playwright three

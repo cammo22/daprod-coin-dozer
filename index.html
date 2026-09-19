@@ -351,7 +351,7 @@
 <div id="hud">
   <div class="marchio">
     <div class="logo">DaProd</div>
-    <div class="sub">SALA SLOT · <span id="versione">v1.4.0</span></div>
+    <div class="sub">SALA SLOT · <span id="versione">v1.5.0</span></div>
   </div>
   <div class="stat">
     <div class="box premi" id="boxPremi" title="Tocca per aprire il negozio">🏆 PREMI<b id="premi">30</b></div>
@@ -364,7 +364,7 @@
 <div id="combo"></div>
 <div id="carica"><div class="track"><i id="caricaBar"></i></div><span id="caricaTxt">CANNONE</span></div>
 <div id="taglioOra"><span id="taglioTxt">TAGLIO · L.100</span><span class="modo semplice" id="modoTxt">TIRO SEMPLICE</span></div>
-<div id="hint"><kbd>tocca</kbd> lancia · <b>tocca di nuovo un chip per spegnerlo</b> e tirare senza abilità</div>
+<div id="hint"><kbd>tocca</kbd> scegli la <b>colonna</b>: la lira scende sempre dalla fessura in fondo, sul ripiano che la porta avanti</div>
 <button id="apriNegozio" class="tondo">▲ <span class="tLungo">POTENZIAMENTI</span><span class="tCorto">NEGOZIO</span></button>
 <div id="abilita">
   <button class="chip" id="ch-cannone" title="Tieni premuto il tasto destro per caricare lo sparo"><span class="led"></span>💥 CANNONE <small id="ch-cannone-v"></small></button>
@@ -510,6 +510,10 @@ const costoCannonePot = (n) => Math.round(420 * Math.pow(2.2, n));
 const costoRaffica = (n) => (n <= 0 ? COSTO_RAFFICA : Math.round(COSTO_RAFFICA * Math.pow(2.3, n)));
 const rateRaffica = (n) => (n <= 0 ? 0 : 2.5 + 1.1 * n);  // lire al secondo a raffica (1 lira per colpo)
 const COMBO_BONUS_MAX = 5;                                // tetto al bonus combo: niente valanghe di premi
+// Le lire ora cadono a ondate regolari (una per corsa del ripiano): con la finestra
+// larga di prima la combo non si azzerava mai e il bonus restava sempre al massimo.
+// Cosi' invece la combo premia davvero l'ondata grossa.
+const COMBO_FINESTRA = 1500;
 const capCaricatore = (n) => 16 + 4 * n;                  // gettoni trasportabili nel caricatore
 const ricaricaGettoni = (n) => 1.2 + 0.55 * n;            // gettoni al secondo, sempre attivi
 const costoTaglio = (n) => (n <= 1 ? 900 : 6000);         // passaggio a L.500 e L.1000
@@ -517,7 +521,7 @@ const nomeTaglio = (n) => TAGLI[Math.max(0, Math.min(TAGLI.length - 1, n))].nome
 const fattoreForza = (n) => 1 + 0.25 * n;                 // moltiplicatore della spinta di lancio
 const lirePerLancio = (n) => 1 + n;                       // lire lanciate per click
 const forzaCannone = (n) => 1 + 0.5 * n;                  // potenza dello sparo
-const VERSIONE = 'v1.4.0';                                // mostrata nell'HUD per verificare gli aggiornamenti
+const VERSIONE = 'v1.5.0';                                // mostrata nell'HUD per verificare gli aggiornamenti
 const COSTO_FELTRO = { blu: 250, bordeaux: 700, notte: 1500 };
 const NOME_FELTRO = { verde: 'Verde DaProd', blu: 'Blu Royal', bordeaux: 'Bordeaux', notte: 'Notte Neon' };
 const PRESTIGIO_CANNONE = 1;
@@ -546,6 +550,15 @@ function texCanvas(lato, disegna) {
   const c = document.createElement('canvas');
   c.width = c.height = lato;
   disegna(c.getContext('2d'), lato);
+  const t = new THREE.CanvasTexture(c);
+  t.anisotropy = 4;
+  return t;
+}
+// versione rettangolare (serve alla fessura di lancio, larga e bassa)
+function texCanvasWH(larg, alt, disegna) {
+  const c = document.createElement('canvas');
+  c.width = larg; c.height = alt;
+  disegna(c.getContext('2d'), larg, alt);
   const t = new THREE.CanvasTexture(c);
   t.anisotropy = 4;
   return t;
@@ -622,28 +635,51 @@ const texTarga = texCanvas(512, (g, s) => {
 });
 
 // zona di lancio: bordo tratteggiato + strisce diagonali + scritta
-const texZona = texCanvas(512, (g, s) => {
-  g.clearRect(0, 0, s, s);
-  const gr = g.createLinearGradient(0, s, 0, 0);
-  gr.addColorStop(0, 'rgba(126,240,192,.16)');
-  gr.addColorStop(1, 'rgba(126,240,192,.05)');
+// FESSURA DI LANCIO: la striscia luminosa in fondo da cui scendono le lire
+const texZona = texCanvasWH(1024, 200, (g, w, h) => {
+  g.clearRect(0, 0, w, h);
+  const gr = g.createLinearGradient(0, h, 0, 0);
+  gr.addColorStop(0, 'rgba(126,240,192,.20)');
+  gr.addColorStop(1, 'rgba(126,240,192,.06)');
   g.fillStyle = gr;
-  g.beginPath(); g.roundRect(10, 10, s - 20, s - 20, 46); g.fill();
+  g.beginPath(); g.roundRect(8, 8, w - 16, h - 16, 52); g.fill();
   g.save();
-  g.beginPath(); g.roundRect(10, 10, s - 20, s - 20, 46); g.clip();
-  g.strokeStyle = 'rgba(126,240,192,.20)'; g.lineWidth = 16;
-  for (let i = -s; i < s * 2; i += 54) {
-    g.beginPath(); g.moveTo(i, s); g.lineTo(i + s, 0); g.stroke();
+  g.beginPath(); g.roundRect(8, 8, w - 16, h - 16, 52); g.clip();
+  g.strokeStyle = 'rgba(126,240,192,.22)'; g.lineWidth = 14;
+  for (let i = -h; i < w + h; i += 46) {
+    g.beginPath(); g.moveTo(i, h); g.lineTo(i + h, 0); g.stroke();
   }
   g.restore();
-  g.setLineDash([26, 18]);
-  g.strokeStyle = 'rgba(160,255,220,.95)'; g.lineWidth = 8;
-  g.beginPath(); g.roundRect(10, 10, s - 20, s - 20, 46); g.stroke();
+  g.setLineDash([24, 16]);
+  g.strokeStyle = 'rgba(160,255,220,.95)'; g.lineWidth = 7;
+  g.beginPath(); g.roundRect(8, 8, w - 16, h - 16, 52); g.stroke();
   g.setLineDash([]);
-  g.fillStyle = 'rgba(200,255,235,.85)';
+  g.fillStyle = 'rgba(205,255,238,.9)';
   g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.font = '900 40px -apple-system, Segoe UI, sans-serif';
-  g.fillText('ZONA DI LANCIO', s / 2, s * 0.5);
+  g.font = '900 62px -apple-system, Segoe UI, sans-serif';
+  g.fillText('▼  FESSURA DI LANCIO  ▼', w / 2, h / 2);
+});
+
+// piano del RIPIANO che scorre: acciaio spazzolato con le frecce del senso di marcia
+const texRipiano = texCanvas(512, (g, s) => {
+  const gr = g.createLinearGradient(0, 0, 0, s);
+  gr.addColorStop(0, '#6d7484'); gr.addColorStop(0.5, '#aeb6c6'); gr.addColorStop(1, '#7d8494');
+  g.fillStyle = gr; g.fillRect(0, 0, s, s);
+  g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 1;
+  for (let y = 0; y < s; y += 3) { g.beginPath(); g.moveTo(0, y); g.lineTo(s, y); g.stroke(); }
+  g.strokeStyle = 'rgba(20,26,40,.16)'; g.lineWidth = 2;
+  for (let y = 0; y < s; y += 46) { g.beginPath(); g.moveTo(0, y); g.lineTo(s, y); g.stroke(); }
+  // frecce: mostrano da che parte il ripiano porta le lire
+  g.fillStyle = 'rgba(30,38,56,.16)';
+  for (let x = 40; x < s; x += 128) {
+    for (let y = 70; y < s; y += 170) {
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + 46, y); g.lineTo(x + 23, y + 34); g.closePath(); g.fill();
+    }
+  }
+  g.fillStyle = 'rgba(28,36,54,.20)';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '900 34px -apple-system, Segoe UI, sans-serif';
+  g.fillText('DaProd', s / 2, s / 2);
 });
 
 // logo inciso sul feltro
@@ -764,9 +800,9 @@ renderer.domElement.addEventListener('touchend', (e) => {
 const ambient = new THREE.AmbientLight(0x8899bb, 0.4);
 scene.add(ambient);
 
-const spot = new THREE.SpotLight(0xffddaa, 80, 30, Math.PI/4, 0.4, 1);
-spot.position.set(0, 14, 2);
-spot.target.position.set(0, 0, 0);
+const spot = new THREE.SpotLight(0xffddaa, 78, 32, Math.PI/4, 0.45, 1);
+spot.position.set(0, 14, -1);
+spot.target.position.set(0, 0, -2.6);   // il faro punta sulla pila, non sul ripiano
 spot.castShadow = true;
 spot.shadow.mapSize.set(TATTILE ? 512 : 1024, TATTILE ? 512 : 1024);
 spot.shadow.camera.near = 5;
@@ -796,8 +832,8 @@ const logoFeltro = new THREE.Mesh(
   new THREE.PlaneGeometry(5, 2.5),
   new THREE.MeshBasicMaterial({ map: texLogoFeltro, transparent: true, opacity: 0.5, depthWrite: false })
 );
-logoFeltro.rotation.x = -Math.PI / 2;
-logoFeltro.position.set(0, 0.005, 2.6);
+logoFeltro.rotation.set(-Math.PI / 2, 0, Math.PI);   // idem: la scritta va raddrizzata
+logoFeltro.position.set(0, 0.005, -3.4);              // sul campo di gioco, dove si vede
 scene.add(logoFeltro);
 
 // ============ SPONDE (spigoli arrotondati) ============
@@ -814,39 +850,86 @@ function creaSponda(larg, prof, x, z) {
 }
 creaSponda(0.3, 10, -4.15, 0);
 creaSponda(0.3, 10, 4.15, 0);
-const spondaFondo = creaSponda(8, 0.3, 0, 5.15);
+const spondaFondo = creaSponda(8, 0.3, 0, 5.05);
 
-// targa neon DaProd sul retro
+// MURO DI FONDO: la parete della macchina. Nasconde la coda del ripiano che scorre
+// (il ripiano entra ed esce da sotto il muro, come nelle macchine vere) e regge la targa.
+// il muro è alto perché il ripiano, a corsa finita, esce all'indietro da sotto di lui:
+// la coda deve restare nascosta da qualunque inquadratura (anche da telefono in verticale)
+const MURO_H = 1.6;
+const muroFondo = new THREE.Mesh(
+  new THREE.BoxGeometry(8.3, MURO_H, 0.34),
+  new THREE.MeshStandardMaterial({ color: 0x1d1410, roughness: 0.78, metalness: 0.12 })
+);
+muroFondo.position.set(0, MURO_H / 2, 5.06);
+muroFondo.castShadow = false;
+muroFondo.receiveShadow = true;
+scene.add(muroFondo);
+
+// filo di luce sul bordo alto del muro
+const filoMuro = new THREE.Mesh(
+  new THREE.BoxGeometry(8.3, 0.05, 0.36),
+  new THREE.MeshBasicMaterial({ color: 0x66e6ff, transparent: true, opacity: 0.7 })
+);
+filoMuro.position.set(0, MURO_H, 5.06);
+scene.add(filoMuro);
+
+// targa neon DaProd, ALZATA sopra il muro di fondo
 const targa = new THREE.Mesh(
-  new THREE.PlaneGeometry(3.2, 3.2),
+  new THREE.PlaneGeometry(3.8, 3.8),
   new THREE.MeshBasicMaterial({ map: texTarga, transparent: true, depthWrite: false })
 );
 targa.rotation.y = Math.PI;
-targa.position.set(0, 0.52, 4.98);
+targa.position.set(0, MURO_H + 0.85, 5.22);
 scene.add(targa);
 
-// ============ PUSHER (piastra orizzontale, lenta) ============
-const PLATE_D = 1.1;        // profondità piastra (lungo Z)
-const PUSHER_SPEED = 0.8;   // velocità lenta, come nella macchina vera
-const PUSHER_MIN = 1.7;     // corsa in avanti solo ~40% di prima: la piastra resta quasi al fondo
-const PUSHER_MAX = 4.45;    // a riposo la piastra tocca la sponda di fondo
+// ============ RIPIANO CHE SCORRE (la piastra del dozer) ============
+// Ora è un vero RIPIANO RIALZATO che arriva fino in fondo alla macchina: le lire
+// cadono sempre là dietro, sopra al ripiano. Quando il ripiano avanza se le porta
+// dietro; quando torna indietro sfila via da sotto e le lire CADONO giù sul tavolo,
+// dove la faccia del ripiano le spinge verso il bordo dei premi.
+const ALTEZZA_PIASTRA = 0.34;   // quota del piano d'appoggio superiore
+const PLATE_D = 4.0;            // profondità: copre tutto il fondo, la coda sta dietro al muro
+const PUSHER_SPEED = 1.7;       // velocità della corsa
+// CORSA LUNGA: prima la faccia spingeva solo fra z 1,15 e 3,9, cioè DIETRO alla pila
+// (che sta fra -5 e 1): non la toccava mai. Le lire si ammucchiavano davanti e il
+// fondo restava vuoto. Ora la faccia attraversa il tavolo e spinge davvero la pila.
+const FRONTE_AVANTI = -0.6;     // dove arriva la faccia quando spinge (dentro la pila)
+const FRONTE_INDIETRO = 1.6;    // dove torna la faccia (corsa = 2,2)
+const PUSHER_MIN = FRONTE_AVANTI + PLATE_D / 2;
+const PUSHER_MAX = FRONTE_INDIETRO + PLATE_D / 2;
+// le lire scendono SEMPRE qui dietro: il ripiano copre questa fascia in ogni momento
+const Z_LANCIO = 2.5;
+const X_LANCIO_MAX = 3.5;       // si sceglie solo la posizione orizzontale
+const limitaX = (x) => Math.max(-X_LANCIO_MAX, Math.min(X_LANCIO_MAX, x));
 
-const pusherGeo = geoArrotondata(7.9, PLATE_D, 0.12, 0.30);
+const pusherGeo = geoArrotondata(7.9, PLATE_D, ALTEZZA_PIASTRA, 0.30);
 const pusherMat = new THREE.MeshStandardMaterial({
-  color: 0xb9bfcc, roughness: 0.22, metalness: 0.95
+  map: texRipiano, color: 0x8b93a4, roughness: 0.48, metalness: 0.68
 });
+// RIPIANO FISSO: la parte di fondo non si muove mai, così dietro alla fessura non
+// resta mai un buco scoperto. Il ripiano mobile entra ed esce da sotto di lui.
+const DECK_Z0 = 3.0, DECK_Z1 = 5.06, ALTEZZA_DECK = ALTEZZA_PIASTRA + 0.02;
+const ripianoFisso = new THREE.Mesh(
+  new THREE.BoxGeometry(7.9, ALTEZZA_DECK, DECK_Z1 - DECK_Z0),
+  new THREE.MeshStandardMaterial({ map: texRipiano, color: 0x6a7181, roughness: 0.5, metalness: 0.7 })
+);
+ripianoFisso.position.set(0, ALTEZZA_DECK / 2, (DECK_Z0 + DECK_Z1) / 2);
+ripianoFisso.receiveShadow = true;
+scene.add(ripianoFisso);
+
 const pusher = new THREE.Mesh(pusherGeo, pusherMat);
-pusher.position.set(0, 0.12, PUSHER_MAX);
+pusher.position.set(0, ALTEZZA_PIASTRA, PUSHER_MAX);
 pusher.castShadow = true;
 pusher.receiveShadow = true;
 scene.add(pusher);
 
 // bordo luminoso della piastra (segna la faccia che spinge)
 const bordoPiastra = new THREE.Mesh(
-  new THREE.BoxGeometry(7.3, 0.05, 0.07),
-  new THREE.MeshBasicMaterial({ color: 0x66e6ff, transparent: true, opacity: 0.85 })
+  new THREE.BoxGeometry(7.5, 0.06, 0.10),
+  new THREE.MeshBasicMaterial({ color: 0x66e6ff, transparent: true, opacity: 0.95 })
 );
-bordoPiastra.position.set(0, 0.005, -PLATE_D / 2 + 0.05);
+bordoPiastra.position.set(0, 0.01, -PLATE_D / 2 + 0.06);
 pusher.add(bordoPiastra);
 
 let pusherZ = PUSHER_MAX;
@@ -863,7 +946,10 @@ const TAGLI = [
 ];
 const TAGLIO_PREDEFINITO = 1;                       // si lanciano lire da L.100
 const LIVELLI_TORRE_MAX = 30;                       // TORRI FINO A 30 PIANI
-const LIRE_INIZIALI = 96;                            // pila iniziale mista, come nella macchina vera
+// Pila FITTA: in una macchina vera il campo è pieno di monete appoggiate una all'altra,
+// ed è proprio quella densità che fa viaggiare la spinta del ripiano fino al bordo.
+// Con poche lire sparse la spinta si perdeva dopo due monete.
+const LIRE_INIZIALI = 150;
 // Tetto MORBIDO delle lire in scena: NON blocca mai il lancio. Quando si supera, le lire
 // in fondo al tavolo (le più lontane dal bordo dei premi) tornano da sole in cassa ♻️
 const MAX_LIRE = TATTILE ? 170 : 300;
@@ -918,19 +1004,27 @@ function taglio(i) {
 }
 TAGLI.forEach((t, i) => taglio(i)); // prepara tutti i tagli all'avvio
 
-// ============ ZONA DI LANCIO + MIRINO ============
-const ZONA = { minX: -3.8, maxX: 3.8, minZ: -4.8, maxZ: 3.8 };
+// ============ FESSURA DI LANCIO + MIRINO ============
+// Non si sceglie più la profondità: si sceglie SOLO la colonna (la x). La lira scende
+// sempre dalla fessura in fondo, sopra al ripiano che scorre.
 const zonaMat = new THREE.MeshBasicMaterial({
-  map: texZona, transparent: true, opacity: 0.5, depthWrite: false,
+  map: texZona, transparent: true, opacity: 0.55, depthWrite: false,
   blending: THREE.AdditiveBlending
 });
-const zonaMesh = new THREE.Mesh(
-  new THREE.PlaneGeometry(ZONA.maxX - ZONA.minX - 0.4, ZONA.maxZ - ZONA.minZ - 0.6),
-  zonaMat
-);
-zonaMesh.rotation.x = -Math.PI / 2;
-zonaMesh.position.set((ZONA.minX + ZONA.maxX) / 2, 0.010, (ZONA.minZ + ZONA.maxZ) / 2);
+const zonaMesh = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 1.2), zonaMat);
+// rotazione di 180° nel proprio piano: altrimenti la scritta si legge capovolta
+zonaMesh.rotation.set(-Math.PI / 2, 0, Math.PI);
+zonaMesh.position.set(0, ALTEZZA_PIASTRA + 0.03, Z_LANCIO);
 scene.add(zonaMesh);
+
+// guida verticale: mostra la COLONNA in cui cadrà la lira
+const guidaMat = new THREE.MeshBasicMaterial({
+  color: 0x7ef0c0, transparent: true, opacity: 0.30, depthWrite: false,
+  blending: THREE.AdditiveBlending, side: THREE.DoubleSide
+});
+const guida = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 4.2), guidaMat);
+guida.position.set(0, ALTEZZA_PIASTRA + 2.1, Z_LANCIO);
+scene.add(guida);
 
 const mirinoMat = new THREE.MeshBasicMaterial({
   color: 0x7ef0c0, transparent: true, opacity: 0.95,
@@ -938,7 +1032,7 @@ const mirinoMat = new THREE.MeshBasicMaterial({
 });
 const mirino = new THREE.Mesh(new THREE.RingGeometry(0.46, 0.56, 48), mirinoMat);
 mirino.rotation.x = -Math.PI / 2;
-mirino.position.y = 0.014;
+mirino.position.set(0, ALTEZZA_PIASTRA + 0.05, Z_LANCIO);
 scene.add(mirino);
 
 const liraFantasma = new THREE.Mesh(taglio(TAGLIO_PREDEFINITO).geo, new THREE.MeshBasicMaterial({
@@ -1029,6 +1123,8 @@ function riciclaEccesso() {
       if (!m.attiva) continue;
       if (!ripiego || m.mesh.position.z > ripiego.mesh.position.z) ripiego = m;
       if (!m.aTerra || m.proiettile) continue;
+      // mai quelle appena scese sul ripiano: sparirebbero sotto gli occhi del giocatore
+      if (m.mesh.position.y > ALTEZZA_PIASTRA - 0.05) continue;
       if (!scelta || m.mesh.position.z > scelta.mesh.position.z) scelta = m;
     }
     if (!scelta) scelta = ripiego;
@@ -1046,10 +1142,10 @@ const TAGLIO_PILA = [0, 0, 1, 1, 1, 2, 2, 3];   // 50, 100, 500, 1000 → più p
 function taglioACasoDallaPila() {
   return TAGLIO_PILA[Math.floor(Math.random() * TAGLIO_PILA.length)];
 }
-for (let riga = 0; riga < 8 && lire.length < LIRE_INIZIALI; riga++) {
-  const zb = -4.5 + riga * 0.72;
-  for (let k = 0; k < 9 && lire.length < LIRE_INIZIALI; k++) {
-    creaLira(-3.4 + k * 0.78 + (Math.random() - 0.5) * 0.15, 0.08, zb + (Math.random() - 0.5) * 0.12,
+for (let riga = 0; riga < 9 && lire.length < LIRE_INIZIALI; riga++) {
+  const zb = -4.6 + riga * 0.6;
+  for (let k = 0; k < 10 && lire.length < LIRE_INIZIALI; k++) {
+    creaLira(-3.5 + k * 0.72 + (Math.random() - 0.5) * 0.12, 0.08, zb + (Math.random() - 0.5) * 0.09,
       { taglio: taglioACasoDallaPila() });
   }
 }
@@ -1074,17 +1170,21 @@ let cooldownSparo = 0;     // secondi di ricarica del cannone
 const COOLDOWN = 240;      // ms tra due lanci normali
 const SPARO_MAX = 1.1;     // secondi per caricare al massimo
 
+// Si mira SOLO in orizzontale: conta la colonna (x), la profondità è sempre la fessura
+// in fondo. Si può toccare ovunque sul tavolo, anche davanti: vale la colonna toccata.
+const pianoMira = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.2);
+const puntoMira = new THREE.Vector3();
 function aggiornaPuntatore(e) {
   mouse.x = (e.clientX / innerWidth) * 2 - 1;
   mouse.y = -(e.clientY / innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
-  const hit = raycaster.intersectObject(tavolo)[0];
-  if (hit) {
-    puntatore.x = hit.point.x;
-    puntatore.z = hit.point.z;
+  const p = raycaster.ray.intersectPlane(pianoMira, puntoMira);
+  if (p && isFinite(p.x)) {
+    puntatore.x = limitaX(p.x);
+    puntatore.z = Z_LANCIO;
     puntatore.visibile = true;
-    puntatore.dentro = puntatore.x > ZONA.minX + 0.2 && puntatore.x < ZONA.maxX - 0.2 &&
-                        puntatore.z > ZONA.minZ + 0.2 && puntatore.z < ZONA.maxZ - 0.2;
+    // margine generoso: basta toccare vicino alla macchina, la colonna viene limitata
+    puntatore.dentro = Math.abs(p.x) < X_LANCIO_MAX + 1.4 && p.z > -7 && p.z < 9;
   } else {
     puntatore.visibile = false;
     puntatore.dentro = false;
@@ -1141,7 +1241,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
       elCarica.classList.remove('attiva');
       const potenza = carica;
       carica = 0;
-      if (potenza > 0.12 && puntatore.dentro) sparaCannone(puntatore.x, puntatore.z, potenza);
+      if (potenza > 0.12 && puntatore.dentro) sparaCannone(puntatore.x, potenza);
     }
     return;
   }
@@ -1160,7 +1260,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
     carica = 0;
     // tocco veloce: invece di non fare nulla, parte un lancio normale
     if (puntatore.dentro) {
-      if (potenza > 0.12) sparaCannone(puntatore.x, puntatore.z, potenza);
+      if (potenza > 0.12) sparaCannone(puntatore.x, potenza);
       else lanciaDalPuntatore();
     }
     return;
@@ -1174,7 +1274,7 @@ renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
 // lancio normale delle lire (multi-lancio passivo: sempre attivo)
 function lanciaDalPuntatore(daRaffica = false) {
   if (!puntatore.visibile || !puntatore.dentro) {
-    if (!daRaffica) { suono.errore(); avviso('Lancia dentro la zona illuminata'); }
+    if (!daRaffica) { suono.errore(); avviso('Tocca il tavolo per scegliere la colonna'); }
     return;
   }
   const ora = performance.now();
@@ -1189,9 +1289,9 @@ function lanciaDalPuntatore(daRaffica = false) {
     inRaffica = false;
     return;
   }
-  const spargi = daRaffica ? 0.35 : 0.55;
+  const spargi = daRaffica ? 0.3 : 0.5;
   for (let i = 0; i < n; i++) {
-    const m = lanciaLira(puntatore.x + (Math.random() - 0.5) * spargi, puntatore.z + (Math.random() - 0.5) * spargi);
+    const m = lanciaLira(puntatore.x + (Math.random() - 0.5) * spargi);
     // FORZA: abilità passiva. A raffica la spinta è ridotta: tante lire non devono
     // trasformarsi in una valanga che butta giù mezzo tavolo in un colpo solo.
     m.spinta = 0.25 * stato.pot.forza * (daRaffica ? 0.45 : 1);
@@ -1206,31 +1306,33 @@ function lanciaDalPuntatore(daRaffica = false) {
 }
 
 // sparo del cannone: lira pesante che travolge la pila (costa 1 gettone)
-function sparaCannone(x, z, potenza) {
+function sparaCannone(x, potenza) {
   if (stato.gettoni < 1) { suono.errore(); avviso('CARICATORE IN RICARICA…'); return; }
   riciclaEccesso();                          // il tavolo fa spazio da solo: lo sparo non si rifiuta mai
   stato.gettoni -= 1;
   stato.totLanci += 1;
-  const m = lanciaLira(x, z, true);
+  const m = lanciaLira(x, true);
   m.proiettile = true;
   m.spinta = forzaCannone(stato.pot.cannonePot) * (0.7 + potenza);
   m.vy = -6 - 12 * potenza;
   cooldownSparo = 2.6;
   suono.cannone();
   scossa(0.5 + 0.6 * potenza);
-  particelle(x, 0.4, z, 14, 0xffc857, 1.4);
+  particelle(x, ALTEZZA_PIASTRA + 0.4, Z_LANCIO, 14, 0xffc857, 1.4);
   avviso('CANNONE ' + Math.round(potenza * 100) + '%');
   aggiornaHUD();
   salvaPartita();
 }
 
-function lanciaLira(x, z, proiettile = false) {
+function lanciaLira(x, proiettile = false) {
   // la lira lanciata è del TAGLIO scelto (potenziamento TAGLIO); il cannone usa un taglio più grande
   const indice = proiettile ? Math.min(TAGLI.length - 1, stato.pot.taglio + 1) : stato.pot.taglio;
-  const m = creaLira(x, proiettile ? 7.6 : 6, z, { volo: true, taglio: indice });
-  m.vx = (Math.random() - 0.5) * 0.4;
+  // la profondità non si sceglie: si scende sempre dalla fessura in fondo, sopra al ripiano
+  const z = Z_LANCIO + (Math.random() - 0.5) * 0.5;
+  const m = creaLira(limitaX(x), proiettile ? 7.6 : 6, z, { volo: true, taglio: indice });
+  m.vx = (Math.random() - 0.5) * 0.25;
   m.vy = -1; // solo verso il basso, mai verso l'alto
-  m.vz = (Math.random() - 0.5) * 0.4;
+  m.vz = (Math.random() - 0.5) * 0.25;
   m.rx = (Math.random() - 0.5) * 0.4;
   m.rz = (Math.random() - 0.5) * 0.4;
   m.wx = (Math.random() - 0.5) * 1.2;
@@ -1241,8 +1343,11 @@ function lanciaLira(x, z, proiettile = false) {
 // ============ FISICA ============
 const G = 14;               // gravità (solo verso il basso)
 const AIR_DRAG = 0.2;       // attrito aria
-const GROUND_FRICTION = 8;  // forte attrito sul tavolo: la pila resta ferma se non è spinta
+// Attrito del tavolo. Era così forte (8) che una lira spinta si fermava dopo pochi
+// centimetri: la spinta non arrivava mai alle lire davanti e la pila non si muoveva.
+const GROUND_FRICTION = 5;
 const V_MAX = 8;
+const ITERAZIONI_CONTATTO = 3;   // giri di separazione: fanno viaggiare la spinta nella pila
 
 // ---------- GRIGLIA SPAZIALE ----------
 // Prima ogni lira veniva confrontata con TUTTE le altre (n×n): con 300 lire erano
@@ -1281,12 +1386,19 @@ function aggiornaFisica(dt) {
   // --- Piastra: avanti e indietro, lentamente ---
   pusherZ += pusherDir * PUSHER_SPEED * dt;
   if (pusherZ > PUSHER_MAX) { pusherZ = PUSHER_MAX; pusherDir = -1; }
-  if (pusherZ < PUSHER_MIN) { pusherZ = PUSHER_MIN; pusherDir = 1; }
+  if (pusherZ < PUSHER_MIN) {
+    pusherZ = PUSHER_MIN; pusherDir = 1;
+    // fine della spinta: la combo riparte. Così premia l'ONDATA grossa e non il
+    // gocciolio continuo (con il flusso costante non si azzerava mai e regalava
+    // il bonus massimo su ogni singola lira).
+    combo = 0;
+  }
   pusherVel = pusherDir * PUSHER_SPEED;
   pusher.position.z = pusherZ;
 
   const halfD = PLATE_D / 2;
-  const face = pusherZ - halfD; // faccia anteriore della piastra
+  const fronteRipiano = pusherZ - halfD;   // faccia che spinge
+  const retroRipiano = pusherZ + halfD;    // coda, sempre dietro al muro di fondo
 
   // 2 sotto-passi per collisioni più stabili
   const sub = 2;
@@ -1320,13 +1432,16 @@ function aggiornaFisica(dt) {
       const p = m.mesh.position;
       let restY = m.h / 2;               // superficie del tavolo (ogni taglio ha il suo spessore)
       let appoggio = null;
-      // sopra la piastra le lire viaggiano con lei
-      if (Math.abs(p.x) < 3.95 && p.z > pusherZ - halfD && p.z < pusherZ + halfD) restY = 0.12 + m.h / 2;
+      // sopra il RIPIANO (mobile o fisso): le lire poggiano un gradino più in alto
+      if (Math.abs(p.x) < 3.95) {
+        if (p.z > DECK_Z0 && p.z < DECK_Z1) restY = ALTEZZA_DECK + m.h / 2;
+        else if (p.z > fronteRipiano && p.z < retroRipiano) restY = ALTEZZA_PIASTRA + m.h / 2;
+      }
       const vic = cercaVicine(p.x, p.z);
       for (let j = 0; j < vic.length; j++) {
         const o = vic[j];
         if (o.rango >= i) continue;                           // guardo solo chi sta più in basso
-        const rSup = (m.r + o.r) * 0.78;                      // ogni taglio ha il suo raggio
+        const rSup = (m.r + o.r) * 0.62;                      // ci si appoggia sopra solo se si è davvero sopra
         const dx = p.x - o.mesh.position.x, dz = p.z - o.mesh.position.z;
         if (dx * dx + dz * dz >= rSup * rSup) continue;
         if (o.livello >= LIVELLI_TORRE_MAX) continue;         // tetto della torre: 30 piani
@@ -1364,27 +1479,56 @@ function aggiornaFisica(dt) {
         const fr = Math.exp(-GROUND_FRICTION * h);
         m.vx *= fr; m.vz *= fr;
         if (Math.hypot(m.vx, m.vz) < 0.02) { m.vx = 0; m.vz = 0; }
-        // TORRI: la lira si centra su quella che ha sotto (pile ordinate e soddisfacenti)
+        // Appoggio su un'altra lira. Prima si "incollavano" fra loro: qualsiasi lira
+        // che sfiorava un'altra le saltava sopra e ci scivolava in mezzo di scatto.
+        // Ora chi poggia storta, sul bordo, SCIVOLA GIÙ; solo chi è ben centrata si
+        // assesta, e piano, così la pila resta ordinata senza effetto calamita.
         if (m.sotto && m.sotto.attiva) {
-          const k = Math.min(1, 6 * h);
-          p.x += (m.sotto.mesh.position.x - p.x) * k;
-          p.z += (m.sotto.mesh.position.z - p.z) * k;
+          const dx = p.x - m.sotto.mesh.position.x;
+          const dz = p.z - m.sotto.mesh.position.z;
+          const d = Math.hypot(dx, dz);
+          const limite = (m.r + m.sotto.r) * 0.30;
+          if (d > limite && d > 0.0001) {
+            const spinta = 2.2 * h / d;       // sta in bilico: cade dalla parte sbagliata
+            m.vx += dx * spinta;
+            m.vz += dz * spinta;
+          } else if (d > 0.0001) {
+            const k = Math.min(1, 2.0 * h);   // ben appoggiata: si centra dolcemente
+            p.x -= dx * k;
+            p.z -= dz * k;
+          }
         }
       } else {
         const fr = Math.exp(-AIR_DRAG * h);
         m.vx *= fr; m.vz *= fr;
       }
 
-      // Piastra: TRASPORTA le lire che poggiano sopra, SPINGE la pila davanti a sé
-      const sopraPiastra = p.y > 0.10 && p.y < 1.10 &&
-        Math.abs(p.x) < 3.95 && p.z > pusherZ - halfD && p.z < pusherZ + halfD;
-      if (sopraPiastra) {
-        p.z += pusherVel * h;
-        m.vz = pusherVel;
-      } else if (pusherVel < 0 && p.y < 0.12 &&
-                 p.z > face - m.r && p.z < pusherZ + halfD) {
-        // la faccia spinge la pila lentamente in avanti
-        p.z = face - m.r;
+      // Sul RIPIANO FISSO non spinge nessuno: senza un filo di pendenza una lira
+      // finita lì dietro (un rimbalzo, un colpo di cannone) ci restava per sempre.
+      // Così invece scivola da sola sul ripiano mobile e rientra in gioco.
+      if (m.aTerra && p.z >= DECK_Z0 && p.y > ALTEZZA_PIASTRA - 0.05) m.vz -= 4.0 * h;
+
+      // ---- IL MECCANISMO DEL DOZER ----
+      // Sul RIPIANO: quando avanza se le porta dietro; quando torna indietro il ripiano
+      // sfila via da sotto (il muro di fondo le trattiene) e le lire restano dove sono.
+      // Così ogni corsa le porta un po' più avanti finché il bordo del ripiano le
+      // abbandona e CADONO GIÙ sul tavolo, dove la faccia del ripiano le spinge.
+      const sopraRipiano = m.aTerra && p.y > ALTEZZA_PIASTRA - 0.05 && p.z < DECK_Z0 &&
+        Math.abs(p.x) < 3.95 && p.z > fronteRipiano && p.z < retroRipiano;
+      if (sopraRipiano) {
+        if (pusherVel < 0) {
+          // corsa in avanti: le lire viaggiano ALLA STESSA velocità del ripiano.
+          // (prima si sommavano velocità e spostamento: correvano al doppio e finivano
+          // sempre troppo avanti rispetto a dove le avevi lasciate cadere)
+          m.vz = Math.min(m.vz, pusherVel);
+        } else if (m.vz > 0) {
+          // corsa di ritorno: il ripiano scivola via da sotto, le lire non tornano indietro
+          m.vz = 0;
+        }
+      } else if (pusherVel < 0 && p.y < ALTEZZA_PIASTRA &&
+                 p.z > fronteRipiano - m.r && p.z < retroRipiano) {
+        // sul tavolo: la faccia del ripiano spinge la pila verso il bordo dei premi
+        p.z = fronteRipiano - m.r;
         m.vz = Math.min(m.vz, pusherVel);
       }
 
@@ -1395,30 +1539,35 @@ function aggiornaFisica(dt) {
     }
 
     // 4) collisione lira-lira (solo a pari altezza: chi sta sopra non viene spinto di lato)
-    for (let i = 0; i < attive.length; i++) {
-      const a = attive[i];
-      const pa = a.mesh.position;
-      const vic = cercaVicine(pa.x, pa.z);
-      for (let j = 0; j < vic.length; j++) {
-        const b = vic[j];
-        if (b.rango <= i) continue;                       // ogni coppia si guarda una volta sola
-        const pb = b.mesh.position;
-        const minD = (a.r + b.r) * 0.98;                  // ogni taglio ha il suo diametro
-        if (Math.abs(pa.y - pb.y) > (a.h + b.h) * 0.34) continue;
-        const dx = pa.x - pb.x;
-        const dz = pa.z - pb.z;
-        const d2 = dx * dx + dz * dz;
-        if (d2 >= minD * minD || d2 < 1e-8) continue;
-        const dist = Math.sqrt(d2);
-        const nx = dx / dist, nz = dz / dist;
-        const overlap = (minD - dist) / 2;
-        pa.x += nx * overlap; pa.z += nz * overlap;
-        pb.x -= nx * overlap; pb.z -= nz * overlap;
-        const rvn = (a.vx - b.vx) * nx + (a.vz - b.vz) * nz;
-        if (rvn < 0) {
-          const imp = rvn * 0.55;
-          a.vx -= nx * imp; a.vz -= nz * imp;
-          b.vx += nx * imp; b.vz += nz * imp;
+    // Si ripete piu' volte: cosi' la spinta del ripiano ATTRAVERSA la pila di lira in
+    // lira, come nella macchina vera, invece di fermarsi alla prima che tocca.
+    for (let giro = 0; giro < ITERAZIONI_CONTATTO; giro++) {
+      for (let i = 0; i < attive.length; i++) {
+        const a = attive[i];
+        const pa = a.mesh.position;
+        const vic = cercaVicine(pa.x, pa.z);
+        for (let j = 0; j < vic.length; j++) {
+          const b = vic[j];
+          if (b.rango <= i) continue;                       // ogni coppia si guarda una volta sola
+          const pb = b.mesh.position;
+          const minD = (a.r + b.r) * 0.98;                  // ogni taglio ha il suo diametro
+          if (Math.abs(pa.y - pb.y) > (a.h + b.h) * 0.34) continue;
+          const dx = pa.x - pb.x;
+          const dz = pa.z - pb.z;
+          const d2 = dx * dx + dz * dz;
+          if (d2 >= minD * minD || d2 < 1e-8) continue;
+          const dist = Math.sqrt(d2);
+          const nx = dx / dist, nz = dz / dist;
+          const overlap = (minD - dist) / 2;
+          pa.x += nx * overlap; pa.z += nz * overlap;
+          pb.x -= nx * overlap; pb.z -= nz * overlap;
+          if (giro > 0) continue;                           // l'urto si conta una volta sola
+          const rvn = (a.vx - b.vx) * nx + (a.vz - b.vz) * nz;
+          if (rvn < 0) {
+            const imp = rvn * 0.55;
+            a.vx -= nx * imp; a.vz -= nz * imp;
+            b.vx += nx * imp; b.vz += nz * imp;
+          }
         }
       }
     }
@@ -1464,8 +1613,8 @@ function mostraCombo(n) {
 function vinciLira(m) {
   const pos = m.mesh.position;
   const ora = performance.now();
-  combo = (ora - comboScadenza < 2600) ? combo + 1 : 1;
-  comboScadenza = ora + 2600;
+  combo = (ora - comboScadenza < COMBO_FINESTRA) ? combo + 1 : 1;
+  comboScadenza = ora + COMBO_FINESTRA;
   stato.comboMax = Math.max(stato.comboMax, combo);
   // il valore dipende dal TAGLIO della lira vinta (50→1, 100→2, 500→5, 1000→10)
   const guadagno = (m.premio || 1) + Math.min(COMBO_BONUS_MAX, Math.floor(combo / 5));
@@ -1622,7 +1771,7 @@ function testoVolante(x, y, z, testo, classe = '') {
   setTimeout(() => { d.remove(); floaterAttivi--; }, 1100);
 }
 function avviso(testo) {
-  testoVolante(0, 0.5, 1, testo, 'bonus');
+  testoVolante(0, 1.5, 1.2, testo, 'bonus');
 }
 let scossaForza = 0;
 function scossa(f) { scossaForza = Math.max(scossaForza, f); }
@@ -1684,7 +1833,7 @@ const chipAbilita = [
   { id: 'audio', sbloccata: () => true, nota: () => (stato.audio ? 'ON' : 'OFF') }
 ];
 const PASSIVE = [
-  { nome: '💪 FORZA DI LANCIO', valore: () => 'x' + fmt(fattoreForza(stato.pot.forza)), desc: 'Ogni lira lanciata colpisce la pila e la spinge verso il bordo.' },
+  { nome: '💪 FORZA DI LANCIO', valore: () => 'x' + fmt(fattoreForza(stato.pot.forza)), desc: 'Ogni lira che scende colpisce e spinge in avanti quelle sul ripiano.' },
   { nome: '✨ MULTI-LANCIO', valore: () => lirePerLancio(stato.pot.multi) + ' lire', desc: 'Più lire per click: si compra e resta sempre attiva.' },
   { nome: '🪙 RICARICA GETTONI', valore: () => fmt(ricaricaGettoni(stato.pot.idle)) + '/s', desc: 'Il caricatore si riempie da solo: i gettoni sono infiniti.' },
   { nome: '🏗️ TORRI DI LIRE', valore: () => 'record x' + (stato.torreRecord || 1), desc: 'Bonus automatico dal 4° piano fino a 30 piani.' }
@@ -1791,7 +1940,7 @@ function rendiNegozio() {
       lv: p.idle, max: LIVELLI_MAX.idle, costo: costoIdle(p.idle), max2: p.idle >= LIVELLI_MAX.idle });
     html += riga({ id: 'forza', icona: '💪', nome: 'FORZA DI LANCIO <em>PASSIVA</em>',
       extra: 'x' + fmt(fattoreForza(p.forza)),
-      desc: 'Le lire lanciate colpiscono più forte: all\'impatto spingono la pila verso il bordo di caduta. Vale sempre, senza interruttori.',
+      desc: 'Le lire lanciate arrivano più forte: all\'impatto spingono in avanti quelle già sul ripiano. Vale sempre, senza interruttori.',
       lv: p.forza, max: LIVELLI_MAX.forza, costo: costoForza(p.forza), max2: p.forza >= LIVELLI_MAX.forza });
     html += riga({ id: 'multi', icona: '✨', nome: 'MULTI-LANCIO <em>PASSIVO</em>',
       extra: lirePerLancio(p.multi) + ' lire per click',
@@ -1800,20 +1949,20 @@ function rendiNegozio() {
     html += titolo('💥 ATTIVE · una per volta');
     html += riga({ id: 'raffica', icona: '⚡', nome: 'RAFFICA',
       extra: p.raffica > 0 ? rateRaffica(p.raffica).toFixed(0) + ' lire/s' : 'da sbloccare',
-      desc: 'Tieni premuto il tasto sinistro e le lire partono una dietro l\'altra verso la pila, senza fermarti.',
+      desc: 'Tieni premuto e le lire scendono dalla fessura una dietro l\'altra, senza fermarti.',
       lv: p.raffica, max: LIVELLI_MAX.raffica, costo: costoRaffica(p.raffica), max2: p.raffica >= LIVELLI_MAX.raffica });
     html += riga({ id: 'cannonePot', icona: '💥', nome: 'POTENZA CANNONE',
       extra: stato.sbloccati.cannone ? 'x' + fmt(forzaCannone(p.cannonePot)) : 'da sbloccare',
-      desc: 'Rende più violento lo sparo: tieni premuto il tasto destro per caricare, rilascia per sparare.',
+      desc: 'Rende più violento lo sparo: la lira piomba sul ripiano e butta giù sul campo quelle che trova. Tieni premuto per caricare, rilascia per sparare.',
       lv: p.cannonePot, max: LIVELLI_MAX.cannonePot, costo: costoCannonePot(p.cannonePot),
       max2: p.cannonePot >= LIVELLI_MAX.cannonePot, bloccato: !stato.sbloccati.cannone });
   } else if (schedaAttiva === 'sblocca') {
     html += riga({ id: 'cannone', icona: '🔫', nome: 'CANNONE', extra: stato.sbloccati.cannone ? 'SBLOCCATO' : 'ABILITÀ NUOVA',
-      desc: 'Tieni premuto il tasto destro: si carica lo sparo che travolge la pila di lire.',
+      desc: 'Tieni premuto il tasto destro: si carica uno sparo che piomba sul ripiano e travolge le lire che ci trova.',
       costo: COSTO_CANNONE, max2: stato.sbloccati.cannone });
     html += riga({ id: 'torriInfo', icona: '🏗️', nome: 'TORRI FINO A 30 PIANI <em>PASSIVA</em>',
       extra: 'record attuale x' + (stato.torreRecord || 1) + ' / 30',
-      desc: 'Le lire si impilano una sull\'altra fino a 30 piani! Dal 4° piano ogni torre paga un extra: più alta è, più premi regala.',
+      desc: 'Le lire si impilano una sull\'altra fino a 30 piani! Dal 4° piano ogni torre paga un extra: più alta è, più premi regala. Ora chi poggia storta scivola giù: le torri si guadagnano.',
       max2: true, etichettaMax: '🏗️ ATTIVA', sottoMax: 'bonus automatico' });
     html += titolo('🎨 PANNI DEL TAVOLO');
     for (const f of ['blu', 'bordeaux', 'notte']) {
@@ -1827,7 +1976,7 @@ function rendiNegozio() {
     }
   } else if (schedaAttiva === 'abilita') {
     const vociAb = [
-      { id: 'cannone', nome: 'CANNONE', desc: 'Tieni premuto il tasto destro per caricare lo sparo che travolge la pila.', sbloccata: stato.sbloccati.cannone },
+      { id: 'cannone', nome: 'CANNONE', desc: 'Tieni premuto il tasto destro per caricare lo sparo che piomba sul ripiano.', sbloccata: stato.sbloccati.cannone },
       { id: 'raffica', nome: 'RAFFICA', desc: 'Tieni premuto e spari una lira dietro l\'altra (' + rateRaffica(p.raffica).toFixed(0) + '/s).', sbloccata: p.raffica > 0 },
       { id: 'audio', nome: 'AUDIO', desc: 'Effetti sonori della sala, sintetizzati in tempo reale (nessun file esterno).', sbloccata: true }
     ];
@@ -2078,23 +2227,26 @@ function animate() {
     if (pronto !== sparaPronto) { sparaPronto = pronto; aggiornaSpara(); }
   }
 
-  // --- mirino e lira fantasma seguono il puntatore ---
+  // --- mirino, guida e lira fantasma: seguono solo la COLONNA scelta ---
   if (puntatore.visibile) {
     mirino.visible = true;
     mirino.position.x = puntatore.x;
-    mirino.position.z = puntatore.z;
     mirinoMat.opacity = puntatore.dentro ? 0.95 : 0.3;
+    guida.visible = puntatore.dentro;
+    guida.position.x = puntatore.x;
+    guida.lookAt(camera.position.x, guida.position.y, camera.position.z);
+    guidaMat.opacity = 0.18 + (Math.sin(t * 3.2) * 0.5 + 0.5) * 0.18;
     liraFantasma.visible = puntatore.dentro;
-    liraFantasma.position.set(puntatore.x, 1.5 + Math.sin(t * 2.6) * 0.2, puntatore.z);
+    liraFantasma.position.set(puntatore.x, ALTEZZA_PIASTRA + 1.3 + Math.sin(t * 2.6) * 0.18, Z_LANCIO);
     liraFantasma.rotation.y = t * 0.9;
   } else {
     mirino.visible = false;
+    guida.visible = false;
     liraFantasma.visible = false;
   }
 
-  // --- zona di lancio pulsante ---
-  zonaMat.opacity = 0.34 + (Math.sin(t * 1.9) * 0.5 + 0.5) * 0.28;
-  zonaMesh.scale.setScalar(1 + Math.sin(t * 1.9) * 0.005);
+  // --- fessura di lancio pulsante ---
+  zonaMat.opacity = 0.38 + (Math.sin(t * 1.9) * 0.5 + 0.5) * 0.3;
 
   // --- i bordi delle lire brillano di riflesso (taglio più alto = bordo più vivo) ---
   if (combo > 0 && now > comboScadenza) combo = 0;
@@ -2121,8 +2273,8 @@ function animate() {
 const elSpara = document.getElementById('spara');
 elSpara.onclick = () => {
   if (!stato.sbloccati.cannone || !stato.attivi.cannone || cooldownSparo > 0) { suono.errore(); return; }
-  if (!puntatore.visibile || !puntatore.dentro) { suono.errore(); avviso('Tocca il tavolo per mirare'); return; }
-  sparaCannone(puntatore.x, puntatore.z, 1);
+  if (!puntatore.visibile || !puntatore.dentro) { suono.errore(); avviso('Tocca il tavolo per scegliere la colonna'); return; }
+  sparaCannone(puntatore.x, 1);
 };
 function aggiornaSpara() {
   if (!elSpara) return;
@@ -2206,8 +2358,10 @@ rendiNegozio();
 // ponte di controllo: serve ai controlli automatici e per vedere dal vivo che cosa
 // sta facendo il tavolo (quante lire, che modalità, quante ne ha ritirate).
 window.DOZER = {
-  stato, lire, MAX_LIRE, VERSIONE,
+  stato, lire, MAX_LIRE, VERSIONE, Z_LANCIO, X_LANCIO_MAX, ALTEZZA_PIASTRA,
+  FRONTE_AVANTI, FRONTE_INDIETRO, PLATE_D,
   lireSulTavolo, riciclaEccesso, modoAttuale, cambiaAbilita, cambiaOpzione, aggiornaAbilita,
+  pusherAvanti: () => pusherZ < PUSHER_MIN + 0.12,   // a che punto della corsa e' il ripiano
   creaLira, lanciaLira, aggiornaFisica, aggiornaHUD, rendiNegozio
 };
 

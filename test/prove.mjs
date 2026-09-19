@@ -17,7 +17,7 @@ const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const CDN = 'https://unpkg.com/three@0.160.0/build/three.module.js';
 const THREE_LOCALE = ['node_modules/three/build/three.module.js', 'test/three.module.js']
   .map(p => path.join(ROOT, p)).find(p => fs.existsSync(p));
-const PORT = 8137;
+const PORT = Number(process.env.PORT) || 8100 + Math.floor(Math.random() * 800);
 const TIPI = { '.html': 'text/html', '.js': 'text/javascript', '.md': 'text/markdown' };
 const server = http.createServer((req, res) => {
   let f = decodeURIComponent(req.url.split('?')[0]);
@@ -69,8 +69,82 @@ console.log('\n== DESKTOP ==');
   T('nessun errore in console', errori.length === 0, errori.join(' | '));
   T('canvas presente', await page.locator('canvas').count() === 1);
   T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
-  T('versione v1.4.0 in HUD', (await page.locator('#versione').textContent()) === 'v1.4.0');
-  T('pila iniziale creata', await page.evaluate(() => DOZER.lireSulTavolo()) > 80);
+  T('versione v1.5.0 in HUD', (await page.locator('#versione').textContent()) === 'v1.5.0');
+  T('pila iniziale fitta', await page.evaluate(() => DOZER.lireSulTavolo()) > 130);
+
+  // --- MECCANICA DEL DOZER: si sceglie solo la colonna, si cade sempre in fondo ---
+  {
+    const lancio = await page.evaluate(() => {
+      const D = DOZER;
+      return [-9, -2, 0, 2.4, 9].map(x => { const m = D.lanciaLira(x); return { x: m.mesh.position.x, z: m.mesh.position.z }; });
+    });
+    const Z = await page.evaluate(() => DOZER.Z_LANCIO);
+    const XMAX = await page.evaluate(() => DOZER.X_LANCIO_MAX);
+    T('la lira scende sempre dalla fessura in fondo, mai davanti',
+      lancio.every(l => Math.abs(l.z - Z) <= 0.3), 'z ' + lancio.map(l => l.z.toFixed(1)).join(' '));
+    T('la colonna scelta viene rispettata e limitata alla larghezza del tavolo',
+      lancio.every(l => Math.abs(l.x) <= XMAX + 1e-6) && Math.abs(lancio[2].x) < 1e-6 &&
+      Math.abs(lancio[3].x - 2.4) < 1e-6, 'x ' + lancio.map(l => l.x.toFixed(1)).join(' '));
+
+    const H = await page.evaluate(() => DOZER.ALTEZZA_PIASTRA);
+    const dopo = await page.evaluate(() => {
+      const D = DOZER;
+      const nate = [];
+      for (let i = 0; i < 8; i++) nate.push(D.lanciaLira(-3 + i * 0.8));
+      for (let f = 0; f < 90; f++) { D.aggiornaFisica(1/60); D.riciclaEccesso(); }
+      return nate.filter(m => m.attiva).map(m => m.mesh.position.y);
+    });
+    T('atterrano sul ripiano rialzato, non sul tavolo',
+      dopo.length > 0 && dopo.every(y => y > H - 0.05), dopo.length + ' lire sul ripiano');
+
+    const viaggio = await page.evaluate(() => {
+      const D = DOZER;
+      const nate = [];
+      for (let i = 0; i < 8; i++) nate.push(D.lanciaLira(-3 + i * 0.8));
+      const partenza = Math.max(...nate.map(m => m.mesh.position.z));
+      for (let f = 0; f < 60 * 25; f++) { D.aggiornaFisica(1/60); D.riciclaEccesso(); }
+      const vive = nate.filter(m => m.attiva);
+      return { partenza,
+        arrivo: vive.length ? Math.max(...vive.map(m => m.mesh.position.z)) : -99,
+        sulTavolo: vive.filter(m => m.mesh.position.y < DOZER.ALTEZZA_PIASTRA - 0.05).length,
+        vive: vive.length };
+    });
+    T('il ripiano porta le lire avanti e poi le lascia cadere sul campo',
+      viaggio.arrivo < viaggio.partenza - 1.2,
+      'da z ' + viaggio.partenza.toFixed(1) + ' a z ' + viaggio.arrivo.toFixed(1));
+    T('finiscono sul tavolo, non restano incastrate sul ripiano',
+      viaggio.sulTavolo === viaggio.vive, viaggio.sulTavolo + '/' + viaggio.vive);
+
+    const dietro = await page.evaluate(() =>
+      DOZER.lire.filter(m => m.attiva && m.mesh.position.z > DOZER.Z_LANCIO + 0.6 &&
+        m.mesh.position.y < DOZER.ALTEZZA_PIASTRA - 0.05).length);
+    T('nessuna lira intrappolata dietro al ripiano', dietro === 0, dietro + ' bloccate');
+  }
+
+  // --- la spinta del ripiano arriva fino al bordo dei premi ---
+  {
+    const flusso = await page.evaluate(() => {
+      const D = DOZER;
+      const premi0 = D.stato.premi, vinte0 = D.stato.vinte;
+      let acc = 0;
+      for (let f = 0; f < 60 * 90; f++) {
+        acc += 1.6 / 60;
+        while (acc >= 1) { acc -= 1; D.lanciaLira(-3 + Math.random() * 6); }
+        D.aggiornaFisica(1/60); D.riciclaEccesso();
+      }
+      const vive = D.lire.filter(m => m.attiva);
+      return { vinte: D.stato.vinte - vinte0, premi: D.stato.premi - premi0,
+        inScena: vive.length,
+        davanti: vive.filter(m => m.mesh.position.z < -2.5).length,
+        mezzo: vive.filter(m => m.mesh.position.z >= -2.5 && m.mesh.position.y < DOZER.ALTEZZA_PIASTRA - 0.05).length };
+    });
+    T('giocando normalmente le lire cadono davvero dal bordo', flusso.vinte > 60, flusso.vinte + ' vinte in 90 s');
+    T('entra quanto esce: la pila non cresce all\'infinito', flusso.inScena < 190, flusso.inScena + ' in scena');
+    T('il campo non resta vuoto in mezzo', flusso.mezzo >= 8, flusso.mezzo + ' lire fra ripiano e pila');
+    T('la pila resta appoggiata al bordo dei premi', flusso.davanti >= 25, flusso.davanti + ' lire nella pila');
+    const perLira = flusso.premi / Math.max(1, flusso.vinte);
+    T('il guadagno per lira resta ragionevole', perLira >= 1.5 && perLira <= 5, perLira.toFixed(1) + ' premi/lira');
+  }
 
   // --- modalità di partenza e spegnimento abilità ---
   const modo0 = await page.evaluate(() => DOZER.modoAttuale());
@@ -188,6 +262,8 @@ console.log('\n== TELEFONO (portrait, touch) ==');
   T('parte senza errori', errori.length === 0, errori.join(' | '));
   T('ombre spente di serie su telefono', await page.evaluate(() => DOZER.stato.grafica.ombre === false));
   T('tetto lire ridotto su telefono', await page.evaluate(() => DOZER.MAX_LIRE) === 170);
+  T('anche su telefono si mira solo in orizzontale',
+    await page.evaluate(() => Math.abs(DOZER.lanciaLira(99).mesh.position.z - DOZER.Z_LANCIO) < 0.3));
   const chip = await page.locator('#ch-raffica').boundingBox();
   T('chip abilità abbastanza grandi da toccare', chip && chip.height >= 30, chip ? Math.round(chip.height) + 'px' : 'n/d');
   const neg = await page.locator('#apriNegozio').boundingBox();
@@ -233,7 +309,8 @@ console.log('\n== RAFFICA TENUTA PREMUTA ==');
   T('tenendo premuta la raffica si vince davvero qualcosa', r.vinte > 5, r.vinte + ' lire vinte');
   // L.100 paga 2, il bonus combo si ferma a +5: mai piu' di 7 premi per lira
   T('il guadagno per lira resta nel tetto (combo limitata)', perLira <= 7.05, perLira.toFixed(1) + ' premi/lira');
-  T('il tavolo non straborda sotto raffica', r.lire <= 300, r.lire + ' lire in scena');
+  T('la combo si azzera a ogni corsa del ripiano', perLira <= 6, perLira.toFixed(2) + ' premi/lira');
+  T('il tavolo non straborda sotto raffica', r.lire <= 312, r.lire + ' lire in scena');
   T('nessun errore durante la raffica', e2.length === 0, e2.join(' | '));
   await c2.close();
   }
