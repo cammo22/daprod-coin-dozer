@@ -56,7 +56,11 @@
     font: 800 10.5px/1 inherit; letter-spacing: 1.6px; color: #ffd54a;
     background: rgba(12,9,22,.72); border: 1px solid rgba(255,213,74,.3);
     padding: 7px 13px; border-radius: 999px; pointer-events: none;
-    text-shadow: 0 0 10px rgba(255,180,0,.5); }
+    text-shadow: 0 0 10px rgba(255,180,0,.5);
+    display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+  #taglioOra .modo { color: #7ef0c0; padding-left: 9px; text-shadow: 0 0 10px rgba(90,255,190,.5);
+    border-left: 1px solid rgba(255,255,255,.2); }
+  #taglioOra .modo.semplice { color: #cfc7de; text-shadow: none; }
   .box.premi { pointer-events: auto; cursor: pointer; }
   .box.premi:hover { border-color: var(--oro); }
   .box.premi:active { transform: scale(.98); }
@@ -75,10 +79,12 @@
     box-shadow: 0 14px 30px rgba(255,170,0,.22), inset 0 1px 0 rgba(255,255,255,.2); }
   .tondo:active { transform: translateY(0) scale(.97); }
   #apriNegozio { right: 18px; bottom: 18px; }
-  #hint { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 11;
+  #hint { position: fixed; bottom: 144px; left: 50%; transform: translateX(-50%); z-index: 11;
     background: var(--vetro); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.14);
     padding: 10px 20px; border-radius: 999px; font-size: 12.5px; color: #d6d0e0;
-    letter-spacing: .4px; pointer-events: none; text-align: center; max-width: 74vw; }
+    letter-spacing: .4px; pointer-events: none; text-align: center; max-width: 74vw;
+    transition: opacity .5s ease, transform .5s ease; }
+  #hint.via { opacity: 0; transform: translateX(-50%) translateY(14px); }
   #hint kbd { background: linear-gradient(180deg,#2a2440,#171320); padding: 3px 9px; border-radius: 8px;
     border: 1px solid #4a4166; font: inherit; font-size: 11.5px; color: #fff; }
 
@@ -98,7 +104,9 @@
     transition: background .2s, box-shadow .2s; }
   .chip.on { color: #eaffe9; border-color: rgba(126,240,192,.55); }
   .chip.on .led { background: #7ef0c0; box-shadow: 0 0 10px rgba(126,240,192,.9); }
+  .chip.off { color: #a79fbb; border-color: rgba(255,255,255,.10); }
   .chip.off .led { background: #7a7392; }
+  .chip:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
   .chip.bloccata { opacity: .42; color: #8d8598; cursor: not-allowed;
     border-color: rgba(255,255,255,.08); background: rgba(255,255,255,.04); }
   .chip.bloccata:hover { transform: none; }
@@ -175,9 +183,13 @@
     color: #fff; width: 36px; height: 36px; border-radius: 12px; cursor: pointer;
     font-size: 15px; font-weight: 800; }
   #chiudiNegozio:hover { background: rgba(255,255,255,.14); }
-  .tab { display: flex; gap: 8px; padding: 14px 22px 0; }
-  .tab button { flex: 1; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04);
-    color: #cfc7de; font: 800 11.5px/1 inherit; letter-spacing: 1.6px; padding: 12px 10px;
+  .pannello header { flex: none; }
+  .tab { display: flex; flex: none; gap: 8px; padding: 14px 22px 0; overflow-x: auto;
+    scrollbar-width: none; padding-bottom: 2px; }
+  .tab::-webkit-scrollbar { display: none; }
+  .tab button { flex: 1 1 auto; white-space: nowrap; border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.04);
+    color: #cfc7de; font: 800 10.5px/1 inherit; letter-spacing: 1.1px; padding: 12px 7px;
     border-radius: 14px; cursor: pointer; transition: all .18s; }
   .tab button.sel { color: #14101f; background: linear-gradient(180deg, #ffe89a, var(--oro2));
     border-color: transparent; box-shadow: 0 8px 22px rgba(255,170,0,.3); }
@@ -222,7 +234,7 @@
     box-shadow: 0 0 12px rgba(255,180,0,.45); }
   .prog span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     font: 900 9.5px/1 inherit; letter-spacing: 1.6px; color: #fff;
-    text-shadow: 0 1px 3px rgba(0,0,0,.85); }
+    text-shadow: 0 1px 3px rgba(0,0,0,.95), 0 0 6px rgba(0,0,0,.85); }
   .compra { border: 1px solid rgba(255,255,255,.16); border-radius: 15px; cursor: pointer;
     background: linear-gradient(180deg, #ffe89a, var(--oro2)); color: #171024;
     font: 900 12.5px/1.15 inherit; letter-spacing: 1px; padding: 14px 16px; min-width: 138px;
@@ -237,6 +249,15 @@
   .compra:disabled b { color: #cfc7de; }
   .voce.max .compra { background: rgba(126,240,192,.18); color: #7ef0c0;
     border-color: transparent; box-shadow: none; }
+  /* segmenti delle OPZIONI: scelte a pulsante, grandi anche col pollice */
+  .seg { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .seg button { border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06);
+    color: #cfc7de; font: 900 10.5px/1 inherit; letter-spacing: 1.2px; padding: 12px 13px;
+    border-radius: 12px; cursor: pointer; transition: all .16s; }
+  .seg button:hover { border-color: var(--bordo); }
+  .seg button.sel { background: linear-gradient(180deg, #ffe89a, var(--oro2)); color: #171024;
+    border-color: transparent; box-shadow: 0 8px 20px rgba(255,170,0,.22); }
+  .box.fps b { color: #7ef0c0; text-shadow: 0 0 12px rgba(90,255,190,.4); }
   .riepilogo { font-size: 13px; color: #d3cbe4; line-height: 2.05; }
   .riepilogo b { color: var(--oro); }
   .nav { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
@@ -261,7 +282,8 @@
     .box.idle b { font-size: 10.5px; }
     .barra { height: 4px; margin-top: 4px; }
 
-    #hint { top: 146px; bottom: auto; font-size: 9.5px; padding: 6px 11px; max-width: 94vw;
+    #hint { top: auto; bottom: calc(max(8px, env(safe-area-inset-bottom)) + 186px);
+      font-size: 9.5px; padding: 6px 11px; max-width: 92vw;
       letter-spacing: .2px; line-height: 1.5; }
     #hint kbd { padding: 2px 6px; font-size: 9px; }
 
@@ -317,6 +339,8 @@
     /* righe a colonna singola: prezzo grande e facile da premere col pollice */
     .voce { grid-template-columns: 1fr; }
     .compra, .inter { width: 100%; }
+    .seg { width: 100%; justify-content: stretch; }
+    .seg button { flex: 1 1 0; }
     .compra { flex-direction: row; justify-content: space-between; padding: 14px 16px; }
     .prog { max-width: none; }
   }
@@ -327,22 +351,23 @@
 <div id="hud">
   <div class="marchio">
     <div class="logo">DaProd</div>
-    <div class="sub">SALA SLOT · <span id="versione">v1.3.2</span></div>
+    <div class="sub">SALA SLOT · <span id="versione">v1.4.0</span></div>
   </div>
   <div class="stat">
     <div class="box premi" id="boxPremi" title="Tocca per aprire il negozio">🏆 PREMI<b id="premi">30</b></div>
     <div class="box">🏅 VINTE<b id="vinte">0</b></div>
     <div class="box idle">🪙 GETTONI<b id="gettoniV">12/12</b><span class="barra"><i id="gettoniBar"></i></span></div>
+    <div class="box fps" id="boxFps" style="display:none">🏞 FPS<b id="fps">60</b></div>
   </div>
 </div>
 <div id="floaters"></div>
 <div id="combo"></div>
 <div id="carica"><div class="track"><i id="caricaBar"></i></div><span id="caricaTxt">CANNONE</span></div>
-<div id="taglioOra">TAGLIO · L.100</div>
-<div id="hint"><kbd>click</kbd> lancia · <kbd>tieni premuto sx</kbd> ⚡ raffica · <kbd>tieni premuto dx</kbd> 💥 cannone · le lire si impilano fino a <b>30 piani</b></div>
+<div id="taglioOra"><span id="taglioTxt">TAGLIO · L.100</span><span class="modo semplice" id="modoTxt">TIRO SEMPLICE</span></div>
+<div id="hint"><kbd>tocca</kbd> lancia · <b>tocca di nuovo un chip per spegnerlo</b> e tirare senza abilità</div>
 <button id="apriNegozio" class="tondo">▲ <span class="tLungo">POTENZIAMENTI</span><span class="tCorto">NEGOZIO</span></button>
 <div id="abilita">
-  <button class="chip" id="ch-cannone" title="Tieni premuto il tasto destro per caricare lo sparo"><span class="led"></span>💥 CANNONE</button>
+  <button class="chip" id="ch-cannone" title="Tieni premuto il tasto destro per caricare lo sparo"><span class="led"></span>💥 CANNONE <small id="ch-cannone-v"></small></button>
   <button class="chip" id="ch-raffica" title="Tieni premuto il tasto sinistro per sparare a raffica"><span class="led"></span>⚡ RAFFICA <small id="ch-raffica-v"></small></button>
   <button class="chip audio" id="ch-audio" title="Audio ON/OFF"><span class="led"></span>🔊 AUDIO <small id="ch-audio-v">ON</small></button>
 </div>
@@ -358,6 +383,7 @@
     <button data-tab="sblocca">🎁 SBLOCCABILI</button>
     <button data-tab="abilita">🎚️ ABILITÀ</button>
     <button data-tab="stat">📊 STATISTICHE</button>
+    <button data-tab="opz">⚙️ OPZIONI</button>
   </div>
   <div class="voci" id="voci"></div>
   </div>
@@ -442,6 +468,9 @@ const stato = {
   attivi: { cannone: true, raffica: false, audio: true },   // solo Cannone/Raffica: uno per volta
   audio: true,
   torreRecord: 1,
+  totRiciclate: 0,
+  // OPZIONI GRAFICHE: si adattano al dispositivo e si cambiano dalla scheda ⚙️ OPZIONI
+  grafica: { ombre: !TATTILE, effetti: 1, auto: true, fps: false },
   sbloccati: { cannone: false, feltro: 'verde' },
   feltriPosseduti: ['verde'],
   ts: Date.now()
@@ -457,6 +486,8 @@ function caricaPartita() {
       stato.audio = r.audio !== false;
       if (typeof r.gettoni === 'number') stato.gettoni = r.gettoni; // salvato compatibile
       if (typeof r.torreRecord === 'number') stato.torreRecord = r.torreRecord;
+      stato.grafica = Object.assign({ ombre: !TATTILE, effetti: 1, auto: true, fps: false }, r.grafica);
+      stato.totRiciclate = Math.max(0, parseInt(r.totRiciclate, 10) || 0);
       stato.sbloccati = Object.assign({ cannone: false, feltro: 'verde' }, r.sbloccati);
       stato.feltriPosseduti = Array.isArray(r.feltriPosseduti) ? r.feltriPosseduti : ['verde'];
     }
@@ -477,7 +508,8 @@ const costoForza = (n) => Math.round(60 * Math.pow(2.0, n));
 const costoMulti = (n) => Math.round(140 * Math.pow(3.3, n));
 const costoCannonePot = (n) => Math.round(420 * Math.pow(2.2, n));
 const costoRaffica = (n) => (n <= 0 ? COSTO_RAFFICA : Math.round(COSTO_RAFFICA * Math.pow(2.3, n)));
-const rateRaffica = (n) => (n <= 0 ? 0 : 3 + 2 * n);      // lire al secondo a raffica
+const rateRaffica = (n) => (n <= 0 ? 0 : 2.5 + 1.1 * n);  // lire al secondo a raffica (1 lira per colpo)
+const COMBO_BONUS_MAX = 5;                                // tetto al bonus combo: niente valanghe di premi
 const capCaricatore = (n) => 16 + 4 * n;                  // gettoni trasportabili nel caricatore
 const ricaricaGettoni = (n) => 1.2 + 0.55 * n;            // gettoni al secondo, sempre attivi
 const costoTaglio = (n) => (n <= 1 ? 900 : 6000);         // passaggio a L.500 e L.1000
@@ -485,7 +517,7 @@ const nomeTaglio = (n) => TAGLI[Math.max(0, Math.min(TAGLI.length - 1, n))].nome
 const fattoreForza = (n) => 1 + 0.25 * n;                 // moltiplicatore della spinta di lancio
 const lirePerLancio = (n) => 1 + n;                       // lire lanciate per click
 const forzaCannone = (n) => 1 + 0.5 * n;                  // potenza dello sparo
-const VERSIONE = 'v1.3.2';                                // mostrata nell'HUD per verificare gli aggiornamenti
+const VERSIONE = 'v1.4.0';                                // mostrata nell'HUD per verificare gli aggiornamenti
 const COSTO_FELTRO = { blu: 250, bordeaux: 700, notte: 1500 };
 const NOME_FELTRO = { verde: 'Verde DaProd', blu: 'Blu Royal', bordeaux: 'Bordeaux', notte: 'Notte Neon' };
 const PRESTIGIO_CANNONE = 1;
@@ -667,19 +699,27 @@ const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 100)
 camera.position.set(0, 10, -12);
 camera.lookAt(0, 0, 0);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+// su telefono l'antialias hardware costa parecchio: si spegne e si guadagnano fotogrammi
+const renderer = new THREE.WebGLRenderer({ antialias: !TATTILE, powerPreference: 'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, TATTILE ? 1.5 : 2));
-renderer.shadowMap.enabled = true;
+const PIXEL_RATIO_MAX = Math.min(devicePixelRatio || 1, TATTILE ? 1.5 : 2);
+let scalaRender = 1;                       // qualità automatica: scende se il gioco arranca
+renderer.setPixelRatio(PIXEL_RATIO_MAX);
+renderer.shadowMap.enabled = !!stato.grafica.ombre;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.1;
 document.body.appendChild(renderer.domElement);
 
+// il ridimensionamento arriva a raffica (barra del browser su telefono): lo accorpo
+let timerResize = 0;
 addEventListener('resize', () => {
-  camera.aspect = innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+  clearTimeout(timerResize);
+  timerResize = setTimeout(() => {
+    camera.aspect = innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  }, 80);
 });
 
 // Zoom con rotella
@@ -689,10 +729,12 @@ addEventListener('wheel', (e) => {
 }, { passive: true });
 
 // In verticale (telefono) il tavolo non ci sta in larghezza: la camera arretra da sola
+// In verticale il tavolo (largo 8) non ci sta: la camera arretra quanto serve perché
+// si vedano SEMPRE le due sponde e il bordo dei premi, senza tagliare le lire che cadono.
 const fattoreVerticale = () => {
   const asp = innerWidth / innerHeight;
   if (asp >= 1.05) return 1;
-  return 1 + (1.05 - asp) * 0.62;
+  return Math.min(2.1, 1 + (1.05 - asp) * 1.25);
 };
 
 // Zoom con due dita (pinch) sul telefono
@@ -726,7 +768,7 @@ const spot = new THREE.SpotLight(0xffddaa, 80, 30, Math.PI/4, 0.4, 1);
 spot.position.set(0, 14, 2);
 spot.target.position.set(0, 0, 0);
 spot.castShadow = true;
-spot.shadow.mapSize.set(1024, 1024);
+spot.shadow.mapSize.set(TATTILE ? 512 : 1024, TATTILE ? 512 : 1024);
 spot.shadow.camera.near = 5;
 spot.shadow.camera.far = 25;
 scene.add(spot);
@@ -822,7 +864,10 @@ const TAGLI = [
 const TAGLIO_PREDEFINITO = 1;                       // si lanciano lire da L.100
 const LIVELLI_TORRE_MAX = 30;                       // TORRI FINO A 30 PIANI
 const LIRE_INIZIALI = 96;                            // pila iniziale mista, come nella macchina vera
-const MAX_LIRE = TATTILE ? 150 : 260;               // tetto di sicurezza (niente spazzate: si aspetta che il bordo si svuoti)
+// Tetto MORBIDO delle lire in scena: NON blocca mai il lancio. Quando si supera, le lire
+// in fondo al tavolo (le più lontane dal bordo dei premi) tornano da sole in cassa ♻️
+const MAX_LIRE = TATTILE ? 170 : 300;
+const RICICLO_PER_FRAME = 4;                        // quante lire al massimo si riciclano per fotogramma
 
 // faccia della lira disegnata su canvas, con la scritta del taglio
 function creaFacciaLira(colore, scritta) {
@@ -918,7 +963,7 @@ function creaLira(x, y, z, opz = {}) {
   const mesh = new THREE.Mesh(t.geo, t.mats);
   mesh.position.set(x, y, z);
   mesh.rotation.y = Math.random() * Math.PI * 2; // solo rotazione su se stessa: la lira resta PIATTA
-  mesh.castShadow = true;
+  mesh.castShadow = !!stato.grafica.ombre;
   mesh.receiveShadow = true;
   scene.add(mesh);
   const inVolo = !!opz.volo;
@@ -950,7 +995,51 @@ function lireSulTavolo() {
   for (const m of lire) if (m.attiva) n++;
   return n;
 }
-const tavoloPieno = () => lireSulTavolo() >= MAX_LIRE;
+
+// Le lire spente restano nell'elenco finché non si compatta: senza questo l'elenco
+// cresceva all'infinito e ogni fotogramma ripassava anche le lire già vinte.
+let daRimuovere = 0;
+function compattaLire() {
+  if (daRimuovere <= 0) return;
+  let k = 0;
+  for (let i = 0; i < lire.length; i++) if (lire[i].attiva) lire[k++] = lire[i];
+  lire.length = k;
+  daRimuovere = 0;
+}
+function spegniLira(m) {
+  m.attiva = false;
+  m.sotto = null;
+  scene.remove(m.mesh);
+  daRimuovere++;
+}
+
+// ♻️ RICICLO AUTOMATICO: il tavolo NON si riempie mai e il lancio non viene mai rifiutato.
+// Quando ci sono troppe lire, il tavolo ritira quelle in fondo (lontano dal bordo dei premi):
+// non pagano nulla, servono solo a lasciare spazio alle nuove.
+function riciclaEccesso() {
+  const eccesso = lireSulTavolo() - MAX_LIRE;
+  if (eccesso <= 0) return;
+  // di solito bastano poche lire per fotogramma (il ritiro si nota appena); se però il
+  // tavolo è molto oltre il tetto si accelera, così il limite regge sempre
+  const quante = Math.min(eccesso, Math.max(RICICLO_PER_FRAME, Math.ceil(eccesso / 4)), 30);
+  for (let fatte = 0; fatte < quante; fatte++) {
+    let scelta = null;
+    let ripiego = null;                      // se nessuna è posata, ritiro comunque la più in fondo
+    for (const m of lire) {
+      if (!m.attiva) continue;
+      if (!ripiego || m.mesh.position.z > ripiego.mesh.position.z) ripiego = m;
+      if (!m.aTerra || m.proiettile) continue;
+      if (!scelta || m.mesh.position.z > scelta.mesh.position.z) scelta = m;
+    }
+    if (!scelta) scelta = ripiego;
+    if (!scelta) break;
+    const p = scelta.mesh.position;
+    particelle(p.x, p.y + 0.12, p.z, 3, 0x8fd6ff, 0.45);
+    spegniLira(scelta);
+    stato.totRiciclate++;
+  }
+  compattaLire();
+}
 
 // strato di base: file fitte di lire MISTE (tagli diversi) da vicino al bordo fino alla piastra
 const TAGLIO_PILA = [0, 0, 1, 1, 1, 2, 2, 3];   // 50, 100, 500, 1000 → più piccole che grandi
@@ -1005,28 +1094,43 @@ function aggiornaPuntatore(e) {
 renderer.domElement.addEventListener('pointermove', aggiornaPuntatore);
 renderer.domElement.addEventListener('pointerleave', () => { puntatore.visibile = false; });
 
+// che cosa è acceso adesso: se spegni tutto resti al TIRO SEMPLICE (nessuna abilità)
+const cannoneAcceso = () => !!stato.attivi.cannone && !!stato.sbloccati.cannone;
+const rafficaAccesa = () => !!stato.attivi.raffica && stato.pot.raffica > 0;
+function modoAttuale() {
+  if (rafficaAccesa()) return 'RAFFICA';
+  if (cannoneAcceso()) return 'CANNONE';
+  return 'TIRO SEMPLICE';
+}
+
 renderer.domElement.addEventListener('pointerdown', (e) => {
   if (e.button !== 0 && e.button !== 2) return;
   audioOn();
   aggiornaPuntatore(e);
   if (!puntatore.dentro) return;
-  // Tasto destro (o tasto sinistro se la raffica è spenta): CANNONE
-  const usaCannone = stato.attivi.cannone && stato.sbloccati.cannone && cooldownSparo <= 0 &&
-    (e.button === 2 || !(stato.attivi.raffica && stato.pot.raffica > 0 && stato.gettoni >= 1));
-  if (e.button === 2 || usaCannone) {
-    if (usaCannone) {
+  // Tasto destro: CANNONE (solo se è l'abilità accesa)
+  if (e.button === 2) {
+    if (cannoneAcceso() && cooldownSparo <= 0) {
       inCarica = true;
       carica = 0;
       elCarica.classList.add('attiva');
     }
     return;
   }
-  // RAFFICA: tieni premuto il tasto sinistro e spara una lira dietro l'altra
-  if (stato.attivi.raffica && stato.pot.raffica > 0 && stato.gettoni >= 1) {
+  // RAFFICA accesa: tieni premuto il tasto sinistro e spara una lira dietro l'altra
+  if (rafficaAccesa() && stato.gettoni >= 1) {
     inRaffica = true;
     accRaffica = 0;
     colpiRaffica = 0;
+    return;
   }
+  // CANNONE acceso: anche il tasto sinistro carica lo sparo (comodo su telefono)
+  if (cannoneAcceso() && cooldownSparo <= 0) {
+    inCarica = true;
+    carica = 0;
+    elCarica.classList.add('attiva');
+  }
+  // nessuna abilità accesa: il lancio parte al rilascio (tiro semplice)
 });
 
 renderer.domElement.addEventListener('pointerup', (e) => {
@@ -1054,7 +1158,11 @@ renderer.domElement.addEventListener('pointerup', (e) => {
     elCarica.classList.remove('attiva');
     const potenza = carica;
     carica = 0;
-    if (potenza > 0.12 && puntatore.dentro) sparaCannone(puntatore.x, puntatore.z, potenza);
+    // tocco veloce: invece di non fare nulla, parte un lancio normale
+    if (puntatore.dentro) {
+      if (potenza > 0.12) sparaCannone(puntatore.x, puntatore.z, potenza);
+      else lanciaDalPuntatore();
+    }
     return;
   }
   lanciaDalPuntatore();
@@ -1071,12 +1179,11 @@ function lanciaDalPuntatore(daRaffica = false) {
   }
   const ora = performance.now();
   if (!daRaffica && ora - ultimoLancio < COOLDOWN) return;
-  if (tavoloPieno()) {                       // NESSUNA spazzata: si aspetta che il bordo si svuoti
-    inRaffica = false;
-    if (!daRaffica) { suono.errore(); avviso('TAVOLO PIENO — il bordo si sta svuotando 🕐'); }
-    return;
-  }
-  const n = Math.min(lirePerLancio(stato.pot.multi), Math.floor(stato.gettoni));
+  // NIENTE "tavolo pieno": se serve spazio il tavolo ricicla da solo le lire in fondo
+  riciclaEccesso();
+  // a raffica parte UNA lira per colpo: il multi-lancio non si moltiplica con la cadenza
+  const volute = daRaffica ? 1 : lirePerLancio(stato.pot.multi);
+  const n = Math.min(volute, Math.floor(stato.gettoni));
   if (n <= 0) {
     if (!daRaffica) { suono.errore(); avviso('CARICATORE IN RICARICA…'); }
     inRaffica = false;
@@ -1085,11 +1192,14 @@ function lanciaDalPuntatore(daRaffica = false) {
   const spargi = daRaffica ? 0.35 : 0.55;
   for (let i = 0; i < n; i++) {
     const m = lanciaLira(puntatore.x + (Math.random() - 0.5) * spargi, puntatore.z + (Math.random() - 0.5) * spargi);
-    m.spinta = 0.25 * stato.pot.forza;        // FORZA: abilità passiva
+    // FORZA: abilità passiva. A raffica la spinta è ridotta: tante lire non devono
+    // trasformarsi in una valanga che butta giù mezzo tavolo in un colpo solo.
+    m.spinta = 0.25 * stato.pot.forza * (daRaffica ? 0.45 : 1);
   }
   stato.gettoni -= n;
   stato.totLanci += n;
   ultimoLancio = ora;
+  nascondiHint();
   if (!daRaffica) suono.lancio();
   aggiornaHUD();
   salvaPartita();
@@ -1098,7 +1208,7 @@ function lanciaDalPuntatore(daRaffica = false) {
 // sparo del cannone: lira pesante che travolge la pila (costa 1 gettone)
 function sparaCannone(x, z, potenza) {
   if (stato.gettoni < 1) { suono.errore(); avviso('CARICATORE IN RICARICA…'); return; }
-  if (tavoloPieno()) { suono.errore(); avviso('TAVOLO PIENO — il bordo si sta svuotando '); return; }
+  riciclaEccesso();                          // il tavolo fa spazio da solo: lo sparo non si rifiuta mai
   stato.gettoni -= 1;
   stato.totLanci += 1;
   const m = lanciaLira(x, z, true);
@@ -1134,6 +1244,39 @@ const AIR_DRAG = 0.2;       // attrito aria
 const GROUND_FRICTION = 8;  // forte attrito sul tavolo: la pila resta ferma se non è spinta
 const V_MAX = 8;
 
+// ---------- GRIGLIA SPAZIALE ----------
+// Prima ogni lira veniva confrontata con TUTTE le altre (n×n): con 300 lire erano
+// ~180.000 confronti a fotogramma. Ora le lire finiscono in celle di 1,1 e ognuna
+// guarda solo le 9 celle attorno a sé: il costo cresce in modo lineare.
+const CELLA = 1.1;                       // lato cella: maggiore del diametro della lira più grande
+const griglia = new Map();               // chiave cella -> elenco di lire (gli elenchi si riusano)
+const attive = [];                       // lire attive dell'istante (riusata, niente spazzatura)
+const vicine = [];                       // lire nelle celle attorno (riusata)
+const chiaveCella = (ix, iz) => (ix + 512) * 4096 + (iz + 512);
+
+function costruisciGriglia() {
+  for (const cella of griglia.values()) cella.length = 0;
+  for (let i = 0; i < attive.length; i++) {
+    const m = attive[i];
+    const k = chiaveCella(Math.floor(m.mesh.position.x / CELLA), Math.floor(m.mesh.position.z / CELLA));
+    let c = griglia.get(k);
+    if (!c) { c = []; griglia.set(k, c); }
+    c.push(m);
+  }
+}
+function cercaVicine(x, z) {
+  vicine.length = 0;
+  const ix = Math.floor(x / CELLA), iz = Math.floor(z / CELLA);
+  for (let a = -1; a <= 1; a++) {
+    for (let b = -1; b <= 1; b++) {
+      const c = griglia.get(chiaveCella(ix + a, iz + b));
+      if (!c) continue;
+      for (let i = 0; i < c.length; i++) vicine.push(c[i]);
+    }
+  }
+  return vicine;
+}
+
 function aggiornaFisica(dt) {
   // --- Piastra: avanti e indietro, lentamente ---
   pusherZ += pusherDir * PUSHER_SPEED * dt;
@@ -1151,9 +1294,11 @@ function aggiornaFisica(dt) {
 
   for (let s = 0; s < sub; s++) {
 
-    // 1) integrazione del moto
+    // 1) integrazione del moto (e elenco delle sole lire attive)
+    attive.length = 0;
     for (const m of lire) {
       if (!m.attiva) continue;
+      attive.push(m);
       m.vy -= G * h;
       const sp = Math.hypot(m.vx, m.vy, m.vz);
       if (sp > V_MAX) { const k = V_MAX / sp; m.vx *= k; m.vy *= k; m.vz *= k; }
@@ -1164,26 +1309,29 @@ function aggiornaFisica(dt) {
       m.rz += m.wz * h;
     }
 
-    // 2) supporto: quanto in alto può stare ogni lira (dal basso verso l'alto)
-    const ordinate = lire.filter(m => m.attiva).sort((a, b) => a.mesh.position.y - b.mesh.position.y);
-    for (let i = 0; i < ordinate.length; i++) {
-      const m = ordinate[i];
+    // dal basso verso l'alto: serve per capire su che cosa poggia ogni lira
+    attive.sort((a, b) => a.mesh.position.y - b.mesh.position.y);
+    for (let i = 0; i < attive.length; i++) attive[i].rango = i;
+    costruisciGriglia();
+
+    // 2) supporto: quanto in alto può stare ogni lira
+    for (let i = 0; i < attive.length; i++) {
+      const m = attive[i];
       const p = m.mesh.position;
       let restY = m.h / 2;               // superficie del tavolo (ogni taglio ha il suo spessore)
       let appoggio = null;
       // sopra la piastra le lire viaggiano con lei
       if (Math.abs(p.x) < 3.95 && p.z > pusherZ - halfD && p.z < pusherZ + halfD) restY = 0.12 + m.h / 2;
-      for (let j = 0; j < i; j++) {
-        const o = ordinate[j];
-        const oz = o.mesh.position.z;
+      const vic = cercaVicine(p.x, p.z);
+      for (let j = 0; j < vic.length; j++) {
+        const o = vic[j];
+        if (o.rango >= i) continue;                           // guardo solo chi sta più in basso
         const rSup = (m.r + o.r) * 0.78;                      // ogni taglio ha il suo raggio
-        if (p.z - oz >= rSup || oz - p.z >= rSup) continue;    // scarto rapido
-        const dx = p.x - o.mesh.position.x, dz = p.z - oz;
-        if (dx * dx + dz * dz < rSup * rSup) {
-          if (o.livello >= LIVELLI_TORRE_MAX) continue;        // tetto della torre: 30 piani
-          const top = o.mesh.position.y + o.h;
-          if (top > restY) { restY = top; appoggio = o; }
-        }
+        const dx = p.x - o.mesh.position.x, dz = p.z - o.mesh.position.z;
+        if (dx * dx + dz * dz >= rSup * rSup) continue;
+        if (o.livello >= LIVELLI_TORRE_MAX) continue;         // tetto della torre: 30 piani
+        const top = o.mesh.position.y + o.h;
+        if (top > restY) { restY = top; appoggio = o; }
       }
       // oltre il bordo anteriore: niente più supporto, la lira cade giù
       if (p.z < -5) restY = -100;
@@ -1203,8 +1351,8 @@ function aggiornaFisica(dt) {
     }
 
     // 3) comportamento a contatto + piastra + sponde
-    for (const m of lire) {
-      if (!m.attiva) continue;
+    for (let i = 0; i < attive.length; i++) {
+      const m = attive[i];
       const p = m.mesh.position;
 
       if (m.aTerra) {
@@ -1247,42 +1395,40 @@ function aggiornaFisica(dt) {
     }
 
     // 4) collisione lira-lira (solo a pari altezza: chi sta sopra non viene spinto di lato)
-    for (let i = 0; i < lire.length; i++) {
-      const a = lire[i];
-      if (!a.attiva) continue;
-      const az = a.mesh.position.z, ay = a.mesh.position.y, ax = a.mesh.position.x;
-      for (let j = i + 1; j < lire.length; j++) {
-        const b = lire[j];
-        if (!b.attiva) continue;
-        const bz = b.mesh.position.z;
+    for (let i = 0; i < attive.length; i++) {
+      const a = attive[i];
+      const pa = a.mesh.position;
+      const vic = cercaVicine(pa.x, pa.z);
+      for (let j = 0; j < vic.length; j++) {
+        const b = vic[j];
+        if (b.rango <= i) continue;                       // ogni coppia si guarda una volta sola
+        const pb = b.mesh.position;
         const minD = (a.r + b.r) * 0.98;                  // ogni taglio ha il suo diametro
-        if (az - bz >= minD || bz - az >= minD) continue; // scarto rapido (la maggior parte delle coppie)
-        if (Math.abs(ay - b.mesh.position.y) > (a.h + b.h) * 0.34) continue;
-        const dx = ax - b.mesh.position.x;
-        const dz = az - bz;
-        const dist = Math.sqrt(dx * dx + dz * dz);
-        if (dist < minD && dist > 0.0001) {
-          const nx = dx / dist, nz = dz / dist;
-          const overlap = (minD - dist) / 2;
-          a.mesh.position.x += nx * overlap; a.mesh.position.z += nz * overlap;
-          b.mesh.position.x -= nx * overlap; b.mesh.position.z -= nz * overlap;
-          const rvn = (a.vx - b.vx) * nx + (a.vz - b.vz) * nz;
-          if (rvn < 0) {
-            const imp = rvn * 0.55;
-            a.vx -= nx * imp; a.vz -= nz * imp;
-            b.vx += nx * imp; b.vz += nz * imp;
-          }
+        if (Math.abs(pa.y - pb.y) > (a.h + b.h) * 0.34) continue;
+        const dx = pa.x - pb.x;
+        const dz = pa.z - pb.z;
+        const d2 = dx * dx + dz * dz;
+        if (d2 >= minD * minD || d2 < 1e-8) continue;
+        const dist = Math.sqrt(d2);
+        const nx = dx / dist, nz = dz / dist;
+        const overlap = (minD - dist) / 2;
+        pa.x += nx * overlap; pa.z += nz * overlap;
+        pb.x -= nx * overlap; pb.z -= nz * overlap;
+        const rvn = (a.vx - b.vx) * nx + (a.vz - b.vz) * nz;
+        if (rvn < 0) {
+          const imp = rvn * 0.55;
+          a.vx -= nx * imp; a.vz -= nz * imp;
+          b.vx += nx * imp; b.vz += nz * imp;
         }
       }
     }
 
     // 5) caduta dal bordo = lira vinta (paga il valore del taglio)
-    for (let i = lire.length - 1; i >= 0; i--) {
-      const m = lire[i];
+    for (let i = attive.length - 1; i >= 0; i--) {
+      const m = attive[i];
       if (!m.attiva) continue;
       if (m.mesh.position.z < -5 && m.mesh.position.y < -1.2) {
-        m.attiva = false;
-        scene.remove(m.mesh);
+        spegniLira(m);
         vinciLira(m);
       }
     }
@@ -1300,6 +1446,7 @@ function aggiornaFisica(dt) {
       m.mesh.scale.setScalar(1);
     }
   }
+  compattaLire();   // via dall'elenco le lire vinte: l'elenco non cresce all'infinito
 }
 
 // ============ VINCITE, COMBO, TORRI, ATTERRAGGI ============
@@ -1321,22 +1468,16 @@ function vinciLira(m) {
   comboScadenza = ora + 2600;
   stato.comboMax = Math.max(stato.comboMax, combo);
   // il valore dipende dal TAGLIO della lira vinta (50→1, 100→2, 500→5, 1000→10)
-  const guadagno = (m.premio || 1) + Math.floor(combo / 5);
+  const guadagno = (m.premio || 1) + Math.min(COMBO_BONUS_MAX, Math.floor(combo / 5));
   stato.premi += guadagno;
   stato.vinte += 1;
   stato.totVinte += 1;
-  if (combo >= 3) mostraCombo(combo);
+  if (combo >= 3 && combo % 2 === 1) mostraCombo(combo);   // niente lampeggio a ogni lira durante una valanga
   testoVolante(pos.x, 0.3, -4.6, '+' + guadagno + (m.taglio >= 500 ? ' 💎' : '') + (guadagno > (m.premio || 1) ? ' COMBO' : ''),
     m.taglio >= 500 ? 'bonus' : '');
   particelle(pos.x, 0.2, -4.9, 6 + Math.min(12, combo) + (m.taglio >= 500 ? 8 : 0), m.colore || 0xffd54a, 0.9);
   suono.vinci(combo);
-  if (combo >= 5) {
-    const lampo = document.createElement('div');
-    lampo.className = 'lampo';
-    document.body.appendChild(lampo);
-    setTimeout(() => lampo.remove(), 520);
-    scossa(0.3);
-  }
+  if (combo >= 5) { lampo(); scossa(0.3); }
   aggiornaHUD();
 }
 
@@ -1352,10 +1493,7 @@ function suTorre(p, livello) {
   particelle(p.x, p.y, p.z, 10 + livello * 2, 0x7ef0c0, 1 + livello * 0.03);
   suono.torre();
   if (livello >= 10) {                 // torre importante: festa
-    const lampo = document.createElement('div');
-    lampo.className = 'lampo';
-    document.body.appendChild(lampo);
-    setTimeout(() => lampo.remove(), 520);
+    lampo();
     scossa(0.25 + livello * 0.02);
   }
   aggiornaHUD();
@@ -1388,13 +1526,28 @@ function suAtterraggio(m) {
     particelle(p.x, 0.45, p.z, m.proiettile ? 22 : 10, 0xffb03a, 1.4);
     scossa(m.proiettile ? 0.7 + 0.4 * spinta : 0.2 * spinta);
   }
+  // la lira ha finito il suo viaggio: torna una lira come le altre, quindi
+  // può essere ritirata dal riciclo e non ricolpisce la pila una seconda volta
+  m.proiettile = false;
+  m.spinta = 0;
 }
 
 // ============ EFFETTI (particelle, testi volanti, scossa) ============
 const gruppoParticelle = new THREE.Group();
 scene.add(gruppoParticelle);
 const poolParticelle = [];
+const particelleLibere = [];          // pila dei posti liberi: prendere una particella è immediato
 const PARTICELLE_MAX = 240;
+// lampo a schermo: uno solo per volta, così una valanga di vincite non riempie il DOM
+let lampoAttivo = false;
+function lampo() {
+  if (lampoAttivo || stato.grafica.effetti <= 0) return;
+  lampoAttivo = true;
+  const d = document.createElement('div');
+  d.className = 'lampo';
+  document.body.appendChild(d);
+  setTimeout(() => { d.remove(); lampoAttivo = false; }, 520);
+}
 function creaParticella() {
   const mat = new THREE.SpriteMaterial({
     map: texScintilla, transparent: true, depthWrite: false,
@@ -1405,14 +1558,19 @@ function creaParticella() {
   gruppoParticelle.add(s);
   const p = { sprite: s, vita: 0, vitaMax: 1, vx: 0, vy: 0, vz: 0, taglia: 0.4 };
   poolParticelle.push(p);
+  particelleLibere.push(p);
   return p;
 }
 function particelle(x, y, z, quante, colore = 0xffd54a, forza = 1) {
+  const q = stato.grafica.effetti;                 // 1 = piene, 0.5 = ridotte, 0 = nessuna
+  if (q <= 0) return;
+  quante = Math.max(1, Math.round(quante * q));
   for (let i = 0; i < quante; i++) {
-    let p = poolParticelle.find(q => q.vita <= 0);
+    let p = particelleLibere.pop();
     if (!p) {
       if (poolParticelle.length >= PARTICELLE_MAX) return;
       p = creaParticella();
+      particelleLibere.pop();                      // la nuova particella è già in uso
     }
     p.vita = p.vitaMax = 0.5 + Math.random() * 0.45;
     p.vx = (Math.random() - 0.5) * 2.4 * forza;
@@ -1429,7 +1587,7 @@ function aggiornaParticelle(dt) {
   for (const p of poolParticelle) {
     if (p.vita <= 0) continue;
     p.vita -= dt;
-    if (p.vita <= 0) { p.sprite.visible = false; continue; }
+    if (p.vita <= 0) { p.sprite.visible = false; particelleLibere.push(p); continue; }
     p.vy -= 6 * dt;
     p.sprite.position.x += p.vx * dt;
     p.sprite.position.y += p.vy * dt;
@@ -1446,7 +1604,11 @@ function proietta(x, y, z) {
   const v = new THREE.Vector3(x, y, z).project(camera);
   return { sx: (v.x * 0.5 + 0.5) * innerWidth, sy: (-v.y * 0.5 + 0.5) * innerHeight };
 }
+// tetto ai testi volanti: durante una pioggia di vincite non si creano centinaia di nodi
+let floaterAttivi = 0;
+const FLOATER_MAX = 14;
 function testoVolante(x, y, z, testo, classe = '') {
+  if (floaterAttivi >= FLOATER_MAX) return;
   const { sx, sy } = proietta(x, y, z);
   if (!isFinite(sx) || !isFinite(sy)) return;
   if (sx < -100 || sx > innerWidth + 100 || sy < -100 || sy > innerHeight + 100) return;
@@ -1456,7 +1618,8 @@ function testoVolante(x, y, z, testo, classe = '') {
   d.style.left = sx + 'px';
   d.style.top = sy + 'px';
   contenitoreFloater.appendChild(d);
-  setTimeout(() => d.remove(), 1100);
+  floaterAttivi++;
+  setTimeout(() => { d.remove(); floaterAttivi--; }, 1100);
 }
 function avviso(testo) {
   testoVolante(0, 0.5, 1, testo, 'bonus');
@@ -1464,30 +1627,60 @@ function avviso(testo) {
 let scossaForza = 0;
 function scossa(f) { scossaForza = Math.max(scossaForza, f); }
 
+// il suggerimento se ne va appena hai capito come si gioca: niente cartelli davanti al tavolo
+const elHint = document.getElementById('hint');
+let hintVia = false;
+function nascondiHint() {
+  if (hintVia || !elHint) return;
+  hintVia = true;
+  elHint.classList.add('via');
+  setTimeout(() => { if (elHint) elHint.style.display = 'none'; }, 600);
+}
+setTimeout(nascondiHint, 14000);
+
 // ============ HUD ============
 const elPremi = document.getElementById('premi');
 const elVinte = document.getElementById('vinte');
 const elGettoniV = document.getElementById('gettoniV');
 const elGettoniBar = document.getElementById('gettoniBar');
-const elTaglioOra = document.getElementById('taglioOra');
+const elTaglioTxt = document.getElementById('taglioTxt');
+const elModoTxt = document.getElementById('modoTxt');
+const elFps = document.getElementById('fps');
+const elBoxFps = document.getElementById('boxFps');
 const elCarica = document.getElementById('carica');
 const elCaricaBar = document.getElementById('caricaBar');
 const elCaricaTxt = document.getElementById('caricaTxt');
 const fmt = (n) => (Math.round(n * 10) / 10).toString().replace('.', ',');
+// L'HUD veniva riscritto a ogni fotogramma (la ricarica dei gettoni lo chiamava sempre):
+// ogni scrittura nel DOM costa. Ora si tocca solo quello che è davvero cambiato.
+const memoHUD = { premi: null, vinte: null, gettoni: null, barra: null, taglio: null, modo: null };
 function aggiornaHUD() {
-  elPremi.textContent = Math.floor(stato.premi);
-  elVinte.textContent = stato.vinte;
+  const premi = Math.floor(stato.premi);
+  if (premi !== memoHUD.premi) { memoHUD.premi = premi; elPremi.textContent = premi; }
+  if (stato.vinte !== memoHUD.vinte) { memoHUD.vinte = stato.vinte; elVinte.textContent = stato.vinte; }
   const cap = capCaricatore(stato.pot.idle);
-  elGettoniV.textContent = Math.floor(stato.gettoni) + '/' + cap;
-  elGettoniBar.style.width = Math.min(100, stato.gettoni / cap * 100).toFixed(0) + '%';
-  if (elTaglioOra) elTaglioOra.textContent = 'TAGLIO · ' + nomeTaglio(stato.pot.taglio).replace(/^\S+\s*/, '').toUpperCase() + ' · VALE ' + taglio(stato.pot.taglio).premio;
+  const gettoni = Math.floor(stato.gettoni) + '/' + cap;
+  if (gettoni !== memoHUD.gettoni) { memoHUD.gettoni = gettoni; elGettoniV.textContent = gettoni; }
+  const barra = Math.min(100, stato.gettoni / cap * 100).toFixed(0);
+  if (barra !== memoHUD.barra) { memoHUD.barra = barra; elGettoniBar.style.width = barra + '%'; }
+  const tg = 'TAGLIO · ' + nomeTaglio(stato.pot.taglio).replace(/^\S+\s*/, '').toUpperCase() +
+    ' · VALE ' + taglio(stato.pot.taglio).premio;
+  if (elTaglioTxt && tg !== memoHUD.taglio) { memoHUD.taglio = tg; elTaglioTxt.textContent = tg; }
+  const modo = modoAttuale();
+  if (elModoTxt && modo !== memoHUD.modo) {
+    memoHUD.modo = modo;
+    elModoTxt.textContent = modo;
+    elModoTxt.classList.toggle('semplice', modo === 'TIRO SEMPLICE');
+  }
 }
 
 // ============ ABILITÀ ATTIVE (interruttori ON/OFF) ============
 // Solo due: CANNONE e RAFFICA. Una esclude l'altra. FORZA, GETTONI e TORRI sono PASSIVE.
 const chipAbilita = [
-  { id: 'cannone', sbloccata: () => stato.sbloccati.cannone, nota: () => 'carica dx' },
-  { id: 'raffica', sbloccata: () => stato.pot.raffica > 0, nota: () => rateRaffica(stato.pot.raffica).toFixed(0) + '/s' },
+  { id: 'cannone', sbloccata: () => stato.sbloccati.cannone,
+    nota: () => (stato.attivi.cannone ? 'ON · carica' : 'OFF') },
+  { id: 'raffica', sbloccata: () => stato.pot.raffica > 0,
+    nota: () => (stato.attivi.raffica ? 'ON · ' + rateRaffica(stato.pot.raffica).toFixed(1).replace('.', ',') + '/s' : 'OFF') },
   { id: 'audio', sbloccata: () => true, nota: () => (stato.audio ? 'ON' : 'OFF') }
 ];
 const PASSIVE = [
@@ -1518,18 +1711,20 @@ function cambiaAbilita(id) {
     const c = chipAbilita.find(q => q.id === id);
     if (!c || !c.sbloccata()) { suono.errore(); avviso('Prima sbloccalo nel negozio'); return; }
     const acceso = !stato.attivi[id];
-    // CANNONE e RAFFICA si escludono a vicenda
+    // CANNONE e RAFFICA si escludono a vicenda; se rispengo quella accesa NON si
+    // riaccende nulla: si torna al TIRO SEMPLICE (click = una lira, senza abilità).
     stato.attivi.cannone = false;
     stato.attivi.raffica = false;
-    stato.attivi[id] = acceso;
-    if (!acceso) stato.attivi.cannone = true;   // se spengo tutto, resta attivo il cannone
-    if (id === 'raffica' || !stato.attivi.raffica) { inRaffica = false; accRaffica = 0; colpiRaffica = 0; }
+    if (acceso) stato.attivi[id] = true;
+    // in ogni caso interrompo subito quello che era in corso
+    inRaffica = false; accRaffica = 0; colpiRaffica = 0;
     if (inCarica) { inCarica = false; elCarica.classList.remove('attiva'); carica = 0; }
+    avviso(acceso ? (id === 'raffica' ? 'RAFFICA ACCESA ⚡' : 'CANNONE ACCESO 💥') : 'TIRO SEMPLICE 🪙');
   }
   suono.compra();
   aggiornaAbilita();
   aggiornaHUD();
-  rendiNegozio();
+  if (!elNegozio.classList.contains('chiuso')) rendiNegozio();
   salvaPartita();
 }
 function collegaAbilita() {
@@ -1566,6 +1761,15 @@ function riga(o) {
     '<div class="desc">' + o.desc + '</div>' + prog + avvisoManca +
     '</div><button class="compra" data-id="' + o.id + '" ' + dis + '>' +
     '<b>' + etichetta + '</b><i>' + sotto + '</i></button></div>';
+}
+
+// riga di OPZIONE: descrizione a sinistra, scelte a pulsante a destra
+function rigaOpzione(o) {
+  const scelte = o.scelte.map(v =>
+    '<button data-opz="' + o.id + '" data-val="' + v.val + '"' +
+    (String(v.val) === String(o.valore) ? ' class="sel"' : '') + '>' + v.testo + '</button>').join('');
+  return '<div class="voce"><div><div class="nome"><span class="ico">' + o.icona + '</span>' + o.nome + '</div>' +
+    '<div class="desc">' + o.desc + '</div></div><div class="seg">' + scelte + '</div></div>';
 }
 
 function rendiNegozio() {
@@ -1627,7 +1831,8 @@ function rendiNegozio() {
       { id: 'raffica', nome: 'RAFFICA', desc: 'Tieni premuto e spari una lira dietro l\'altra (' + rateRaffica(p.raffica).toFixed(0) + '/s).', sbloccata: p.raffica > 0 },
       { id: 'audio', nome: 'AUDIO', desc: 'Effetti sonori della sala, sintetizzati in tempo reale (nessun file esterno).', sbloccata: true }
     ];
-    html = vociAb.map(v => {
+    html += titolo('🎚️ ABILITÀ ATTIVE · una per volta, oppure nessuna');
+    html += vociAb.map(v => {
       const acceso = v.id === 'audio' ? stato.audio : (v.sbloccata && !!stato.attivi[v.id]);
       const statoTesto = v.sbloccata ? (acceso ? 'ATTIVA' : 'DISATTIVATA') : 'DA SBLOCCARE NEL NEGOZIO';
       return '<div class="voce"><div><div class="nome">' + v.nome + '</div>' +
@@ -1636,30 +1841,97 @@ function rendiNegozio() {
         '<button class="inter' + (acceso ? ' acceso' : '') + '" data-ab="' + v.id + '"' + (v.sbloccata ? '' : ' disabled') + '>' +
         '<span class="pallino"></span>' + (acceso ? 'ON' : 'OFF') + '</button></div>';
     }).join('');
+    html += '<div class="voce"><div class="riepilogo">' +
+      '<b>MODALITÀ IN USO: ' + modoAttuale() + '</b><br>' +
+      '<span style="opacity:.75">Tocca un\'abilità accesa per <b>spegnerla</b>: con tutte spente il click ' +
+      'lancia una lira normale, senza cannone e senza raffica.</span>' +
+      '</div></div>';
     html += '<div class="voce"><div class="riepilogo"><b>ABILITÀ PASSIVE</b> — sempre attive, non si spengono:<br><br>' +
       PASSIVE.map(v => v.nome + ' · <b>' + v.valore() + '</b><br><span style="opacity:.72">' + v.desc + '</span>').join('<br><br>') +
       '</div></div>';
+  } else if (schedaAttiva === 'opz') {
+    html += titolo('⚙️ OPZIONI · GRAFICA E AUDIO');
+    html += rigaOpzione({ id: 'audio', icona: '🔊', nome: 'AUDIO', valore: stato.audio ? 1 : 0,
+      desc: 'Effetti sonori della sala, sintetizzati in tempo reale (nessun file esterno).',
+      scelte: [{ val: 1, testo: 'ACCESO' }, { val: 0, testo: 'SPENTO' }] });
+    html += rigaOpzione({ id: 'ombre', icona: '🌑', nome: 'OMBRE', valore: stato.grafica.ombre ? 1 : 0,
+      desc: 'Le ombre delle lire sono belle ma pesanti: spegnendole si guadagnano parecchi fotogrammi, soprattutto su telefono.',
+      scelte: [{ val: 1, testo: 'ACCESE' }, { val: 0, testo: 'SPENTE' }] });
+    html += rigaOpzione({ id: 'effetti', icona: '✨', nome: 'EFFETTI', valore: stato.grafica.effetti,
+      desc: 'Quante scintille, lampi e testi volanti mostrare quando vinci.',
+      scelte: [{ val: 1, testo: 'PIENI' }, { val: 0.5, testo: 'RIDOTTI' }, { val: 0, testo: 'NESSUNO' }] });
+    html += rigaOpzione({ id: 'auto', icona: '🎛️', nome: 'QUALITÀ AUTOMATICA', valore: stato.grafica.auto ? 1 : 0,
+      desc: 'Se il gioco rallenta abbassa da sola la risoluzione di disegno, e la rialza appena torna fluido.',
+      scelte: [{ val: 1, testo: 'ATTIVA' }, { val: 0, testo: 'FISSA' }] });
+    html += rigaOpzione({ id: 'fps', icona: '🏞️', nome: 'CONTAFOTOGRAMMI', valore: stato.grafica.fps ? 1 : 0,
+      desc: 'Mostra gli FPS nell\'HUD, utile per capire se una scelta grafica aiuta davvero.',
+      scelte: [{ val: 1, testo: 'MOSTRA' }, { val: 0, testo: 'NASCONDI' }] });
+    html += titolo('♻️ TAVOLO');
+    html += '<div class="voce"><div class="riepilogo">' +
+      'Le <b>lire non finiscono mai</b> e il tavolo <b>non si riempie mai</b>: quando ci sono ' +
+      'troppe lire in scena (oltre <b>' + MAX_LIRE + '</b>) il tavolo ritira da solo quelle in fondo, ' +
+      'lontano dal bordo dei premi.<br>Lire ritirate finora: <b>' + stato.totRiciclate + '</b>' +
+      '</div></div>';
+    html += '<div class="voce"><div><div class="nome"><span class="ico">⚠️</span>RICOMINCIA DA ZERO</div>' +
+      '<div class="desc">Cancella saldo, potenziamenti, sbloccabili e record. Non si torna indietro.</div></div>' +
+      '<button class="compra" data-id="azzera"><b>AZZERA TUTTO</b><i>salvataggio cancellato</i></button></div>';
   } else {
-    html = '<div class="voce"><div class="riepilogo">' +
+    html += titolo('📊 LA TUA PARTITA');
+    html += '<div class="voce"><div class="riepilogo">' +
       'Lire vinte in totale: <b>' + stato.totVinte + '</b><br>' +
       'Lire lanciate: <b>' + stato.totLanci + '</b><br>' +
+      'Lire in scena adesso: <b>' + lireSulTavolo() + '</b> / ' + MAX_LIRE + '<br>' +
+      'Lire ritirate dal tavolo ♻️: <b>' + stato.totRiciclate + '</b><br>' +
       'Torri costruite: <b>' + stato.totTorri + '</b> · record <b>x' + (stato.torreRecord || 1) + '/30</b><br>' +
-      'Combo massima: <b>x' + stato.comboMax + '</b><br>' +
+      'Combo massima: <b>x' + stato.comboMax + '</b> (bonus max +' + COMBO_BONUS_MAX + ')<br>' +
+      'Modalità in uso: <b>' + modoAttuale() + '</b><br>' +
       'Taglio in uso: <b>' + nomeTaglio(p.taglio) + '</b><br>' +
       'Ricarica gettoni: <b>' + fmt(ricaricaGettoni(p.idle)) + '/s</b> (cap ' + capCaricatore(p.idle) + ')<br>' +
       'Premi attuali: <b>' + Math.floor(stato.premi) + '</b>' +
-      '</div><button class="compra" data-id="azzera">AZZERA TUTTO</button></div>';
+      '</div></div>';
   }
   elVoci.innerHTML = html;
-  elVoci.querySelectorAll('button.compra').forEach(b => { b.onclick = () => compra(b.dataset.id); });
-  elVoci.querySelectorAll('button.inter').forEach(b => { b.onclick = () => cambiaAbilita(b.dataset.ab); });
-  // su telefono i bottoni del negozio devono rispondere al tocco
-  elVoci.querySelectorAll('button.compra, button.inter').forEach(b => {
-    b.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      if (b.dataset.id) compra(b.dataset.id); else if (b.dataset.ab) cambiaAbilita(b.dataset.ab);
-    }, { passive: false });
+  const premi = (b) => {
+    if (b.dataset.id) compra(b.dataset.id);
+    else if (b.dataset.ab) cambiaAbilita(b.dataset.ab);
+    else if (b.dataset.opz) cambiaOpzione(b.dataset.opz, parseFloat(b.dataset.val));
+  };
+  elVoci.querySelectorAll('button.compra, button.inter, .seg button').forEach(b => {
+    b.onclick = () => premi(b);
+    // su telefono i bottoni del negozio devono rispondere al tocco
+    b.addEventListener('touchend', (e) => { e.preventDefault(); premi(b); }, { passive: false });
   });
+}
+
+// ---------- OPZIONI: applicano subito l'effetto e si salvano ----------
+function cambiaOpzione(id, val) {
+  if (id === 'audio') stato.audio = val > 0;
+  else if (id === 'ombre') stato.grafica.ombre = val > 0;
+  else if (id === 'effetti') stato.grafica.effetti = val;
+  else if (id === 'auto') stato.grafica.auto = val > 0;
+  else if (id === 'fps') stato.grafica.fps = val > 0;
+  applicaGrafica();
+  suono.compra();
+  aggiornaAbilita();
+  salvaPartita();
+  rendiNegozio();
+}
+
+// le ombre si accendono/spengono a gioco avviato: vanno ricompilati i materiali
+function applicaGrafica() {
+  const ombre = !!stato.grafica.ombre;
+  if (renderer.shadowMap.enabled !== ombre) {
+    renderer.shadowMap.enabled = ombre;
+    scene.traverse((o) => {
+      if (!o.material) return;
+      const mm = Array.isArray(o.material) ? o.material : [o.material];
+      for (const q of mm) q.needsUpdate = true;
+    });
+  }
+  spot.castShadow = ombre;
+  for (const m of lire) m.mesh.castShadow = ombre;
+  if (elBoxFps) elBoxFps.style.display = stato.grafica.fps ? '' : 'none';
+  if (!stato.grafica.auto) { scalaRender = 1; renderer.setPixelRatio(PIXEL_RATIO_MAX); }
 }
 
 function compra(id) {
@@ -1726,9 +1998,20 @@ function compra(id) {
 
 // ============ LOOP ============
 let lastTime = performance.now();
+const bersaglioCamera = new THREE.Vector3();   // riusato: niente allocazioni a ogni fotogramma
 let tempoSalvataggio = 0;
 let t = 0;
 let sparaPronto = true;
+
+// --- contafotogrammi e qualità automatica ---
+let fpsTempo = 0, fpsConta = 0;
+function adattaQualita(fps) {
+  if (!stato.grafica.auto) return;
+  const prima = scalaRender;
+  if (fps < 45) scalaRender = Math.max(0.6, scalaRender - 0.1);
+  else if (fps > 57) scalaRender = Math.min(1, scalaRender + 0.05);
+  if (scalaRender !== prima) renderer.setPixelRatio(PIXEL_RATIO_MAX * scalaRender);
+}
 
 function animate() {
   requestAnimationFrame(animate);
@@ -1738,7 +2021,16 @@ function animate() {
   t += dt;
 
   aggiornaFisica(dt);
+  riciclaEccesso();          // ♻️ il tavolo fa spazio da solo: il lancio non si rifiuta mai
   aggiornaParticelle(dt);
+
+  fpsConta++; fpsTempo += dt;
+  if (fpsTempo >= 0.5) {
+    const fps = fpsConta / fpsTempo;
+    fpsConta = 0; fpsTempo = 0;
+    if (stato.grafica.fps && elFps) elFps.textContent = Math.round(fps);
+    adattaQualita(fps);
+  }
 
   // --- GETTONI INFINITI: il caricatore si ricarica SEMPRE, senza interruttori che lo fermino ---
   const capG = capCaricatore(stato.pot.idle);
@@ -1809,8 +2101,8 @@ function animate() {
 
   // --- camera: zoom (utente + arretramento in verticale) + scossa ---
   const kv = fattoreVerticale();
-  const targetPos = new THREE.Vector3(0, 10 * kv * cameraZoom, -12 * kv * cameraZoom);
-  camera.position.lerp(targetPos, 0.1);
+  bersaglioCamera.set(0, 10 * kv * cameraZoom, -12 * kv * cameraZoom);
+  camera.position.lerp(bersaglioCamera, 0.1);
   if (scossaForza > 0) {
     scossaForza = Math.max(0, scossaForza - dt * 2.6);
     camera.position.x += (Math.random() - 0.5) * scossaForza * 0.5;
@@ -1828,13 +2120,13 @@ function animate() {
 // sparo dal pulsante dedicato (telefono): parte già carico al massimo
 const elSpara = document.getElementById('spara');
 elSpara.onclick = () => {
-  if (!stato.sbloccati.cannone || cooldownSparo > 0) { suono.errore(); return; }
+  if (!stato.sbloccati.cannone || !stato.attivi.cannone || cooldownSparo > 0) { suono.errore(); return; }
   if (!puntatore.visibile || !puntatore.dentro) { suono.errore(); avviso('Tocca il tavolo per mirare'); return; }
   sparaCannone(puntatore.x, puntatore.z, 1);
 };
 function aggiornaSpara() {
   if (!elSpara) return;
-  const mostralo = TATTILE && stato.sbloccati.cannone;
+  const mostralo = TATTILE && stato.sbloccati.cannone && !!stato.attivi.cannone;
   elSpara.style.display = mostralo ? 'inline-flex' : 'none';
   if (mostralo) {
     elSpara.disabled = cooldownSparo > 0 || stato.gettoni < 1;
@@ -1887,8 +2179,8 @@ addEventListener('keydown', (e) => {
     if (!elNegozio.classList.contains('chiuso')) rendiNegozio();
     return;
   }
-  // scorciatoie abilità: C cannone · R raffica · F forza · M multi · I idle · T torri · A audio
-  const tasti = { c: 'cannone', r: 'raffica', f: 'forza', m: 'multi', i: 'idle', t: 'torri', a: 'audio' };
+  // scorciatoie: C cannone · R raffica · A audio (le altre abilità sono passive, sempre attive)
+  const tasti = { c: 'cannone', r: 'raffica', a: 'audio' };
   const ab = tasti[e.key.toLowerCase()];
   if (ab) cambiaAbilita(ab);
 });
@@ -1902,11 +2194,23 @@ stato.torreRecord = Math.max(1, parseInt(stato.torreRecord, 10) || 1);
 const elVersione = document.getElementById('versione');
 if (elVersione) elVersione.textContent = VERSIONE;
 stato.gettoni = Math.min(Math.max(stato.gettoni, 0), capCaricatore(stato.pot.idle));
+stato.grafica.effetti = [0, 0.5, 1].indexOf(stato.grafica.effetti) >= 0 ? stato.grafica.effetti : 1;
+stato.totRiciclate = Math.max(0, parseInt(stato.totRiciclate, 10) || 0);
 aggiornaFantasma();          // l'anteprima usa il taglio scelto
+applicaGrafica();            // ombre, effetti e contafotogrammi come li ha scelti il giocatore
 aggiornaHUD();
 aggiornaAbilita();
 aggiornaSpara();
 rendiNegozio();
+
+// ponte di controllo: serve ai controlli automatici e per vedere dal vivo che cosa
+// sta facendo il tavolo (quante lire, che modalità, quante ne ha ritirate).
+window.DOZER = {
+  stato, lire, MAX_LIRE, VERSIONE,
+  lireSulTavolo, riciclaEccesso, modoAttuale, cambiaAbilita, cambiaOpzione, aggiornaAbilita,
+  creaLira, lanciaLira, aggiornaFisica, aggiornaHUD, rendiNegozio
+};
+
 animate();
 </script>
 </body>

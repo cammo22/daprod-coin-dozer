@@ -1,0 +1,267 @@
+// Controlli automatici di DaProd Coin Dozer.
+//
+//   npm i -D playwright three && node test/prove.mjs
+//
+// Apre il gioco in un browser vero (Chromium headless) su desktop, su telefono e con
+// un salvataggio di una versione vecchia, e verifica che: parta senza errori, il tavolo
+// non si riempia mai, le abilita' si possano spegnere, la raffica non regali premi
+// fuori scala e il negozio funzioni anche al tocco.
+// Se three.js e' installato in locale (node_modules) viene servito da li', cosi' le
+// prove funzionano anche senza rete; altrimenti si usa la CDN come nel gioco vero.
+import { chromium } from 'playwright';
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+
+const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
+const CDN = 'https://unpkg.com/three@0.160.0/build/three.module.js';
+const THREE_LOCALE = ['node_modules/three/build/three.module.js', 'test/three.module.js']
+  .map(p => path.join(ROOT, p)).find(p => fs.existsSync(p));
+const PORT = 8137;
+const TIPI = { '.html': 'text/html', '.js': 'text/javascript', '.md': 'text/markdown' };
+const server = http.createServer((req, res) => {
+  let f = decodeURIComponent(req.url.split('?')[0]);
+  if (f === '/') f = '/index.html';
+  if (f === '/three.module.js' && THREE_LOCALE) {
+    res.writeHead(200, { 'content-type': 'text/javascript' });
+    return res.end(fs.readFileSync(THREE_LOCALE));
+  }
+  const p = path.join(ROOT, f);
+  if (!p.startsWith(ROOT) || !fs.existsSync(p)) { res.writeHead(404); return res.end('no'); }
+  let body = fs.readFileSync(p);
+  // se three e' in locale lo servo da qui: le prove girano anche senza rete
+  if (p.endsWith('index.html') && THREE_LOCALE) {
+    body = Buffer.from(String(body).replace(CDN, '/three.module.js'));
+  }
+  res.writeHead(200, { 'content-type': TIPI[path.extname(p)] || 'application/octet-stream' });
+  res.end(body);
+});
+await new Promise(r => server.listen(PORT, r));
+
+let ok = 0, ko = 0;
+const T = (nome, cond, extra = '') => {
+  if (cond) { ok++; console.log('  ✔', nome, extra); }
+  else { ko++; console.log('  ✘', nome, extra); }
+};
+
+const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });
+
+async function nuovaPagina(opz = {}, salvataggio = null) {
+  const ctx = await browser.newContext(opz);
+  const page = await ctx.newPage();
+  const errori = [];
+  page.on('console', m => { if (m.type() === 'error') errori.push(m.text()); });
+  page.on('pageerror', e => errori.push(String(e)));
+  if (salvataggio) {
+    await page.addInitScript(sv => { try { localStorage.setItem('daprod_dozer_v2', sv); } catch (e) {} }, salvataggio);
+  }
+  await page.goto(`http://127.0.0.1:${PORT}/index.html`);
+  await page.waitForFunction(() => !!window.DOZER, null, { timeout: 25000 });
+  return { ctx, page, errori };
+}
+
+// ============================================================ DESKTOP
+console.log('\n== DESKTOP ==');
+{
+  const { ctx, page, errori } = await nuovaPagina({ viewport: { width: 1280, height: 800 } });
+  await page.waitForTimeout(900);
+
+  T('nessun errore in console', errori.length === 0, errori.join(' | '));
+  T('canvas presente', await page.locator('canvas').count() === 1);
+  T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
+  T('versione v1.4.0 in HUD', (await page.locator('#versione').textContent()) === 'v1.4.0');
+  T('pila iniziale creata', await page.evaluate(() => DOZER.lireSulTavolo()) > 80);
+
+  // --- modalità di partenza e spegnimento abilità ---
+  const modo0 = await page.evaluate(() => DOZER.modoAttuale());
+  T('si parte in TIRO SEMPLICE (cannone non ancora sbloccato)', modo0 === 'TIRO SEMPLICE', modo0);
+
+  await page.evaluate(() => { DOZER.stato.premi = 999999; DOZER.stato.sbloccati.cannone = true; DOZER.stato.attivi.cannone = true; DOZER.aggiornaAbilita(); DOZER.aggiornaHUD(); });
+  T('cannone acceso → modalità CANNONE', await page.evaluate(() => DOZER.modoAttuale()) === 'CANNONE');
+  await page.click('#ch-cannone');
+  const modo1 = await page.evaluate(() => DOZER.modoAttuale());
+  T('ricliccando il chip CANNONE si SPEGNE (tiro senza abilità)', modo1 === 'TIRO SEMPLICE', modo1);
+  T('chip cannone in stato off', await page.locator('#ch-cannone').evaluate(e => e.classList.contains('off')));
+  await page.click('#ch-cannone');
+  T('e si riaccende cliccandolo di nuovo', await page.evaluate(() => DOZER.modoAttuale()) === 'CANNONE');
+
+  await page.evaluate(() => { DOZER.stato.pot.raffica = 3; DOZER.aggiornaAbilita(); });
+  await page.click('#ch-raffica');
+  T('raffica accesa esclude il cannone', await page.evaluate(() => DOZER.modoAttuale()) === 'RAFFICA');
+  T('cannone spento quando c\'è la raffica', await page.evaluate(() => DOZER.stato.attivi.cannone === false));
+  await page.click('#ch-raffica');
+  const modo2 = await page.evaluate(() => DOZER.modoAttuale());
+  T('spegnendo la raffica NON si riaccende il cannone', modo2 === 'TIRO SEMPLICE', modo2);
+  T('la pillola mostra la modalità', (await page.locator('#modoTxt').textContent()) === 'TIRO SEMPLICE');
+
+  // --- il tavolo non si riempie mai ---
+  // 40 secondi di raffica al massimo (10 lire/s) simulati a 60 passi al secondo
+  const pieno = await page.evaluate(async () => {
+    const res = { max: 0 };
+    let acc = 0;
+    for (let g = 0; g < 40 * 60; g++) {
+      acc += 10 / 60;
+      while (acc >= 1) { acc -= 1; const m = DOZER.creaLira(-2 + Math.random() * 4, 6, -4 + Math.random() * 6, { volo: true, taglio: 1 }); m.vy = -1; }
+      DOZER.aggiornaFisica(1 / 60);
+      DOZER.riciclaEccesso();
+      res.max = Math.max(res.max, DOZER.lireSulTavolo());
+    }
+    return res;
+  });
+  T('40 s di raffica: le lire in scena restano sotto il tetto',
+    pieno.max <= (await page.evaluate(() => DOZER.MAX_LIRE)) + 12, 'max ' + pieno.max);
+  // caso estremo: 900 lire tutte insieme, il tetto deve comunque rientrare
+  const estremo = await page.evaluate(() => {
+    for (let i = 0; i < 900; i++) { const m = DOZER.creaLira(-3 + Math.random() * 6, 6 + Math.random() * 3, -4 + Math.random() * 7, { volo: true, taglio: 1 }); m.vy = -1; }
+    for (let g = 0; g < 240; g++) { DOZER.aggiornaFisica(1 / 60); DOZER.riciclaEccesso(); }
+    return DOZER.lireSulTavolo();
+  });
+  T('anche con 900 lire buttate dentro tutte insieme il tavolo rientra',
+    estremo <= (await page.evaluate(() => DOZER.MAX_LIRE)) + 12, 'restano ' + estremo);
+  T('il riciclo ha ritirato lire dal fondo', await page.evaluate(() => DOZER.stato.totRiciclate) > 0,
+    'ritirate ' + await page.evaluate(() => DOZER.stato.totRiciclate));
+  T('l\'elenco interno non accumula lire spente',
+    await page.evaluate(() => DOZER.lire.length - DOZER.lireSulTavolo()) < 30);
+  const sorgente = await page.content();
+  T('la scritta "TAVOLO PIENO" non esiste più in tutta la pagina', !sorgente.includes('TAVOLO PIENO'));
+  T('nessun rifiuto del lancio nel codice', !sorgente.includes('tavoloPieno'));
+
+  // --- prestazioni ---
+  const perf = await page.evaluate(async () => {
+    const t0 = performance.now();
+    for (let i = 0; i < 120; i++) DOZER.aggiornaFisica(1 / 60);
+    return { ms: (performance.now() - t0) / 120, lire: DOZER.lireSulTavolo() };
+  });
+  T('un passo di fisica costa poco anche col tavolo carico', perf.ms < 9,
+    perf.lire + ' lire · ' + perf.ms.toFixed(2) + ' ms/passo');
+
+  // --- negozio ---
+  await page.click('#apriNegozio');
+  await page.waitForTimeout(250);
+  T('negozio aperto', !(await page.locator('#negozio').evaluate(e => e.classList.contains('chiuso'))));
+  T('barra saldo presente', await page.locator('.saldo-bar').count() === 1);
+  T('righe del negozio disegnate', await page.locator('.voce').count() >= 6);
+  T('icone dei potenziamenti', await page.locator('.voce .ico').count() >= 5);
+  T('barre di livello', await page.locator('.prog').count() >= 4);
+
+  for (const [tab, atteso] of [['sblocca', '.voce'], ['abilita', '.inter'], ['stat', '.riepilogo'], ['opz', '.seg button']]) {
+    await page.click(`.tab button[data-tab="${tab}"]`);
+    await page.waitForTimeout(140);
+    T(`scheda ${tab} si apre`, await page.locator(atteso).count() > 0);
+  }
+  T('scheda OPZIONI: 5 gruppi di scelte', await page.locator('.seg').count() === 5);
+  T('statistiche mostrano le lire ritirate', (await page.locator('.voci').textContent()).length > 0);
+
+  // opzioni funzionanti
+  await page.click('.seg button[data-opz="ombre"][data-val="0"]');
+  await page.waitForTimeout(150);
+  T('ombre spegnibili', await page.evaluate(() => DOZER.stato.grafica.ombre === false));
+  await page.click('.seg button[data-opz="fps"][data-val="1"]');
+  await page.waitForTimeout(150);
+  T('contafotogrammi visibile', await page.locator('#boxFps').isVisible());
+  await page.click('.seg button[data-opz="effetti"][data-val="0.5"]');
+  await page.waitForTimeout(150);
+  T('effetti su RIDOTTI', await page.evaluate(() => DOZER.stato.grafica.effetti === 0.5));
+  await page.click('.seg button[data-opz="audio"][data-val="0"]');
+  await page.waitForTimeout(150);
+  T('audio spegnibile dalle opzioni', await page.evaluate(() => DOZER.stato.audio === false));
+
+  await page.click('#chiudiNegozio');
+  T('negozio chiuso', await page.locator('#negozio').evaluate(e => e.classList.contains('chiuso')));
+
+  // --- salvataggio ---
+  const sv = await page.evaluate(() => localStorage.getItem('daprod_dozer_v2'));
+  T('salvataggio scritto con le opzioni', !!sv && JSON.parse(sv).grafica.ombre === false);
+
+  T('nessun errore dopo tutte le prove', errori.length === 0, errori.join(' | '));
+  await ctx.close();
+}
+
+// ============================================================ TELEFONO
+console.log('\n== TELEFONO (portrait, touch) ==');
+{
+  const { ctx, page, errori } = await nuovaPagina({
+    viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3,
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
+  });
+  await page.waitForTimeout(900);
+  T('parte senza errori', errori.length === 0, errori.join(' | '));
+  T('ombre spente di serie su telefono', await page.evaluate(() => DOZER.stato.grafica.ombre === false));
+  T('tetto lire ridotto su telefono', await page.evaluate(() => DOZER.MAX_LIRE) === 170);
+  const chip = await page.locator('#ch-raffica').boundingBox();
+  T('chip abilità abbastanza grandi da toccare', chip && chip.height >= 30, chip ? Math.round(chip.height) + 'px' : 'n/d');
+  const neg = await page.locator('#apriNegozio').boundingBox();
+  T('pulsante negozio raggiungibile', neg && neg.y + neg.height <= 844);
+  T('chip e negozio non si sovrappongono', chip && neg && chip.x + chip.width <= neg.x + 1,
+    'chip fino a ' + Math.round(chip.x + chip.width) + ', negozio da ' + Math.round(neg.x));
+  await page.tap('#apriNegozio');
+  await page.waitForTimeout(300);
+  T('negozio si apre col tocco', !(await page.locator('#negozio').evaluate(e => e.classList.contains('chiuso'))));
+  const tabBox = await page.locator('.tab').boundingBox();
+  T('barra schede dentro lo schermo', tabBox && tabBox.width <= 390);
+  await page.tap('.tab button[data-tab="opz"]');
+  await page.waitForTimeout(250);
+  T('scheda opzioni sul telefono', await page.locator('.seg button').count() >= 9);
+  const segBtn = await page.locator('.seg button').first().boundingBox();
+  T('pulsanti opzioni comodi col pollice', segBtn && segBtn.height >= 34, segBtn ? Math.round(segBtn.height) + 'px' : 'n/d');
+  const larghezzaVoci = await page.locator('.voci').evaluate(e => e.scrollWidth - e.clientWidth);
+  T('niente scorrimento orizzontale nel negozio', larghezzaVoci <= 2, 'extra ' + larghezzaVoci + 'px');
+  T('nessun errore su telefono', errori.length === 0, errori.join(' | '));
+  await ctx.close();
+}
+
+// ============================================================ RAFFICA (equilibrio)
+console.log('\n== RAFFICA TENUTA PREMUTA ==');
+  // --- raffica: niente pioggia di premi fuori scala ---
+{
+  const { ctx: c2, page: p2, errori: e2 } = await nuovaPagina({ viewport: { width: 1280, height: 800 } });
+  await p2.waitForTimeout(1200);
+  await p2.evaluate(() => {
+    const st = DOZER.stato;
+    st.pot.raffica = 6; st.pot.multi = 4; st.pot.idle = 15; st.pot.forza = 8;
+    st.attivi.raffica = true; st.attivi.cannone = false; st.audio = false;
+    st.gettoni = 76; st.premi = 0; st.vinte = 0;
+    DOZER.aggiornaAbilita();
+  });
+  await p2.mouse.move(640, 430);
+  await p2.waitForTimeout(200);
+  await p2.mouse.down();
+  await p2.waitForTimeout(15000);
+  await p2.mouse.up();
+  const r = await p2.evaluate(() => ({ premi: Math.floor(DOZER.stato.premi), vinte: DOZER.stato.vinte, lire: DOZER.lireSulTavolo() }));
+  const perLira = r.vinte ? r.premi / r.vinte : 0;
+  T('tenendo premuta la raffica si vince davvero qualcosa', r.vinte > 5, r.vinte + ' lire vinte');
+  // L.100 paga 2, il bonus combo si ferma a +5: mai piu' di 7 premi per lira
+  T('il guadagno per lira resta nel tetto (combo limitata)', perLira <= 7.05, perLira.toFixed(1) + ' premi/lira');
+  T('il tavolo non straborda sotto raffica', r.lire <= 300, r.lire + ' lire in scena');
+  T('nessun errore durante la raffica', e2.length === 0, e2.join(' | '));
+  await c2.close();
+  }
+
+
+// ============================================================ SALVATAGGIO VECCHIO
+console.log('\n== SALVATAGGIO DI UNA VERSIONE VECCHIA ==');
+{
+  const vecchio = JSON.stringify({
+    premi: 4321, gettoni: 9, vinte: 12, totVinte: 40, totLanci: 90, totTorri: 3, comboMax: 7,
+    pot: { idle: 4, forza: 3, multi: 2, cannonePot: 1, raffica: 2, taglio: 9 },
+    attivi: { cannone: true, raffica: true, forza: true, multi: true, idle: true, torri: true },
+    audio: true, torreRecord: 'boh', sbloccati: { cannone: true, feltro: 'rubino' },
+    feltriPosseduti: ['verde', 'blu'], skin: 'oro'
+  });
+  const { ctx, page, errori } = await nuovaPagina({ viewport: { width: 1280, height: 800 } }, vecchio);
+  await page.waitForTimeout(900);
+  T('il gioco parte con un salvataggio vecchio', errori.length === 0, errori.join(' | '));
+  T('nessun avviso rosso', await page.locator('#erroreGioco').count() === 0);
+  T('taglio riportato nei limiti', await page.evaluate(() => DOZER.stato.pot.taglio) <= 3);
+  T('record torre sanificato', await page.evaluate(() => DOZER.stato.torreRecord) >= 1);
+  T('cannone e raffica non entrambi accesi', await page.evaluate(() => !(DOZER.stato.attivi.cannone && DOZER.stato.attivi.raffica)));
+  T('opzioni grafiche create se mancanti', await page.evaluate(() => typeof DOZER.stato.grafica.effetti === 'number'));
+  T('premi conservati', await page.evaluate(() => DOZER.stato.premi) >= 4321);
+  await ctx.close();
+}
+
+console.log(`\n==== ${ok} OK · ${ko} KO ====`);
+await browser.close();
+server.close();
+process.exit(ko ? 1 : 0);
