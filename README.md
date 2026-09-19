@@ -10,7 +10,8 @@
 
 Il **coin dozer della sala slot DaProd**: la piastra spinge la pila di lire verso il bordo, tu lanci le
 lire dall'alto e quelle che cadono diventano **premi**. I **gettoni da lanciare sono infiniti**: il
-caricatore si ricarica sempre da solo. Funziona **da telefono, tablet e desktop**, basta il browser.
+caricatore si ricarica sempre da solo e **il tavolo non si riempie mai** — quando è troppo carico
+ritira da solo le lire in fondo ♻️. Funziona **da telefono, tablet e desktop**, basta il browser.
 
 ## ▶ Come si gioca
 
@@ -19,18 +20,30 @@ caricatore si ricarica sempre da solo. Funziona **da telefono, tablet e desktop*
 | Lancia una lira | `click` nella zona illuminata | `tap` nella zona illuminata |
 | **Raffica** ⚡ (tieni premuto e spara) | tieni premuto il **tasto sinistro** | tieni premuto il dito |
 | **Cannone** 💥 (sparo potente) | tieni premuto il **tasto destro** e rilascia | tieni premuto e rilascia, oppure il pulsante **◎ SPARA** |
+| **Spegnere un'abilità** | `click` sul chip già acceso | `tap` sul chip già acceso |
 | Zoom | rotella del mouse | pizzica con due dita |
 
+### 🪨 Le abilità si accendono **e si spengono**
+
+Nella barra in basso ci sono i chip 💥 **CANNONE** e ⚡ **RAFFICA**: **una esclude l'altra** e,
+toccando quella accesa, **si spegne senza accenderne un'altra**. Con tutte spente si gioca in
+**TIRO SEMPLICE**: click = una lira, senza abilità. La modalità in uso è sempre scritta nella
+pillola sotto il tavolo, accanto al taglio.
+
 **I gettoni sono infiniti** 🪙♾️: ogni lancio consuma 1 gettone dal caricatore, che si ricarica
-sempre da solo (vedi la barra nell'HUD). Quando una lira cade oltre il bordo vinci **PREMI** 🏆,
+sempre da solo (vedi la barra nell'HUD). **Il tavolo non si riempie mai**: non esiste nessun
+messaggio di tavolo pieno e nessun lancio viene rifiutato, perché quando le lire in scena sono
+troppe (oltre 300, 170 su telefono) il tavolo **ritira da solo quelle in fondo** ♻️, lontano dal
+bordo dei premi. Quando una lira cade oltre il bordo vinci **PREMI** 🏆,
 **in base al suo taglio** (L.50 → 1, L.100 → 2, L.500 → 5, L.1000 → 10), che servono per comprare
 i potenziamenti. Le lire si impilano **fino a 30 piani**: più la torre è alta, più premi regala.
 
-Nella barra in basso ci sono solo le **abilità attive**: 💥 **CANNONE** e  **RAFFICA**, e
-**una esclude l'altra**. 💪 Forza, ✨ Multi-lancio, 🪙 Ricarica gettoni e 🏗️ Torri sono
-**abilità passive**: si comprano e restano sempre attive, senza interruttori.
+💪 Forza, ✨ Multi-lancio, 🪙 Ricarica gettoni e 🏗️ Torri sono invece **abilità passive**:
+si comprano e restano sempre attive, senza interruttori.
 
-Il negozio mostra per ogni potenziamento **icona, livello e tetto massimo** (`LIVELLO x / MAX`).
+Il negozio mostra per ogni potenziamento **icona, livello e tetto massimo** (`LIVELLO x / MAX`),
+e nella scheda **⚙️ OPZIONI** ci sono audio, **ombre**, **effetti** (pieni / ridotti / nessuno),
+**qualità automatica** e **contafotogrammi**.
 
 ## ✨ Cosa c'è dentro
 
@@ -54,8 +67,10 @@ Il negozio mostra per ogni potenziamento **icona, livello e tetto massimo** (`LI
 - **Sbloccabili** 🎁: cannone 🔫 e i panni del tavolo (🔷 blu, 🍷 bordeaux, 🌌 notte).
 - **Soddisfazione**: suoni sintetizzati in tempo reale con la Web Audio API (nessun file audio),
   particelle, testi volanti `+1`, **combo** con tono crescente, lampi e scossoni di camera sui colpi.
-- **Switch ON/OFF** per ogni abilità e per l'audio, più scorciatoie da tastiera:
-  `B` negozio · `C` cannone · `R` raffica · `F` forza · `M` multi · `I` idle · `T` torri · `A` audio.
+- **Switch ON/OFF** per ogni abilità attiva e per l'audio, più scorciatoie da tastiera:
+  `B` negozio · `C` cannone · `R` raffica · `A` audio · `Esc` chiude il negozio.
+- **⚙️ Opzioni grafiche** che si salvano: ombre, quantità di effetti, **qualità automatica**
+  (se il gioco rallenta abbassa da sola la risoluzione e la rialza appena torna fluido) e FPS a schermo.
 
 ## 💾 Salvataggio
 
@@ -74,6 +89,19 @@ Per provarlo in locale basta aprirlo nel browser, oppure:
 
 ```bash
 python -m http.server 8080     # poi apri http://localhost:8080
+```
+
+### ✅ Controlli automatici
+
+Nel repository ci sono **62 prove** che aprono il gioco in un browser vero (desktop, telefono e
+con un salvataggio di una versione vecchia) e controllano che parta senza errori, che il tavolo
+non si riempia mai, che le abilità si spengano, che la raffica non regali premi fuori scala e che
+il negozio funzioni anche al tocco:
+
+```bash
+npm i -D playwright three
+npx playwright install chromium
+node test/prove.mjs
 ```
 
 ## 📱 Da telefono

@@ -4,6 +4,71 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [1.4.0] — 2026-09-19 · Lire davvero infinite, gioco più fluido, abilità spegnibili ♻️⚡
+
+### Risolto
+- **Addio "TAVOLO PIENO"**: quel messaggio non esiste più e il lancio non viene **mai** rifiutato.
+  Quando in scena ci sono troppe lire, il tavolo **ritira da solo quelle in fondo** ♻️ (le più
+  lontane dal bordo dei premi, quelle che non stavi guardando), facendo spazio a quelle nuove.
+  Provato anche buttando dentro 900 lire tutte insieme: il tavolo rientra da solo e si continua a giocare.
+- **Le abilità ora si spengono**: se tocchi il chip di un'abilità **già accesa**, quella si spegne e
+  **non se ne riaccende un'altra al posto suo**. Resta il **TIRO SEMPLICE**: click = una lira, senza
+  cannone e senza raffica. Prima, spegnendo la raffica, si riaccendeva da solo il cannone.
+- **Tocco veloce col cannone acceso**: prima non succedeva niente, ora parte un lancio normale.
+- **Perdita di prestazioni nelle partite lunghe**: l'elenco interno delle lire non veniva mai
+  ripulito e cresceva a ogni lira vinta (dopo 3 minuti conteneva 1535 voci per sole 242 lire vere),
+  rallentando il gioco sempre di più. Ora le lire vinte escono subito dall'elenco.
+- Le scorciatoie `F`, `M`, `I`, `T` non fanno più comparire "prima sbloccalo nel negozio":
+  quelle abilità sono passive e non hanno un interruttore. Restano `C`, `R`, `A` e `B`.
+
+### Equilibrio del gioco
+- **Raffica tenuta premuta**: partiva **una raffica di lire per ogni colpo** (il multi-lancio si
+  moltiplicava con la cadenza, fino a 5 lire × 15 colpi al secondo), il tavolo veniva sommerso e
+  le lire cadevano fuori a valanga regalando premi a raffica. Ora:
+  - a raffica parte **1 lira per colpo** (il multi-lancio vale per il click normale);
+  - la cadenza scende da `3 + 2 × livello` a `2,5 + 1,1 × livello` lire al secondo;
+  - le lire sparate a raffica **spingono meno** (45% della forza), niente più valanghe;
+  - il **bonus combo si ferma a +5** (prima cresceva all'infinito: nelle prove una lira da L.100
+    arrivava a pagare **11,5 premi** invece di 2).
+  - Risultato misurato tenendo premuto 20 secondi al massimo potenziamento: da **47,6 a 27,2
+    premi al secondo**, e soprattutto ora è un valore **con un tetto**, non una cifra che sale
+    finché tieni premuto.
+
+### Prestazioni
+- **Nuova griglia spaziale nella fisica**: prima ogni lira veniva confrontata con **tutte** le
+  altre (con 300 lire: ~180.000 confronti a fotogramma). Ora ogni lira guarda solo le 9 celle
+  attorno a sé. Misurato in partita continua: **2,4× più veloce dopo 1 minuto** e **3,3× dopo 3
+  minuti** (2,97 → 0,91 ms per fotogramma), con il vantaggio che cresce più giochi.
+- **Meno lavoro inutile a ogni fotogramma**: l'HUD si riscrive solo quando un numero cambia
+  davvero, le particelle hanno una lista dei posti liberi (niente più ricerca a ogni scintilla),
+  la camera non alloca più un vettore nuovo 60 volte al secondo, il ridimensionamento della
+  finestra viene accorpato.
+- **Tetto ai fuochi d'artificio**: massimo 14 testi volanti insieme e **un solo lampo** per volta,
+  così una pioggia di vincite non intasa più la pagina.
+- **Telefono più leggero di serie**: antialias hardware spento, **ombre spente**, mappa d'ombra
+  a metà risoluzione. Il tetto delle lire in scena sale comunque da 150 a **170** (da 260 a **300**
+  su desktop).
+
+### Aggiunto
+- **Scheda ⚙️ OPZIONI nel negozio**: 🔊 audio, 🌓 **ombre** on/off, ✨ **effetti** (pieni / ridotti /
+  nessuno), 🎛️ **qualità automatica** (se il gioco rallenta abbassa da sola la risoluzione e la
+  rialza appena torna fluido) e 🏞️ **contafotogrammi** nell'HUD. Tutto si salva.
+- **Pillola della modalità** sotto il tavolo: accanto al taglio in uso c'è sempre scritto se stai
+  giocando in **CANNONE**, **RAFFICA** o **TIRO SEMPLICE**.
+- I chip delle abilità scrivono **ON / OFF** e la cadenza della raffica.
+- Statistiche nuove: lire in scena, **lire ritirate dal tavolo** ♻️ e modalità in uso.
+- **Controlli automatici nel repository** (`test/prove.mjs`, 62 prove su desktop, telefono e
+  salvataggio vecchio): si lanciano con `node test/prove.mjs`.
+
+### Interfaccia
+- **In verticale si vede tutto il tavolo**: prima le sponde laterali restavano fuori schermo, ora
+  la camera arretra quanto serve (fino a 2,1×) e il bordo dei premi è sempre in vista.
+- Il **suggerimento non copre più il gioco**: è una riga sola, sta sopra i chip (non più sovrapposto)
+  e **sparisce da solo** al primo lancio o dopo 14 secondi.
+- **Le 5 schede del negozio stanno tutte in riga** e non vengono più tagliate in basso; su telefono
+  la fila scorre di lato.
+- Barre di livello più leggibili e chip delle abilità con lo stato spento ben visibile.
+
 ## [1.3.2] — 2026-09-19 · Negozio molto più leggibile 🛠️✨
 
 ### Migliorato
@@ -19,7 +84,6 @@ e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subi
   righe minuscole e illeggibili.
 - Controlli automatici nuovi sulla resa del negozio (barra di stato, sezioni, icone, barre, avvisi).
 
-## [1.3.1] — 2026-09-19 · Fix schermo nero 🛠️🚑
 ## [1.3.1] — 2026-09-19 · Fix schermo nero 🛠️🚑
 
 ### Risolto
