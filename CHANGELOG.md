@@ -4,6 +4,61 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [1.6.0] — 2026-09-19 · Sette tagli, carte da collezione e la meteora ♠☄️
+
+### Le lire cadono davvero in fondo
+- La **fessura di lancio** si è spostata **in fondo a tutto** (z 3,95), sulla nuova **camera di
+  carico**: è esattamente la fascia che avevi cerchiato in rosso. Prima cadevano a metà ripiano.
+- Davanti alla camera c'è un **muro (quasi) invisibile con un taglio in basso**: una lira che sta
+  ancora rimbalzando o volando resta dentro, e passa in gioco **solo quando si è posata piatta**.
+  Niente più lire che schizzano sul campo appena toccano terra.
+- La camera è in **leggera pendenza**: le lire posate scivolano piano verso il taglio ed entrano
+  in fila, una dopo l'altra. Una luce dedicata illumina la zona, prima restava al buio.
+- Le **torri** non si pagano più dentro la camera di carico: lì le lire si accatastano solo perché
+  fanno la fila, e premiarle era un regalo.
+
+### Sette tagli, dal 100 al MILIONE
+| Taglio | Paga | Taglio | Paga |
+| --- | --- | --- | --- |
+| 🟤 L.100 | 1 | ⚪ L.10.000 | 15 |
+| ⚪ L.500 | 3 | 🟢 L.100.000 | 40 |
+| 🟡 L.1.000 | 6 | 🟣 L.500.000 | 100 |
+| | | 🔴 **L.1.000.000** | **250** |
+
+Ogni taglio ha grandezza, colore e scritta sue. Il potenziamento **TAGLIO DI LANCIO** sale di
+gradino in gradino: ogni salto costa ~3,4 volte il precedente e paga ~2,5 volte di più.
+
+### ♠ Carte speciali
+- Ogni tanto dalla fessura scende una **carta** invece di una lira: **JOLLY ★**, **PICCHE ♠**,
+  **CUORI ♥**, **QUADRI ♦**, **FIORI ♣** (il jolly è il più raro).
+- Le carte **non pagano premi**: quando cadono dal bordo **te le tieni**, e serviranno a
+  **riscattare premi** (in arrivo). Il conteggio per tipo è nel negozio, scheda 🎁 SBLOCCABILI.
+- Sul tavolo ce ne possono stare **al massimo 5 alla volta**, e il riciclo non le ritira mai.
+- Nuova casella ♠ CARTE nell'HUD, che compare appena ne prendi una.
+
+### ☄️ Il cannone diventa METEORA
+- Con il cannone acceso si **mira dove si vuole sul tavolo**, profondità compresa (il vecchio
+  sistema di mira), e cade una **meteora** che smuove la pila per bene.
+- Mentre il cannone è acceso **non si lanciano lire**: è una modalità a sé.
+- La ricarica è di **5 minuti**. Appena usata, **il cannone si spegne da solo** e torni subito a
+  mettere le lire. Il chip mostra il tempo che manca, e la ricarica scorre anche a gioco chiuso.
+- **POTENZA METEORA** ora rende l'impatto più violento **e accorcia l'attesa** (15 secondi per
+  livello, da 5:00 fino a 2:30).
+- La ⚡ RAFFICA resta come prima, accendibile e spegnibile quando vuoi.
+
+### Risolto
+- **I jolly non contavano nel tetto delle 5 carte**: il jolly ha indice 0 e il controllo
+  `if (m.carta)` lo scartava come valore falso. Trovato dai controlli automatici.
+- Il mirino finiva **sepolto sotto le lire**: ora si disegna sempre sopra al tavolo, e con la
+  meteora è più grande e pulsa.
+
+### Test
+- I controlli automatici salgono a **94**: fessura in fondo, muro che trattiene chi non si è
+  posato, 7 tagli con premio e grandezza crescenti, tetto delle 5 carte, carte che si collezionano
+  senza pagare premi, meteora che spinge la pila, che non lancia lire, che spegne il cannone e che
+  non riparte prima dei 5 minuti. La combo viene verificata guardandola **ricadere davvero** a ogni
+  corsa del ripiano, invece che con un rapporto ballerino.
+
 ## [1.5.0] — 2026-09-19 · Il dozer funziona come quello vero 🪙⚙️
 
 ### Come si gioca adesso
