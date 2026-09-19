@@ -4,6 +4,21 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [1.3.1] — 2026-09-19 · Fix schermo nero 🛠️🚑
+
+### Risolto
+- **Gioco tutto nero con la GUI visibile**: con un **salvataggio esistente** il caricamento della
+  partita andava in `ReferenceError` (una costante veniva letta prima di essere inizializzata),
+  quindi il ciclo di render non partiva mai e restava solo la scena nera. Ora la partita parte sempre.
+- I salvataggi delle versioni precedenti vengono **ripuliti e limitati ai valori validi**
+  (taglio e record torre riportati nell'intervallo giusto) invece di rompere l'avvio.
+- Aggiunta una **rete di sicurezza**: se in futuro qualcosa va storto appare un avviso rosso in alto
+  con il messaggio d'errore, invece di un gioco nero senza spiegazioni.
+
+### Test
+- Nuova regressione automatica: il modulo viene avviato **con un salvataggio vecchio già presente**
+  (potenziamenti, skin e feltri delle versioni precedenti): **35 test OK** su desktop, 35 su desktop
+  con salvataggio e 35 su telefono con salvataggio.
 ## [1.3.0] — 2026-09-18 · Tagli, torri da 30 piani e skill passive 🪙🏗️
 
 ### Aggiunto

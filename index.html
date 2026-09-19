@@ -291,7 +291,7 @@
 <div id="hud">
   <div class="marchio">
     <div class="logo">DaProd</div>
-    <div class="sub">SALA SLOT · <span id="versione">v1.3.0</span></div>
+    <div class="sub">SALA SLOT · <span id="versione">v1.3.1</span></div>
   </div>
   <div class="stat">
     <div class="box premi" id="boxPremi" title="Tocca per aprire il negozio">🏆 PREMI<b id="premi">30</b></div>
@@ -342,6 +342,23 @@ import * as THREE from 'three';
 // Telefono/tablet: niente tasto destro, quindi lo sparo ha un pulsante dedicato
 const TATTILE = (typeof matchMedia === 'function') &&
   (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
+
+// Se qualcosa va storto, lo dico a schermo invece di lasciare il gioco nero
+function mostraErrore(msg) {
+  try {
+    let box = document.getElementById('erroreGioco');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'erroreGioco';
+      box.style.cssText = 'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:99;' +
+        'background:rgba(120,10,20,.95);border:1px solid #ff6b81;border-radius:14px;padding:12px 18px;' +
+        'font:700 12px/1.5 -apple-system,Segoe UI,sans-serif;color:#fff;max-width:92vw;text-align:center;';
+      document.body.appendChild(box);
+    }
+    box.textContent = '⚠️ ' + msg + ' — ricarica la pagina (Ctrl+Shift+R).';
+  } catch (e) {}
+}
+addEventListener('error', (e) => mostraErrore(e && e.message ? e.message : 'errore sconosciuto'));
 
 // ============ SUONO (tutto sintetizzato, nessun file esterno) ============
 let audioCtx = null;
@@ -398,7 +415,7 @@ function caricaPartita() {
     const r = JSON.parse(localStorage.getItem(CHIAVE_SALVATAGGIO) || 'null');
     if (r && typeof r === 'object') {
       Object.assign(stato, r);
-      stato.pot = Object.assign({ idle: 0, forza: 0, multi: 0, cannonePot: 0, raffica: 0, taglio: TAGLIO_PREDEFINITO }, r.pot);
+      stato.pot = Object.assign({ idle: 0, forza: 0, multi: 0, cannonePot: 0, raffica: 0, taglio: 1 }, r.pot);
       stato.attivi = Object.assign({ cannone: true, raffica: false }, r.attivi);
       if (stato.attivi.cannone && stato.attivi.raffica) stato.attivi.raffica = false; // uno solo alla volta
       stato.audio = r.audio !== false;
@@ -432,7 +449,7 @@ const nomeTaglio = (n) => TAGLI[Math.max(0, Math.min(TAGLI.length - 1, n))].nome
 const fattoreForza = (n) => 1 + 0.25 * n;                 // moltiplicatore della spinta di lancio
 const lirePerLancio = (n) => 1 + n;                       // lire lanciate per click
 const forzaCannone = (n) => 1 + 0.5 * n;                  // potenza dello sparo
-const VERSIONE = 'v1.3.0';                                // mostrata nell'HUD per verificare gli aggiornamenti
+const VERSIONE = 'v1.3.1';                                // mostrata nell'HUD per verificare gli aggiornamenti
 const COSTO_FELTRO = { blu: 250, bordeaux: 700, notte: 1500 };
 const NOME_FELTRO = { verde: 'Verde DaProd', blu: 'Blu Royal', bordeaux: 'Bordeaux', notte: 'Notte Neon' };
 const PRESTIGIO_CANNONE = 1;
@@ -1829,6 +1846,9 @@ addEventListener('beforeunload', salvaPartita);
 
 // ============ AVVIO ============
 tavoloMat.color.setHex(COLORE_FELTRI[stato.sbloccati.feltro] || COLORE_FELTRI.verde);
+// il salvataggio può arrivare da versioni vecchie: riporto i valori nei limiti validi
+stato.pot.taglio = Math.max(0, Math.min(TAGLI.length - 1, parseInt(stato.pot.taglio, 10) || 0));
+stato.torreRecord = Math.max(1, parseInt(stato.torreRecord, 10) || 1);
 const elVersione = document.getElementById('versione');
 if (elVersione) elVersione.textContent = VERSIONE;
 stato.gettoni = Math.min(Math.max(stato.gettoni, 0), capCaricatore(stato.pot.idle));
