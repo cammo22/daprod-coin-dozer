@@ -1,6 +1,6 @@
 // Controlli automatici di DaProd Coin Dozer.
 //
-//   npm i -D playwright three && node test/prove.mjs
+//   npm i --no-save playwright three@0.160.0 && node test/prove.mjs
 //
 // Apre il gioco in un browser vero (Chromium headless) su desktop, su telefono e con
 // un salvataggio di una versione vecchia, e verifica che: parta senza errori, il tavolo
@@ -12,8 +12,10 @@ import { chromium } from 'playwright';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
+// fileURLToPath e non .pathname: su Windows .pathname da' /C:/... e il server non trova i file.
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const CDN = 'https://unpkg.com/three@0.160.0/build/three.module.js';
 const THREE_LOCALE = ['node_modules/three/build/three.module.js', 'test/three.module.js']
   .map(p => path.join(ROOT, p)).find(p => fs.existsSync(p));
