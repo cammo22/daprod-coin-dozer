@@ -110,23 +110,36 @@ node test/prove.mjs
 node test/foto.mjs 8 tavolo     # foto della macchina (computer e telefono) in test/.out/
 ```
 
-## 🤖 App Android (APK)
+## 📥 App per Android, Windows e Mac
 
-Ogni release ha l'**APK** allegato: scarica `DaProd-Coin-Dozer-vX.Y.Z.apk` dalle
-[release](https://github.com/cammo22/daprod-coin-dozer/releases/latest), aprilo sul telefono e consenti
-l'installazione da origini sconosciute. L'app contiene il gioco e three.js, quindi **funziona anche
-offline**, a tutto schermo e con lo schermo sempre acceso.
+Ogni [release](https://github.com/cammo22/daprod-coin-dozer/releases/latest) ha tre file:
 
-L'APK lo compila GitHub Actions (`.github/workflows/apk.yml`) a ogni tag `v*`, e pubblica da solo la
-release con le note prese dal CHANGELOG. Il progetto Android è in `android/`: è una WebView che serve
-gli asset da `https://appassets.androidplatform.net`. Per compilarlo in locale:
+| | File | Come si installa |
+| --- | --- | --- |
+| 🤖 Android | `DaProd-Coin-Dozer-X.Y.Z.apk` | aprilo sul telefono e consenti l'installazione da origini sconosciute |
+| 🪟 Windows | `DaProd-Coin-Dozer-X.Y.Z.exe` | portatile: doppio clic e si gioca (se SmartScreen avvisa: *Ulteriori informazioni → Esegui comunque*) |
+| 🍎 Mac | `DaProd-Coin-Dozer-X.Y.Z.dmg` | trascina l'app in Applicazioni; la prima volta *tasto destro → Apri* |
+
+Le app contengono il gioco e three.js, quindi **funzionano anche offline**. EXE e DMG non sono firmati
+(per questo Windows e macOS chiedono conferma la prima volta).
+
+**È tutto automatico** (`.github/workflows/app.yml`): quando su `main` arriva una versione nuova (la
+costante `VERSIONE` in `index.html`), GitHub Actions compila APK, EXE e DMG e pubblica da solo la
+release `vX.Y.Z` con le note prese dal CHANGELOG. Su ogni PR le app vengono compilate come controllo.
+
+- `android/`: WebView a tutto schermo che serve il gioco dagli asset (`https://appassets.androidplatform.net`).
+- `desktop/`: Electron, serve il gioco dal protocollo `app://` (F11 = schermo intero).
+- `strumenti/prepara-www.mjs android|desktop`: copia il gioco e three.js nella cartella dell'app.
+
+Per compilare in locale:
 
 ```bash
-npm i --no-save three@0.160.0 && node android/prepara-www.mjs
-cd android && gradle assembleRelease      # serve l'Android SDK
+npm i --no-save three@0.160.0
+node strumenti/prepara-www.mjs android && (cd android && gradle assembleRelease)   # serve l'Android SDK
+node strumenti/prepara-www.mjs desktop && (cd desktop && npm install && npm run dist)
 ```
 
-Per firmare sempre con la stessa chiave (così gli aggiornamenti si installano sopra), aggiungi ai
+Per firmare l'APK sempre con la stessa chiave (così gli aggiornamenti si installano sopra), aggiungi ai
 segreti del repository `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` e
 `ANDROID_KEY_PASSWORD`. Senza segreti l'APK è firmato con una chiave di debug.
 

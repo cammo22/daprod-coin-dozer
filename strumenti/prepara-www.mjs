@@ -1,12 +1,19 @@
-// Copia il gioco negli asset dell'app Android, con three.js e gli addon del bagliore inclusi:
-// l'app funziona anche senza rete.   Uso:  npm i --no-save three@0.160.0 && node android/prepara-www.mjs
+// Prepara la cartella "www" delle app (Android, Windows, Mac): il gioco con three.js e gli addon del
+// bagliore inclusi, così le app funzionano anche senza rete.
+//
+//   npm i --no-save three@0.160.0
+//   node strumenti/prepara-www.mjs android     -> android/app/src/main/assets/www
+//   node strumenti/prepara-www.mjs desktop     -> desktop/www
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const DEST = { android: 'android/app/src/main/assets/www', desktop: 'desktop/www' };
+const dove = process.argv[2];
+if (!DEST[dove]) { console.error('uso: node strumenti/prepara-www.mjs android|desktop'); process.exit(1); }
 const THREE = path.join(ROOT, 'node_modules/three');
-const WWW = path.join(ROOT, 'android/app/src/main/assets/www');
+const WWW = path.join(ROOT, DEST[dove]);
 const CDN = 'https://unpkg.com/three@0.160.0/';
 if (!fs.existsSync(path.join(THREE, 'build/three.module.js'))) {
   console.error('three.js non trovato: npm i --no-save three@0.160.0'); process.exit(1);

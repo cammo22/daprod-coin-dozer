@@ -27,7 +27,8 @@
     font-family: var(--txt); user-select: none; -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
   button { font-family: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; cursor: pointer; }
-  canvas#gioco { display: block; position: fixed; inset: 0; cursor: crosshair; touch-action: none; }
+  /* larghezza e altezza esplicite: senza, il canvas si mostra grande quanto i suoi pixel (2-3 volte lo schermo su telefono) */
+  canvas#gioco { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
   #vignetta { position: fixed; inset: 0; pointer-events: none; z-index: 4;
     background: radial-gradient(ellipse at 50% 42%, rgba(0,0,0,0) 48%, rgba(0,0,0,.66) 100%); }
 
@@ -395,7 +396,7 @@
 <script type="module">
 import * as THREE from 'three';
 
-const VERSIONE = 'v2.0.0';
+const VERSIONE = 'v2.0.1';
 const $ = (id) => document.getElementById(id);
 const TATTILE = (typeof matchMedia === 'function') &&
   (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
@@ -2189,6 +2190,7 @@ window.DOZER = {
   nuovaMoneta: (t, x, y, z) => { const c = nuovaMoneta(t, x, y, z); c.py = y; c.dx = x; c.dy = y; c.dz = z; return c; },
   pulisci: () => { monete = []; },
   pilaIniziale, riciclaEccesso, inizioBuchi, salva, carica, fotografaTavolo, slot,
+  finisciSlot: () => { let n = 0; while (slot.gira && n++ < 400) aggiornaSlot(0.02); return !slot.gira; },
   colonna: (x) => { colonna = colonnaMirata = x; },
   inGioco: () => inGioco, apriNegozio, chiudiNegozio, rendiNegozio,
   salite: () => salite, atterraggi, pioggiaInCoda: () => pioggiaCoda.length,
