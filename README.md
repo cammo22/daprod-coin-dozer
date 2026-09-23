@@ -18,7 +18,7 @@ vincite. **Due monete uguali una sopra l'altra si fondono nel taglio più grande
 1. **All'inizio scegli la moneta** con cui giocare (poi la cambi quando vuoi dalla barra in basso).
    Ogni lancio costa il valore della moneta.
 2. **Tocca il tavolo**: conta solo la colonna. Il carrello in alto scorre lì e lascia cadere la moneta
-   sul **piano 1**.
+   **in fondo al piano 1**, dove entra nel tappeto di monete e spinge giù quelle davanti.
 3. **Tre spintori** la portano giù: piano 1 → piano 2 → piano 3 → **vasca delle vincite**. Quello che
    cade nella vasca è tuo, al suo valore. Quello che cade nei **buchi laterali** va alla casa.
 4. **Fondi le monete**: quando una moneta si posa sopra una **uguale**, le due diventano il taglio
@@ -65,7 +65,7 @@ se non ti basta il saldo nemmeno per una L.50, arriva L.1.000 in regalo.
 ## ✨ Cosa c'è dentro
 
 - **Tre piani a cascata** con tre spintori che escono da sotto il piano di sopra, come nei coin
-  pusher veri: niente più monete ferme all'inizio, il piano 1 le passa sempre al piano sotto.
+  pusher veri: ogni piano ha il suo tappeto di monete che scorre verso il bordo.
 - **Marchio DaProd ovunque**: insegna neon che si accende sfarfallando, schermo dello slot, frontale
   della vasca, spintori, bordi luminosi dei piani, panni, carrello e gettone.
 - **Luci**: bagliori (bloom), mappa d'ambiente per cromo e monete, led diversi per ogni piano,
@@ -109,6 +109,39 @@ npx playwright install chromium
 node test/prove.mjs
 node test/foto.mjs 8 tavolo     # foto della macchina (computer e telefono) in test/.out/
 ```
+
+## 📥 App per Android, Windows e Mac
+
+Ogni [release](https://github.com/cammo22/daprod-coin-dozer/releases/latest) ha tre file:
+
+| | File | Come si installa |
+| --- | --- | --- |
+| 🤖 Android | `DaProd-Coin-Dozer-X.Y.Z.apk` | aprilo sul telefono e consenti l'installazione da origini sconosciute |
+| 🪟 Windows | `DaProd-Coin-Dozer-X.Y.Z.exe` | portatile: doppio clic e si gioca (se SmartScreen avvisa: *Ulteriori informazioni → Esegui comunque*) |
+| 🍎 Mac | `DaProd-Coin-Dozer-X.Y.Z.dmg` | trascina l'app in Applicazioni; la prima volta *tasto destro → Apri* |
+
+Le app contengono il gioco e three.js, quindi **funzionano anche offline**. EXE e DMG non sono firmati
+(per questo Windows e macOS chiedono conferma la prima volta).
+
+**È tutto automatico** (`.github/workflows/app.yml`): quando su `main` arriva una versione nuova (la
+costante `VERSIONE` in `index.html`), GitHub Actions compila APK, EXE e DMG e pubblica da solo la
+release `vX.Y.Z` con le note prese dal CHANGELOG. Su ogni PR le app vengono compilate come controllo.
+
+- `android/`: WebView a tutto schermo che serve il gioco dagli asset (`https://appassets.androidplatform.net`).
+- `desktop/`: Electron, serve il gioco dal protocollo `app://` (F11 = schermo intero).
+- `strumenti/prepara-www.mjs android|desktop`: copia il gioco e three.js nella cartella dell'app.
+
+Per compilare in locale:
+
+```bash
+npm i --no-save three@0.160.0
+node strumenti/prepara-www.mjs android && (cd android && gradle assembleRelease)   # serve l'Android SDK
+node strumenti/prepara-www.mjs desktop && (cd desktop && npm install && npm run dist)
+```
+
+Per firmare l'APK sempre con la stessa chiave (così gli aggiornamenti si installano sopra), aggiungi ai
+segreti del repository `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` e
+`ANDROID_KEY_PASSWORD`. Senza segreti l'APK è firmato con una chiave di debug.
 
 ## 📱 Da telefono
 

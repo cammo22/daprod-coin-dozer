@@ -4,6 +4,31 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.0.1] — 2026-09-23 · Camera sistemata e app per Android, Windows e Mac 📱🪟🍎
+
+### Risolto
+- **Su telefono la macchina si vedeva enorme e spostata a destra.** Il canvas del gioco non aveva
+  larghezza e altezza scritte nel CSS, e sugli schermi ad alta densità (quasi tutti i telefoni) si
+  mostrava grande quanto i suoi pixel: 2-3 volte lo schermo, tagliato. Ora copre sempre esattamente lo
+  schermo. Nuova prova su un telefono a densità 2,625 che controlla proprio questo.
+
+### Il piano 1 conta davvero
+- Il carrello lascia cadere la moneta **in fondo al piano 1**, davanti al primo spintore, e non più
+  quasi sul bordo. Lo spintore ha una corsa più corta, così sul piano 1 resta un **tappeto di
+  monete**: ogni moneta nuova ci entra da dietro e spinge giù quelle davanti, come nei piani sotto.
+  Il tappeto non cresce: con un lancio ogni mezzo secondo, 9 monete su 10 sono già scese al piano 2
+  dopo pochi secondi (lo controllano le prove).
+
+### Le app
+- Ogni release ora ha tre file da scaricare: **APK** per Android, **EXE** per Windows (portatile,
+  doppio clic e si gioca) e **DMG** per Mac. Tutte contengono il gioco e three.js, quindi **funzionano
+  anche offline**; il salvataggio resta sul dispositivo.
+- **Tutto automatico**: quando su `main` arriva una versione nuova (quella scritta in `index.html`),
+  GitHub Actions compila le tre app e pubblica da solo la release con le note di questo CHANGELOG.
+  Su ogni PR le app vengono compilate come controllo.
+- L'app Android è a tutto schermo e tiene lo schermo acceso; quella per computer va a schermo intero
+  con F11.
+
 ## [2.0.0] — 2026-09-23 · Il remake: tre piani, fusioni e jackpot DaProd 🎰🪙
 
 Rifatto da zero, dalla fisica alla grafica all'interfaccia.

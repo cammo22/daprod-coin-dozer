@@ -27,7 +27,8 @@
     font-family: var(--txt); user-select: none; -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
   button { font-family: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; cursor: pointer; }
-  canvas#gioco { display: block; position: fixed; inset: 0; cursor: crosshair; touch-action: none; }
+  /* larghezza e altezza esplicite: senza, il canvas si mostra grande quanto i suoi pixel (2-3 volte lo schermo su telefono) */
+  canvas#gioco { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
   #vignetta { position: fixed; inset: 0; pointer-events: none; z-index: 4;
     background: radial-gradient(ellipse at 50% 42%, rgba(0,0,0,0) 48%, rgba(0,0,0,.66) 100%); }
 
@@ -395,7 +396,7 @@
 <script type="module">
 import * as THREE from 'three';
 
-const VERSIONE = 'v2.0.0';
+const VERSIONE = 'v2.0.1';
 const $ = (id) => document.getElementById(id);
 const TATTILE = (typeof matchMedia === 'function') &&
   (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
@@ -723,12 +724,12 @@ const LIV = [
   { nome: 'PIANO 3', y: 0.0, zBack: -12.5, zEdge: 5.6,  led: '#ffc23a', feltro: ['#0d5a3e', '#05281b'] },
 ];
 const SPINTORI = [
-  { liv: 0, pav: 3.2, top: 4.3,           fMin: -10.3, fMax: -6.95, scr: -10.4, scrBot: 4.3,           scrTop: 4.75, per: 3.0, fase: 0,   len: 4.2 },
+  { liv: 0, pav: 3.2, top: 4.3,           fMin: -10.35, fMax: -8.3,  scr: -10.4, scrBot: 4.3,           scrTop: 4.75, per: 3.0, fase: 0,   len: 4.2 },
   { liv: 1, pav: 1.6, top: 3.2 - SPESS,   fMin: -7.2,  fMax: -5.6, scr: -6.6,  scrBot: 3.2 - SPESS,   scrTop: 3.2,  per: 3.4, fase: 2.2, len: 5.6 },
   { liv: 2, pav: 0.0, top: 1.6 - SPESS,   fMin: -1.65, fMax: -0.2, scr: -1.2,  scrBot: 1.6 - SPESS,   scrTop: 1.6,  per: 3.8, fase: 4.1, len: 5.6 },
 ];
 SPINTORI.forEach(p => { p.z = p.fMin; p.vz = 0; p.dz = 0; });
-const Z_LANCIO = -7.65, Y_LANCIO = 5.75, Y_BINARIO = 6.2;
+const Z_LANCIO = -9.7, Y_LANCIO = 5.75, Y_BINARIO = 6.2;
 const VASCA = { y: -2.25, z0: 5.75, z1: 7.2 };
 const inizioBuchi = () => LIV[2].zEdge - LUNGHEZZA_BUCHI[stato.pot.sponde];
 
@@ -1314,7 +1315,7 @@ function taglioPila(liv) {
 }
 function pilaIniziale() {
   monete = [];
-  const zone = [[1, -5.15, -1.3], [2, 0.3, 5.5]];
+  const zone = [[0, -7.85, -6.8], [1, -5.15, -1.3], [2, 0.3, 5.5]];
   for (const [liv, z0, z1] of zone) {
     let riga = 0;
     for (let z = z0; z <= z1; z += 0.74, riga++) {
@@ -2189,6 +2190,7 @@ window.DOZER = {
   nuovaMoneta: (t, x, y, z) => { const c = nuovaMoneta(t, x, y, z); c.py = y; c.dx = x; c.dy = y; c.dz = z; return c; },
   pulisci: () => { monete = []; },
   pilaIniziale, riciclaEccesso, inizioBuchi, salva, carica, fotografaTavolo, slot,
+  finisciSlot: () => { let n = 0; while (slot.gira && n++ < 400) aggiornaSlot(0.02); return !slot.gira; },
   colonna: (x) => { colonna = colonnaMirata = x; },
   inGioco: () => inGioco, apriNegozio, chiudiNegozio, rendiNegozio,
   salite: () => salite, atterraggi, pioggiaInCoda: () => pioggiaCoda.length,

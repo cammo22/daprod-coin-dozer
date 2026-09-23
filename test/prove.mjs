@@ -48,7 +48,7 @@ console.log('\n== COMPUTER ==');
   T('nessun errore in console', errori.length === 0, errori.join(' | '));
   T('un solo canvas', await page.locator('canvas').count() === 1);
   T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
-  T('versione v2.0.0 nel marchio', (await page.locator('#versione').textContent()) === 'v2.0.0');
+  T('versione v2.0.1 nel marchio', (await page.locator('#versione').textContent()) === 'v2.0.1');
   T('logo DaProd nel HUD, nella schermata iniziale e nel negozio', await page.locator('svg.logoDP').count() >= 3);
 
   // --- ALL'INIZIO SI SCEGLIE LA MONETA ---
@@ -78,19 +78,20 @@ console.log('\n== COMPUTER ==');
   const pila = await page.evaluate(() => { const m = DOZER.monete(); return [m.filter(c => c.y > 1.5 && c.y < 3 && c.z < -1.2).length, m.filter(c => c.y < 1.2 && c.z > -1.2).length]; });
   T('pila iniziale sui piani 2 e 3', pila[0] > 35 && pila[1] > 50, pila.join(' / '));
 
-  // --- NIENTE MONETE INCASTRATE ALL'INIZIO ---
+  // --- IL PIANO 1 HA IL SUO TAPPETO, MA SCORRE: NIENTE MONETE INCASTRATE ---
   const flusso = await page.evaluate(() => {
     const D = DOZER; D.stato.saldo = 1e6; D.stato.sel = 0;
+    const suP1 = (c) => c.vivo && !c.fuori && c.y > D.LIV[0].y - 0.1 && c.z < D.LIV[0].zEdge;
+    const inizio = D.monete().filter(suP1).length;
     const lanciate = [];
-    for (let i = 0; i < 40; i++) { lanciate.push(D.lanciaMoneta(-3.6 + (i % 10) * 0.8, i % 2)); D.simula(0.35); }
-    const z = D.Z_LANCIO, primo = lanciate.every(c => Math.abs(c.z - z) < 0.3 || !c.vivo || c.z > z - 3);
-    D.simula(12);
-    const ancoraSu = lanciate.filter(c => c.vivo && !c.fuori && c.y > D.LIV[0].y - 0.1 && c.z < D.LIV[0].zEdge).length;
-    const sulP1 = D.monete().filter(c => c.y > D.LIV[0].y - 0.1 && c.z < D.LIV[0].zEdge).length;
-    return { ancoraSu, sulP1, primo };
+    for (let i = 0; i < 60; i++) { lanciate.push(D.lanciaMoneta(-3.6 + (i % 10) * 0.8, i % 2)); D.simula(0.5); }
+    const z = D.Z_LANCIO, primo = lanciate.slice(-3).every(c => !c.vivo || Math.abs(c.z - z) < 1.2 || c.z > z);
+    const vecchie = lanciate.slice(0, 45), uscite = vecchie.filter(c => !suP1(c)).length;
+    return { inizio, fine: D.monete().filter(suP1).length, uscite, su: vecchie.length, primo, dietro: z < D.SPINTORI[0].fMax };
   });
-  T('le monete scendono dal carrello in fondo, sul piano 1', flusso.primo);
-  T('nessuna moneta resta incastrata sul piano 1', flusso.ancoraSu === 0 && flusso.sulP1 === 0, JSON.stringify(flusso));
+  T('la moneta cade in fondo al piano 1, dietro alla corsa del primo spintore', flusso.primo && flusso.dietro);
+  T('sul piano 1 c\'è un tappeto di monete', flusso.inizio >= 15, flusso.inizio + ' monete');
+  T('il tappeto del piano 1 scorre: le monete lanciate scendono al piano 2', flusso.uscite >= flusso.su * 0.9 && flusso.fine <= flusso.inizio + 15, JSON.stringify(flusso));
 
   // --- COSTI ---
   const costo = await page.evaluate(() => {
@@ -199,9 +200,9 @@ console.log('\n== COMPUTER ==');
     return { gira, giri: D.stato.st.slot };
   });
   T('il gettone DaProd nella vasca fa girare lo slot', slot.gira && slot.giri >= 1, JSON.stringify(slot));
-  await page.waitForFunction(() => !DOZER.slot.gira, null, { timeout: 60000, polling: 200 });
-  const jp = await page.evaluate(() => { const D = DOZER; D.stato.saldo = 0; D.avviaSlot([0, 0, 0]); return true; });
-  await page.waitForFunction(() => !DOZER.slot.gira, null, { timeout: 60000, polling: 200 });
+  // lo slot gira a tempo di fotogramma: la prova lo fa avanzare da sola, così non dipende dalla velocità del computer
+  await page.evaluate(() => DOZER.finisciSlot());
+  const jp = await page.evaluate(() => { const D = DOZER; D.stato.saldo = 0; D.avviaSlot([0, 0, 0]); return D.finisciSlot(); });
   const jpEsito = await page.evaluate(() => ({ saldo: DOZER.stato.saldo, coda: DOZER.pioggiaInCoda(), jackpot: DOZER.stato.st.jackpot }));
   T('tre loghi DaProd = JACKPOT: lire e pioggia di monete', jp && jpEsito.saldo > 0 && jpEsito.coda > 10, JSON.stringify(jpEsito));
 
@@ -271,8 +272,11 @@ console.log('\n== COMPUTER ==');
 // ============================================================ TELEFONO
 console.log('\n== TELEFONO ==');
 {
-  const { ctx, page, errori } = await nuovaPagina({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  const { ctx, page, errori } = await nuovaPagina({ viewport: { width: 412, height: 800 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2.625 });
   await page.waitForTimeout(800);
+  // telefono ad alta densità: il canvas deve coprire esattamente lo schermo, non 2-3 volte tanto
+  const cv = await page.locator('canvas').boundingBox();
+  T('il canvas è grande quanto lo schermo anche ad alta densità', Math.abs(cv.width - 412) < 1 && Math.abs(cv.height - 800) < 1 && cv.x === 0 && cv.y === 0, JSON.stringify(cv));
   T('nessun errore in console (telefono)', errori.length === 0, errori.join(' | '));
   await page.locator('#sceltaMonete .mon[data-t="1"]').tap();
   T('al tocco si sceglie la moneta iniziale', await page.evaluate(() => DOZER.stato.sel) === 1);
@@ -280,14 +284,14 @@ console.log('\n== TELEFONO ==');
   await page.waitForTimeout(700);
   T('GIOCA al tocco', await page.evaluate(() => DOZER.inGioco()));
   const box = await page.locator('#monete').boundingBox();
-  T('la barra delle monete sta nello schermo', box && box.x >= 0 && box.x + box.width <= 391 && box.y + box.height <= 845, JSON.stringify(box));
+  T('la barra delle monete sta nello schermo', box && box.x >= 0 && box.x + box.width <= 413 && box.y + box.height <= 801, JSON.stringify(box));
   const sc = await page.locator('#scossaBtn').boundingBox(), ng = await page.locator('#negozioBtn').boundingBox();
   const sovrapp = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   T('scossa e negozio non coprono la barra delle monete', !sovrapp(sc, box) && !sovrapp(ng, box));
   await page.locator('#monete .mon[data-t="0"]').tap();
   T('al tocco si cambia moneta', await page.evaluate(() => DOZER.stato.sel) === 0);
   await page.evaluate(() => { DOZER.pulisci(); DOZER.stato.saldo = 1000; });
-  await page.touchscreen.tap(195, 380);
+  await page.touchscreen.tap(206, 400);
   T('un tocco sul tavolo lancia', await page.evaluate(() => DOZER.stato.saldo) === 950);
   await page.locator('#negozioBtn').tap();
   await page.waitForTimeout(400);

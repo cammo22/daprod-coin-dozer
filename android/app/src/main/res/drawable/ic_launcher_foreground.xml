@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Emblema DaProd: moneta con anello d'oro, anello tratteggiato magenta e la D -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <group android:translateX="22" android:translateY="22">
+        <path android:fillColor="#150E24" android:strokeColor="#FFD54A" android:strokeWidth="4"
+            android:pathData="M32,5a27,27 0,1 1,0 54a27,27 0,1 1,0 -54z" />
+        <path android:fillColor="#00000000" android:strokeColor="#FF5CF4" android:strokeWidth="2"
+            android:pathData="M32,11.5a20.5,20.5 0,1 1,0 41a20.5,20.5 0,1 1,0 -41z" />
+        <path android:fillColor="#FFD54A" android:fillType="evenOdd"
+            android:pathData="M24,19h9.5c8,0 13,5 13,13s-5,13 -13,13H24z M30,25v14h3.2c4.3,0 7,-2.6 7,-7s-2.7,-7 -7,-7z" />
+    </group>
+</vector>
