@@ -1,44 +1,17 @@
-// Controlli automatici di DaProd Coin Dozer.
+// Controlli automatici di DaProd Coin Dozer 2.
 //
 //   npm i --no-save playwright three@0.160.0 && node test/prove.mjs
 //
-// Apre il gioco in un browser vero (Chromium headless) su desktop, su telefono e con
-// un salvataggio di una versione vecchia, e verifica che: parta senza errori, il tavolo
-// non si riempia mai, le abilita' si possano spegnere, la raffica non regali premi
-// fuori scala e il negozio funzioni anche al tocco.
-// Se three.js e' installato in locale (node_modules) viene servito da li', cosi' le
-// prove funzionano anche senza rete; altrimenti si usa la CDN come nel gioco vero.
+// Apre il gioco in un browser vero (Chromium headless) su computer, su telefono e con salvataggi
+// vecchi o rovinati, e verifica: avvio senza errori, scelta della moneta all'inizio, tre piani a
+// cascata con i loro spintori, nessuna moneta incastrata in alto, fusioni (anche a catena), vasca,
+// buchi della casa, slot DaProd, scossa, negozio senza "taglio di lancio" e "forza di lancio",
+// tavolo che non si riempie mai e salvataggio.
+// Se three.js e' installato in locale (node_modules) viene servito da li', addon compresi.
 import { chromium } from 'playwright';
-import http from 'http';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { avviaServer } from './servi.mjs';
 
-// fileURLToPath e non .pathname: su Windows .pathname da' /C:/... e il server non trova i file.
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const CDN = 'https://unpkg.com/three@0.160.0/build/three.module.js';
-const THREE_LOCALE = ['node_modules/three/build/three.module.js', 'test/three.module.js']
-  .map(p => path.join(ROOT, p)).find(p => fs.existsSync(p));
-const PORT = Number(process.env.PORT) || 8100 + Math.floor(Math.random() * 800);
-const TIPI = { '.html': 'text/html', '.js': 'text/javascript', '.md': 'text/markdown' };
-const server = http.createServer((req, res) => {
-  let f = decodeURIComponent(req.url.split('?')[0]);
-  if (f === '/') f = '/index.html';
-  if (f === '/three.module.js' && THREE_LOCALE) {
-    res.writeHead(200, { 'content-type': 'text/javascript' });
-    return res.end(fs.readFileSync(THREE_LOCALE));
-  }
-  const p = path.join(ROOT, f);
-  if (!p.startsWith(ROOT) || !fs.existsSync(p)) { res.writeHead(404); return res.end('no'); }
-  let body = fs.readFileSync(p);
-  // se three e' in locale lo servo da qui: le prove girano anche senza rete
-  if (p.endsWith('index.html') && THREE_LOCALE) {
-    body = Buffer.from(String(body).replace(CDN, '/three.module.js'));
-  }
-  res.writeHead(200, { 'content-type': TIPI[path.extname(p)] || 'application/octet-stream' });
-  res.end(body);
-});
-await new Promise(r => server.listen(PORT, r));
+const { server, url } = await avviaServer(Number(process.env.PORT) || undefined);
 
 let ok = 0, ko = 0;
 const T = (nome, cond, extra = '') => {
@@ -46,475 +19,316 @@ const T = (nome, cond, extra = '') => {
   else { ko++; console.log('  ✘', nome, extra); }
 };
 
-const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });
+const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });
 
-async function nuovaPagina(opz = {}, salvataggio = null) {
+async function nuovaPagina(opz = {}, salvataggi = null) {
   const ctx = await browser.newContext(opz);
+  await ctx.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());   // i font non servono alle prove
   const page = await ctx.newPage();
   const errori = [];
-  page.on('console', m => { if (m.type() === 'error') errori.push(m.text()); });
+  page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errori.push(m.text()); });
   page.on('pageerror', e => errori.push(String(e)));
-  if (salvataggio) {
-    await page.addInitScript(sv => { try { localStorage.setItem('daprod_dozer_v2', sv); } catch (e) {} }, salvataggio);
+  if (salvataggi) {
+    await page.addInitScript(sv => {
+      if (sessionStorage.getItem('provaCaricata')) return;
+      sessionStorage.setItem('provaCaricata', '1');
+      try { for (const k in sv) localStorage.setItem(k, sv[k]); } catch (e) {}
+    }, salvataggi);
   }
-  await page.goto(`http://127.0.0.1:${PORT}/index.html`);
-  await page.waitForFunction(() => !!window.DOZER, null, { timeout: 25000 });
+  await page.goto(url, { waitUntil: 'commit' });
+  await page.waitForFunction(() => !!window.DOZER, null, { timeout: 120000, polling: 250 });
   return { ctx, page, errori };
 }
 
-// ============================================================ DESKTOP
-console.log('\n== DESKTOP ==');
+// ============================================================ COMPUTER
+console.log('\n== COMPUTER ==');
 {
   const { ctx, page, errori } = await nuovaPagina({ viewport: { width: 1280, height: 800 } });
-  await page.waitForTimeout(900);
-
+  await page.waitForTimeout(800);
   T('nessun errore in console', errori.length === 0, errori.join(' | '));
-  T('canvas presente', await page.locator('canvas').count() === 1);
+  T('un solo canvas', await page.locator('canvas').count() === 1);
   T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
-  T('versione v1.7.0 in HUD', (await page.locator('#versione').textContent()) === 'v1.7.0');
-  T('pila iniziale fitta', await page.evaluate(() => DOZER.lireSulTavolo()) > 130);
+  T('versione v2.0.0 nel marchio', (await page.locator('#versione').textContent()) === 'v2.0.0');
+  T('logo DaProd nel HUD, nella schermata iniziale e nel negozio', await page.locator('svg.logoDP').count() >= 3);
 
-  // --- MECCANICA DEL DOZER: si sceglie solo la colonna, si cade sempre in fondo ---
-  {
-    const lancio = await page.evaluate(() => {
-      const D = DOZER;
-      return [-9, -2, 0, 2.4, 9].map(x => { const m = D.lanciaLira(x); return { x: m.mesh.position.x, z: m.mesh.position.z }; });
-    });
-    const Z = await page.evaluate(() => DOZER.Z_LANCIO);
-    const DECK = await page.evaluate(() => [DOZER.DECK_Z0, DOZER.DECK_Z1]);
-    T('la fessura sta in fondo a tutto, sulla camera di carico',
-      Z > DECK[0] + 0.4 && Z < DECK[1] - 0.4, 'z ' + Z + ' dentro ' + DECK[0] + '..' + DECK[1]);
-    const XMAX = await page.evaluate(() => DOZER.X_LANCIO_MAX);
-    T('la lira scende sempre dalla fessura in fondo, mai davanti',
-      lancio.every(l => Math.abs(l.z - Z) <= 0.3), 'z ' + lancio.map(l => l.z.toFixed(1)).join(' '));
-    T('la colonna scelta viene rispettata e limitata alla larghezza del tavolo',
-      lancio.every(l => Math.abs(l.x) <= XMAX + 1e-6) && Math.abs(lancio[2].x) < 1e-6 &&
-      Math.abs(lancio[3].x - 2.4) < 1e-6, 'x ' + lancio.map(l => l.x.toFixed(1)).join(' '));
+  // --- ALL'INIZIO SI SCEGLIE LA MONETA ---
+  T('schermata iniziale visibile', await page.locator('#intro').isVisible());
+  const scelte = await page.locator('#sceltaMonete .mon').count();
+  T('nella schermata iniziale si sceglie la moneta', scelte >= 2, scelte + ' monete');
+  await page.locator('#sceltaMonete .mon[data-t="1"]').click();
+  T('scelta la L.100 dalla schermata iniziale', await page.evaluate(() => DOZER.stato.sel) === 1);
+  T('una moneta bloccata non si sceglie senza saldo', await page.evaluate(() => { DOZER.stato.saldo = 10; return DOZER.sbloccaTaglio(2); }) === false);
+  await page.evaluate(() => { DOZER.stato.saldo = 5000; });
+  await page.locator('#giocaBtn').click();
+  await page.waitForTimeout(700);
+  T('GIOCA chiude la schermata iniziale', await page.evaluate(() => DOZER.inGioco()) && await page.locator('#intro.via').count() === 1);
+  T('la barra delle monete mostra i tagli lanciabili', await page.locator('#monete .mon').count() === await page.evaluate(() => DOZER.MAX_LANCIO + 1));
+  T('la moneta scelta è evidenziata', await page.locator('#monete .mon.sel').getAttribute('data-t') === '1');
+  await page.locator('#monete .mon[data-t="0"]').click();
+  T('dalla barra si cambia moneta', await page.evaluate(() => DOZER.stato.sel) === 0);
 
-    const H = await page.evaluate(() => DOZER.ALTEZZA_PIASTRA);
-    const dopo = await page.evaluate(() => {
-      const D = DOZER;
-      const nate = [];
-      for (let i = 0; i < 8; i++) nate.push(D.lanciaLira(-3 + i * 0.8));
-      for (let f = 0; f < 90; f++) { D.aggiornaFisica(1/60); D.riciclaEccesso(); }
-      return nate.filter(m => m.attiva).map(m => m.mesh.position.y);
-    });
-    T('atterrano sul ripiano rialzato, non sul tavolo',
-      dopo.length > 0 && dopo.every(y => y > H - 0.05), dopo.length + ' lire sul ripiano');
+  // --- TRE PIANI A CASCATA ---
+  const g = await page.evaluate(() => ({ L: DOZER.LIV.map(l => [l.y, l.zEdge]), S: DOZER.SPINTORI.map(p => [p.fMin, p.fMax, p.scr, p.pav, p.top]) }));
+  T('tre piani, ognuno più in basso e più avanti del precedente',
+    g.L.length === 3 && g.L[0][0] > g.L[1][0] && g.L[1][0] > g.L[2][0] && g.L[0][1] < g.L[1][1] && g.L[1][1] < g.L[2][1], JSON.stringify(g.L));
+  T('tre spintori, quelli sotto escono da sotto il piano sopra',
+    g.S.length === 3 && g.S.slice(1).every((s, i) => s[0] < g.L[i][1] && s[1] > g.L[i][1]), JSON.stringify(g.S));
+  const mov = await page.evaluate(() => { const a = DOZER.SPINTORI.map(p => p.z); DOZER.simula(0.8); return DOZER.SPINTORI.map((p, i) => Math.abs(p.z - a[i])); });
+  T('gli spintori si muovono', mov.every(d => d > 0.05), mov.map(d => d.toFixed(2)).join(' '));
+  const pila = await page.evaluate(() => { const m = DOZER.monete(); return [m.filter(c => c.y > 1.5 && c.y < 3 && c.z < -1.2).length, m.filter(c => c.y < 1.2 && c.z > -1.2).length]; });
+  T('pila iniziale sui piani 2 e 3', pila[0] > 35 && pila[1] > 50, pila.join(' / '));
 
-    // --- MURO INVISIBILE: chi non si e' posato non passa sul campo ---
-    const muro = await page.evaluate(() => {
-      const D = DOZER;
-      const nate = [];
-      // lanciate e spinte FORTE in avanti: senza muro schizzerebbero sul campo
-      for (let i = 0; i < 10; i++) { const m = D.lanciaLira(-3 + i * 0.7); m.vz = -9; nate.push(m); }
-      let peggiore = 99;
-      for (let f = 0; f < 60; f++) {
-        D.aggiornaFisica(1/60);
-        for (const m of nate) {
-          if (m.attiva && m.mesh.position.y > D.MURO_TAGLIO) peggiore = Math.min(peggiore, m.mesh.position.z);
-        }
-      }
-      return { peggiore, muro: D.MURO_Z };
-    });
-    T('il muro trattiene le lire che non si sono ancora posate',
-      muro.peggiore >= muro.muro - 0.01, 'la piu\' avanti in aria era a z ' + muro.peggiore.toFixed(2));
-
-    const viaggio = await page.evaluate(() => {
-      const D = DOZER;
-      const nate = [];
-      for (let i = 0; i < 8; i++) nate.push(D.lanciaLira(-3 + i * 0.8));
-      const partenza = Math.max(...nate.map(m => m.mesh.position.z));
-      for (let f = 0; f < 60 * 25; f++) { D.aggiornaFisica(1/60); D.riciclaEccesso(); }
-      const vive = nate.filter(m => m.attiva);
-      return { partenza,
-        arrivo: vive.length ? Math.max(...vive.map(m => m.mesh.position.z)) : -99,
-        sulTavolo: vive.filter(m => m.mesh.position.y < DOZER.ALTEZZA_PIASTRA - 0.05).length,
-        vive: vive.length };
-    });
-    T('il ripiano porta le lire avanti e poi le lascia cadere sul campo',
-      viaggio.arrivo < viaggio.partenza - 1.2,
-      'da z ' + viaggio.partenza.toFixed(1) + ' a z ' + viaggio.arrivo.toFixed(1));
-    T('finiscono sul tavolo, non restano incastrate sul ripiano',
-      viaggio.sulTavolo === viaggio.vive, viaggio.sulTavolo + '/' + viaggio.vive);
-
-    const dietro = await page.evaluate(() =>
-      DOZER.lire.filter(m => m.attiva && m.mesh.position.z > DOZER.Z_LANCIO + 0.6 &&
-        m.mesh.position.y < DOZER.ALTEZZA_PIASTRA - 0.05).length);
-    T('nessuna lira intrappolata dietro al ripiano', dietro === 0, dietro + ' bloccate');
-  }
-
-  // --- SETTE TAGLI, da L.100 al MILIONE ---
-  {
-    const tagli = await page.evaluate(() => DOZER.TAGLI.map(t => ({ t: t.taglio, p: t.premio, r: t.r })));
-    T('ci sono 7 tagli', tagli.length === 7, tagli.map(t => t.t).join(', '));
-    T('i tagli sono 100, 500, 1000, 10K, 100K, 500K e 1 milione',
-      JSON.stringify(tagli.map(t => t.t)) === JSON.stringify([100, 500, 1000, 10000, 100000, 500000, 1000000]));
-    T('premio e grandezza crescono con il taglio',
-      tagli.every((t, i) => i === 0 || (t.p > tagli[i-1].p && t.r > tagli[i-1].r)));
-    T('si parte dal taglio piu\' basso',
-      await page.evaluate(() => DOZER.stato.pot.taglio) === 0);
-  }
-
-  // --- VASCA E TORRI (v1.7) ---
-  {
-    T('il tavolo è più profondo: bordo dei premi a -6,2', await page.evaluate(() => DOZER.BORDO_Z) === -6.2);
-    T('la vasca ha le sponde alte', await page.evaluate(() => DOZER.SPONDA_H) >= 1.2);
-    const torri0 = await page.evaluate(() => DOZER.torriInPiedi());
-    T('all\'avvio ci sono torri di lire in piedi', torri0 >= 2, torri0 + ' torri');
-    const masse = await page.evaluate(() => DOZER.TAGLI.map(t => DOZER.massaLira(t)));
-    T('la massa cresce con il taglio', masse.every((m, i) => i === 0 || m > masse[i - 1]),
-      masse.map(m => m.toFixed(2)).join(' < '));
-  }
-
-  // --- METEORA (il cannone) ---
-  {
-    const met = await page.evaluate(async () => {
-      const D = DOZER;
-      D.stato.premi = 99999; D.stato.sbloccati.cannone = true; D.stato.cannonePronto = 0;
-      D.stato.attivi.cannone = true; D.stato.attivi.raffica = false; D.aggiornaAbilita();
-      const modoMira = D.modoAttuale();
-      for (let f = 0; f < 90; f++) D.aggiornaFisica(1/60);
-      // stesse lire prima e dopo: quelle spinte oltre il bordo contano come "oltre il bordo",
-      // non spariscono dalla media (altrimenti una meteora che vince tanto sembrerebbe inutile)
-      const vive = D.lire.filter(m => m.attiva);
-      const zDi = m => m.attiva ? m.mesh.position.z : D.BORDO_Z - 1;
-      const zPrima = vive.reduce((a, m) => a + zDi(m), 0) / vive.length;
-      const lanciPrima = D.stato.totLanci;
-      const zMira = D.BORDO_Z + 2.5;                 // mira a 2,5 dal bordo dei premi, qualunque sia la lunghezza del tavolo
-      D.lanciaMeteora(0, zMira, 1);
-      const dopoLancio = { pronta: D.meteoraPronta(), acceso: D.stato.attivi.cannone, manca: D.meteoraMancano() };
-      for (let f = 0; f < 60 * 4; f++) { D.aggiornaFisica(1/60); D.aggiornaMeteore(1/60); }
-      const zDopo = vive.reduce((a, m) => a + zDi(m), 0) / vive.length;
-      const inVolo = D.meteoreVolo.length;
-      D.lanciaMeteora(0, zMira, 1);
-      return { modoMira, zPrima, zDopo, ...dopoLancio, rifiutata: D.meteoreVolo.length === inVolo,
-        lireLanciate: D.stato.totLanci - lanciPrima, ricaricaMax: D.ricaricaMeteora(0) };
-    });
-    T('col cannone acceso si mira liberamente', met.modoMira.indexOf('METEORA') === 0, met.modoMira);
-    T('la meteora spinge la pila verso il bordo', met.zDopo < met.zPrima - 0.15,
-      'z medio ' + met.zPrima.toFixed(2) + ' -> ' + met.zDopo.toFixed(2));
-    T('la meteora non lancia nessuna lira', met.lireLanciate === 0, met.lireLanciate + ' lire');
-    T('dopo il colpo il cannone si spegne da solo', met.acceso === false);
-    T('la ricarica base e\' di 5 minuti', met.ricaricaMax === 300, met.ricaricaMax + ' s');
-    T('mentre si ricarica la meteora non riparte', met.pronta === false && met.rifiutata,
-      'mancano ' + met.manca + ' s');
-  }
-
-  // --- la spinta del ripiano arriva fino al bordo dei premi ---
-  {
-    const flusso = await page.evaluate(() => {
-      const D = DOZER;
-      const premi0 = D.stato.premi, vinte0 = D.stato.vinte;
-      let acc = 0;
-      for (let f = 0; f < 60 * 90; f++) {
-        acc += 1.6 / 60;
-        while (acc >= 1) { acc -= 1; D.lanciaLira(-3 + Math.random() * 6); }
-        D.aggiornaFisica(1/60); D.riciclaEccesso();
-      }
-      const vive = D.lire.filter(m => m.attiva);
-      return { vinte: D.stato.vinte - vinte0, premi: D.stato.premi - premi0,
-        inScena: vive.length,
-        davanti: vive.filter(m => m.mesh.position.z < D.BORDO_Z + 2.5).length,
-        mezzo: vive.filter(m => m.mesh.position.z >= D.BORDO_Z + 2.5 && m.mesh.position.y < DOZER.ALTEZZA_PIASTRA - 0.05).length };
-    });
-    T('giocando normalmente le lire cadono davvero dal bordo', flusso.vinte > 60, flusso.vinte + ' vinte in 90 s');
-    T('entra quanto esce: la pila non cresce all\'infinito', flusso.inScena < 190, flusso.inScena + ' in scena');
-    T('il campo non resta vuoto in mezzo', flusso.mezzo >= 8, flusso.mezzo + ' lire fra ripiano e pila');
-    T('la pila resta appoggiata al bordo dei premi', flusso.davanti >= 25, flusso.davanti + ' lire nella pila');
-    const perLira = flusso.premi / Math.max(1, flusso.vinte);
-    T('il guadagno per lira resta ragionevole', perLira >= 1.5 && perLira <= 5, perLira.toFixed(1) + ' premi/lira');
-  }
-
-  // --- modalità di partenza e spegnimento abilità ---
-  const modo0 = await page.evaluate(() => DOZER.modoAttuale());
-  T('si parte in TIRO SEMPLICE (cannone non ancora sbloccato)', modo0 === 'TIRO SEMPLICE', modo0);
-
-  await page.evaluate(() => {
-    DOZER.stato.premi = 999999; DOZER.stato.sbloccati.cannone = true;
-    DOZER.stato.cannonePronto = 0;                     // meteora di nuovo carica
-    DOZER.stato.attivi.cannone = true; DOZER.aggiornaAbilita(); DOZER.aggiornaHUD();
+  // --- NIENTE MONETE INCASTRATE ALL'INIZIO ---
+  const flusso = await page.evaluate(() => {
+    const D = DOZER; D.stato.saldo = 1e6; D.stato.sel = 0;
+    const lanciate = [];
+    for (let i = 0; i < 40; i++) { lanciate.push(D.lanciaMoneta(-3.6 + (i % 10) * 0.8, i % 2)); D.simula(0.35); }
+    const z = D.Z_LANCIO, primo = lanciate.every(c => Math.abs(c.z - z) < 0.3 || !c.vivo || c.z > z - 3);
+    D.simula(12);
+    const ancoraSu = lanciate.filter(c => c.vivo && !c.fuori && c.y > D.LIV[0].y - 0.1 && c.z < D.LIV[0].zEdge).length;
+    const sulP1 = D.monete().filter(c => c.y > D.LIV[0].y - 0.1 && c.z < D.LIV[0].zEdge).length;
+    return { ancoraSu, sulP1, primo };
   });
-  T('cannone acceso → modalità METEORA', (await page.evaluate(() => DOZER.modoAttuale())).indexOf('METEORA') === 0);
-  await page.click('#ch-cannone');
-  const modo1 = await page.evaluate(() => DOZER.modoAttuale());
-  T('ricliccando il chip CANNONE si SPEGNE (tiro senza abilità)', modo1 === 'TIRO SEMPLICE', modo1);
-  T('chip cannone in stato off', await page.locator('#ch-cannone').evaluate(e => e.classList.contains('off')));
-  await page.click('#ch-cannone');
-  T('e si riaccende cliccandolo di nuovo', (await page.evaluate(() => DOZER.modoAttuale())).indexOf('METEORA') === 0);
+  T('le monete scendono dal carrello in fondo, sul piano 1', flusso.primo);
+  T('nessuna moneta resta incastrata sul piano 1', flusso.ancoraSu === 0 && flusso.sulP1 === 0, JSON.stringify(flusso));
 
-  await page.evaluate(() => { DOZER.stato.pot.raffica = 3; DOZER.aggiornaAbilita(); });
-  await page.click('#ch-raffica');
-  T('raffica accesa esclude il cannone', await page.evaluate(() => DOZER.modoAttuale()) === 'RAFFICA');
-  T('cannone spento quando c\'è la raffica', await page.evaluate(() => DOZER.stato.attivi.cannone === false));
-  await page.click('#ch-raffica');
-  const modo2 = await page.evaluate(() => DOZER.modoAttuale());
-  T('spegnendo la raffica NON si riaccende il cannone', modo2 === 'TIRO SEMPLICE', modo2);
-  T('la pillola mostra la modalità', (await page.locator('#modoTxt').textContent()) === 'TIRO SEMPLICE');
-
-  // --- il tavolo non si riempie mai ---
-  // 40 secondi di raffica al massimo (10 lire/s) simulati a 60 passi al secondo
-  const pieno = await page.evaluate(async () => {
-    const res = { max: 0 };
-    let acc = 0;
-    for (let g = 0; g < 40 * 60; g++) {
-      acc += 10 / 60;
-      while (acc >= 1) { acc -= 1; const m = DOZER.creaLira(-2 + Math.random() * 4, 6, -4 + Math.random() * 6, { volo: true, taglio: 1 }); m.vy = -1; }
-      DOZER.aggiornaFisica(1 / 60);
-      DOZER.riciclaEccesso();
-      res.max = Math.max(res.max, DOZER.lireSulTavolo());
-    }
-    return res;
+  // --- COSTI ---
+  const costo = await page.evaluate(() => {
+    const D = DOZER; D.gioca(); D.stato.saldo = 1000; D.stato.sel = 1; D.colonna(0);
+    const n = D.lanciaDalGiocatore(); return { n, saldo: D.stato.saldo };
   });
-  T('40 s di raffica: le lire in scena restano sotto il tetto',
-    pieno.max <= (await page.evaluate(() => DOZER.MAX_LIRE)) + 12, 'max ' + pieno.max);
-  // caso estremo: 900 lire tutte insieme, il tetto deve comunque rientrare
-  const estremo = await page.evaluate(() => {
-    for (let i = 0; i < 900; i++) { const m = DOZER.creaLira(-3 + Math.random() * 6, 6 + Math.random() * 3, -4 + Math.random() * 7, { volo: true, taglio: 1 }); m.vy = -1; }
-    for (let g = 0; g < 240; g++) { DOZER.aggiornaFisica(1 / 60); DOZER.riciclaEccesso(); }
-    return DOZER.lireSulTavolo();
+  T('lanciare costa il valore della moneta', costo.n === 1 && costo.saldo === 900, JSON.stringify(costo));
+  const secco = await page.evaluate(() => { const D = DOZER; D.stato.saldo = 40; D.stato.sel = 0; return D.lanciaDalGiocatore(); });
+  T('senza saldo non si lancia', secco === 0);
+  T('un taglio bloccato non si lancia', await page.evaluate(() => { const D = DOZER; D.stato.saldo = 1e6; return D.scegliMoneta(5); }) === false);
+
+  // --- FUSIONI ---
+  const fus = await page.evaluate(() => {
+    const D = DOZER; D.pulisci();
+    const a = D.nuovaMoneta(1, 0, 0, 3); a.terra = true;
+    D.nuovaMoneta(1, 0.05, 0.6, 3.02);
+    D.simula(1.5);
+    return D.monete().map(c => c.t).sort().join(',');
   });
-  T('anche con 900 lire buttate dentro tutte insieme il tavolo rientra',
-    estremo <= (await page.evaluate(() => DOZER.MAX_LIRE)) + 12, 'restano ' + estremo);
-  T('il riciclo ha ritirato lire dal fondo', await page.evaluate(() => DOZER.stato.totRiciclate) > 0,
-    'ritirate ' + await page.evaluate(() => DOZER.stato.totRiciclate));
-  T('l\'elenco interno non accumula lire spente',
-    await page.evaluate(() => DOZER.lire.length - DOZER.lireSulTavolo()) < 30);
-  const sorgente = await page.content();
-  T('la scritta "TAVOLO PIENO" non esiste più in tutta la pagina', !sorgente.includes('TAVOLO PIENO'));
-  T('nessun rifiuto del lancio nel codice', !sorgente.includes('tavoloPieno'));
-
-  // --- prestazioni ---
-  const perf = await page.evaluate(async () => {
-    const t0 = performance.now();
-    for (let i = 0; i < 120; i++) DOZER.aggiornaFisica(1 / 60);
-    return { ms: (performance.now() - t0) / 120, lire: DOZER.lireSulTavolo() };
+  T('due L.100 una sopra l\'altra diventano una L.200', fus === '2', fus);
+  const catena = await page.evaluate(() => {
+    const D = DOZER; D.pulisci();
+    const a = D.nuovaMoneta(2, 0, 0, 3); a.terra = true;
+    const b = D.nuovaMoneta(0, 0, a.h + 0.001, 3); b.terra = true;   // pila da due diversi: nessuna fusione
+    D.simula(0.5);
+    const prima = D.monete().length;
+    const f0 = D.stato.st.fusioni;
+    const c = D.nuovaMoneta(0, 0.03, 1.4, 3.02);
+    D.simula(2.5);
+    return { prima, dopo: D.monete().map(c => c.t).sort().join(','), fusioni: D.stato.st.fusioni - f0 };
   });
-  T('un passo di fisica costa poco anche col tavolo carico', perf.ms < 9,
-    perf.lire + ' lire · ' + perf.ms.toFixed(2) + ' ms/passo');
+  T('monete diverse una sopra l\'altra restano due', catena.prima === 2);
+  T('L.50 su L.50 sopra una L.200: diventa L.100 e resta sopra la L.200', catena.fusioni === 1 && catena.dopo === '1,2', JSON.stringify(catena));
+  const catena2 = await page.evaluate(() => {
+    const D = DOZER; D.pulisci();
+    const a = D.nuovaMoneta(2, 0, 0, 3); a.terra = true;
+    const b = D.nuovaMoneta(1, 0, a.h + 0.001, 3); b.terra = true;
+    D.simula(0.3);
+    const f0 = D.stato.st.fusioni;
+    D.nuovaMoneta(1, 0.02, 1.4, 3.01);
+    D.simula(3);
+    return { tagli: D.monete().map(c => c.t).sort().join(','), fusioni: D.stato.st.fusioni - f0 };
+  });
+  T('fusione a catena: L.100 su L.100 → L.200 che si posa sulla L.200 → L.500', catena2.tagli === '3' && catena2.fusioni === 2, JSON.stringify(catena2));
+  const storte = await page.evaluate(() => {
+    const D = DOZER; D.pulisci(); D.stato.pot.fusione = 0;
+    const a = D.nuovaMoneta(1, 0, 0, 3); a.terra = true;
+    D.nuovaMoneta(1, a.r * 0.75, 0.6, 3);
+    D.simula(1);
+    const base = D.monete().length;
+    D.pulisci(); D.stato.pot.fusione = 4;
+    const b = D.nuovaMoneta(1, 0, 0, 3); b.terra = true;
+    D.nuovaMoneta(1, b.r * 0.75, 0.6, 3);
+    D.simula(1);
+    const magnete = D.monete().length; D.stato.pot.fusione = 0;
+    return { base, magnete };
+  });
+  T('una moneta molto storta non si fonde, con FUSIONE MAGNETICA al massimo sì', storte.base === 2 && storte.magnete === 1, JSON.stringify(storte));
+  const ultimo = await page.evaluate(() => {
+    const D = DOZER; D.pulisci();
+    const a = D.nuovaMoneta(10, 0, 0, 3); a.terra = true; D.nuovaMoneta(10, 0, 0.8, 3); D.simula(1);
+    return D.monete().length;
+  });
+  T('il Diamante da un milione è l\'ultimo taglio: non si fonde più', ultimo === 2);
+  const sblocco = await page.evaluate(() => {
+    const D = DOZER; D.pulisci(); D.stato.maxLancio = 1; D.stato.record = 1;
+    const a = D.nuovaMoneta(3, 0, 0, 3); a.terra = true; D.nuovaMoneta(3, 0, 0.6, 3); D.simula(1.5);
+    return { max: D.stato.maxLancio, record: D.stato.record, bottoni: document.querySelectorAll('#monete .mon.bloccata').length };
+  });
+  T('creare la L.1.000 sblocca il lancio della L.200', sblocco.max === 2 && sblocco.record === 4, JSON.stringify(sblocco));
+  T('la barra si aggiorna dopo lo sblocco', sblocco.bottoni === await page.evaluate(() => DOZER.MAX_LANCIO - 2));
+  const compraTaglio = await page.evaluate(() => { const D = DOZER; D.stato.saldo = 20000; const r = D.sbloccaTaglio(3); return { r, saldo: D.stato.saldo, max: D.stato.maxLancio, sel: D.stato.sel }; });
+  T('sbloccare la L.500 a pagamento', compraTaglio.r && compraTaglio.saldo === 5000 && compraTaglio.max === 3 && compraTaglio.sel === 3, JSON.stringify(compraTaglio));
 
-  // --- negozio ---
-  await page.click('#apriNegozio');
-  await page.waitForTimeout(250);
-  T('negozio aperto', !(await page.locator('#negozio').evaluate(e => e.classList.contains('chiuso'))));
-  T('barra saldo presente', await page.locator('.saldo-bar').count() === 1);
-  T('righe del negozio disegnate', await page.locator('.voce').count() >= 6);
-  T('icone dei potenziamenti', await page.locator('.voce .ico').count() >= 5);
-  T('barre di livello', await page.locator('.prog').count() >= 4);
+  // --- VASCA E CASA ---
+  const vasca = await page.evaluate(() => {
+    const D = DOZER; D.pulisci(); D.stato.saldo = 0; D.stato.pot.vasca = 0;
+    const v0 = D.stato.st.vinte;
+    const c = D.nuovaMoneta(3, 0, 0, D.LIV[2].zEdge + 0.1); c.vz = 0.5;
+    D.simula(1.2);
+    return { saldo: D.stato.saldo, vinte: D.stato.st.vinte - v0 };
+  });
+  T('una L.500 che cade nella vasca paga L.500', vasca.saldo === 500 && vasca.vinte === 1, JSON.stringify(vasca));
+  const casa = await page.evaluate(() => {
+    const D = DOZER; D.pulisci(); D.stato.saldo = 0; D.stato.pot.sponde = 0;
+    const p0 = D.stato.st.perse;
+    const c = D.nuovaMoneta(1, D.HW - 0.1, 0, D.LIV[2].zEdge - 0.4); c.vx = 3;
+    D.simula(1.2);
+    return { saldo: D.stato.saldo, perse: D.stato.st.perse - p0 };
+  });
+  T('una moneta spinta nel buco laterale va alla casa e non paga', casa.saldo === 0 && casa.perse === 1, JSON.stringify(casa));
+  const sponde = await page.evaluate(() => {
+    const D = DOZER; D.pulisci(); D.stato.pot.sponde = 3; D.stato.saldo = 0;
+    const c = D.nuovaMoneta(1, D.HW - 0.5, 0, D.LIV[2].zEdge - 0.4); c.terra = true; c.vx = 3;
+    D.simula(1);
+    const r = { inizio: D.inizioBuchi(), x: c.x, viva: c.vivo && !c.fuori }; D.stato.pot.sponde = 0; return r;
+  });
+  T('con le sponde al massimo i buchi sono chiusi', sponde.viva && sponde.inizio >= 5.59, JSON.stringify(sponde));
 
-  for (const [tab, atteso] of [['sblocca', '.voce'], ['abilita', '.inter'], ['stat', '.riepilogo'], ['opz', '.seg button']]) {
-    await page.click(`.tab button[data-tab="${tab}"]`);
-    await page.waitForTimeout(140);
-    T(`scheda ${tab} si apre`, await page.locator(atteso).count() > 0);
+  // --- SLOT DaProd ---
+  const slot = await page.evaluate(async () => {
+    const D = DOZER; D.pulisci();
+    const g = D.nuovaMoneta(D.CHIP, 0, 0, D.LIV[2].zEdge + 0.1); g.vz = 0.5;
+    D.simula(1);
+    const gira = D.slot.gira;
+    return { gira, giri: D.stato.st.slot };
+  });
+  T('il gettone DaProd nella vasca fa girare lo slot', slot.gira && slot.giri >= 1, JSON.stringify(slot));
+  await page.waitForFunction(() => !DOZER.slot.gira, null, { timeout: 60000, polling: 200 });
+  const jp = await page.evaluate(() => { const D = DOZER; D.stato.saldo = 0; D.avviaSlot([0, 0, 0]); return true; });
+  await page.waitForFunction(() => !DOZER.slot.gira, null, { timeout: 60000, polling: 200 });
+  const jpEsito = await page.evaluate(() => ({ saldo: DOZER.stato.saldo, coda: DOZER.pioggiaInCoda(), jackpot: DOZER.stato.st.jackpot }));
+  T('tre loghi DaProd = JACKPOT: lire e pioggia di monete', jp && jpEsito.saldo > 0 && jpEsito.coda > 10, JSON.stringify(jpEsito));
+
+  // --- SCOSSA ---
+  const sc = await page.evaluate(() => {
+    const D = DOZER; D.pulisci(); D.stato.scossaPronta = 0;
+    for (let i = 0; i < 6; i++) { const c = D.nuovaMoneta(0, -2 + i * 0.9, 0, 3); c.terra = true; }
+    D.simula(0.2);
+    const r1 = D.scossa(); const inAria = D.monete().filter(c => !c.terra).length; const r2 = D.scossa();
+    return { r1, r2, inAria };
+  });
+  T('la scossa fa saltare le monete', sc.r1 && sc.inAria === 6, JSON.stringify(sc));
+  T('la scossa ha una ricarica', sc.r2 === false);
+
+  // --- NEGOZIO: niente taglio di lancio né forza di lancio ---
+  const pot = await page.evaluate(() => Object.entries(DOZER.POT).map(([k, P]) => k + ':' + P.nome));
+  T('nessun potenziamento "taglio" o "forza"', !pot.some(k => /taglio|forza/i.test(k)), pot.join(', '));
+  await page.evaluate(() => { DOZER.stato.saldo = 100000; });
+  await page.locator('#negozioBtn').click();
+  await page.waitForTimeout(400);
+  T('il negozio si apre', await page.locator('#negozio:not(.chiuso)').count() === 1);
+  const testo = await page.locator('#contenuto').innerText();
+  T('il negozio non parla di forza né di taglio di lancio', !/forza|taglio di lancio/i.test(testo));
+  await page.locator('[data-compra="multi"]').click();
+  T('comprare MULTI-LANCIO', await page.evaluate(() => DOZER.stato.pot.multi) === 1 && await page.evaluate(() => DOZER.stato.saldo) === 91000);
+  for (const s of ['monete', 'opz', 'stat', 'pot']) {
+    await page.locator(`[data-scheda="${s}"]`).click();
+    T('scheda ' + s + ' piena', (await page.locator('#contenuto').innerText()).length > 40);
   }
-  T('scheda OPZIONI: 5 gruppi di scelte', await page.locator('.seg').count() === 5);
-  T('statistiche mostrano le lire ritirate', (await page.locator('.voci').textContent()).length > 0);
+  await page.locator('[data-scheda="monete"]').click();
+  T('la tabella delle fusioni ha tutti i tagli', await page.locator('.fus').count() === 10);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+  T('Esc chiude il negozio', await page.locator('#negozio.chiuso').count() === 1);
+  const multi = await page.evaluate(() => { const D = DOZER; D.pulisci(); D.stato.saldo = 1000; D.stato.sel = 0; D.colonna(0); const n = D.lanciaDalGiocatore(); D.stato.pot.multi = 0; return n; });
+  T('MULTI-LANCIO 1 lancia due monete per tocco', multi === 2);
 
-  // opzioni funzionanti
-  await page.click('.seg button[data-opz="ombre"][data-val="0"]');
-  await page.waitForTimeout(150);
-  T('ombre spegnibili', await page.evaluate(() => DOZER.stato.grafica.ombre === false));
-  await page.click('.seg button[data-opz="fps"][data-val="1"]');
-  await page.waitForTimeout(150);
-  T('contafotogrammi visibile', await page.locator('#boxFps').isVisible());
-  await page.click('.seg button[data-opz="effetti"][data-val="0.5"]');
-  await page.waitForTimeout(150);
-  T('effetti su RIDOTTI', await page.evaluate(() => DOZER.stato.grafica.effetti === 0.5));
-  await page.click('.seg button[data-opz="audio"][data-val="0"]');
-  await page.waitForTimeout(150);
-  T('audio spegnibile dalle opzioni', await page.evaluate(() => DOZER.stato.audio === false));
+  // --- CLICK SUL TAVOLO ---
+  await page.evaluate(() => { DOZER.pulisci(); DOZER.stato.saldo = 1000; DOZER.stato.sel = 0; });
+  await page.mouse.click(640, 430);
+  const click = await page.evaluate(() => ({ n: DOZER.tutte().length, saldo: DOZER.stato.saldo }));
+  T('un click sul tavolo lancia la moneta scelta', click.n >= 1 && click.saldo === 950, JSON.stringify(click));
 
-  await page.click('#chiudiNegozio');
-  T('negozio chiuso', await page.locator('#negozio').evaluate(e => e.classList.contains('chiuso')));
-
-  // --- salvataggio ---
-  const sv = await page.evaluate(() => localStorage.getItem('daprod_dozer_v2'));
-  T('salvataggio scritto con le opzioni', !!sv && JSON.parse(sv).grafica.ombre === false);
-
-  T('nessun errore dopo tutte le prove', errori.length === 0, errori.join(' | '));
-  await ctx.close();
-}
-
-// ============================================================ TORRI: ESPERIMENTO PULITO
-console.log('\n== TORRI CHE CROLLANO ==');
-{
-  // tavolo vuoto, una torre di 10, una lira lanciata contro la base alla stessa velocità:
-  // una volta una L.100, una volta una L.1.000.000. Si contano i pezzi staccati dalla torre.
-  const prova = async (taglio) => {
-    const { ctx, page } = await nuovaPagina({ viewport: { width: 800, height: 600 } });
-    const r = await page.evaluate((taglio) => {
-      const D = DOZER;
-      for (const m of D.lire) { m.attiva = false; m.mesh.visible = false; }
-      const torre = D.costruisciTorre(-2, -3.2, 10);
-      for (let f = 0; f < 30; f++) D.aggiornaFisica(1 / 60);
-      const pianiPrima = Math.max(...torre.map(m => m.livello));
-      const t = D.TAGLI[taglio];
-      const colpo = D.creaLira(-2, t.h / 2, -2.0, { taglio });
-      colpo.vz = -4;
-      for (let f = 0; f < 90; f++) D.aggiornaFisica(1 / 60);
-      const asse = torre[0].mesh.position;
-      const staccati = torre.filter(m => !m.attiva ||
-        Math.hypot(m.mesh.position.x - asse.x, m.mesh.position.z - asse.z) > 0.35).length;
-      return { pianiPrima, staccati };
-    }, taglio);
-    await ctx.close();
-    return r;
-  };
-  const piccola = await prova(0), grande = await prova(6);
-  T('la torre di prova è in piedi', piccola.pianiPrima >= 8 && grande.pianiPrima >= 8, piccola.pianiPrima + ' piani');
-  T('una L.100 stacca almeno un pezzo', piccola.staccati >= 1, piccola.staccati + ' pezzi');
-  T('una L.1.000.000 ne stacca di più', grande.staccati > piccola.staccati,
-    piccola.staccati + ' con la L.100, ' + grande.staccati + ' con la L.1 MLN');
-
-  // crollate tutte le torri, ne risale una
-  const { ctx, page } = await nuovaPagina({ viewport: { width: 800, height: 600 } });
-  const rinascita = await page.evaluate(() => {
-    const D = DOZER;
-    for (const m of D.lire) if (m.diTorre) { m.attiva = false; m.mesh.visible = false; }
-    for (let f = 0; f < 10; f++) D.aggiornaFisica(1 / 60);
-    const prima = D.torriInPiedi();
-    D.curaTorri(999);
-    for (let f = 0; f < 30; f++) D.aggiornaFisica(1 / 60);
-    return { prima, dopo: D.torriInPiedi() };
+  // --- IL TAVOLO NON SI RIEMPIE MAI ---
+  const pieno = await page.evaluate(() => {
+    const D = DOZER; D.pilaIniziale(); D.stato.saldo = 1e9; let max = 0;
+    for (let i = 0; i < 700; i++) { D.lanciaMoneta(-3.5 + Math.random() * 7, i % 3); if (i % 4 === 0) D.simula(1 / 30); max = Math.max(max, D.monete().length); }
+    return max;
   });
-  T('quando le torri crollano ne risale una nuova', rinascita.dopo > rinascita.prima,
-    rinascita.prima + ' → ' + rinascita.dopo + ' torri');
+  T('il tavolo non si riempie mai', pieno <= 381, pieno + ' monete al massimo');
+
+  // --- VELOCITÀ DELLA FISICA ---
+  const ms = await page.evaluate(() => { const D = DOZER; const t = performance.now(); D.simula(2); return (performance.now() - t) / 240; });
+  T('un passo di fisica con il tavolo pieno costa poco', ms < 4, ms.toFixed(2) + ' ms a passo');
+
+  // --- SALVATAGGIO ---
+  const prima = await page.evaluate(() => { const D = DOZER; D.pilaIniziale(); D.simula(3); D.stato.saldo = 12345; D.salva(); return { saldo: 12345, monete: D.monete().length, max: D.stato.maxLancio }; });
+  await page.reload({ waitUntil: 'commit' });
+  await page.waitForFunction(() => !!window.DOZER, null, { timeout: 120000, polling: 250 });
+  const dopo = await page.evaluate(() => ({ saldo: DOZER.stato.saldo, monete: DOZER.monete().length, max: DOZER.stato.maxLancio }));
+  T('il salvataggio ricorda saldo e tagli sbloccati', dopo.saldo === prima.saldo && dopo.max === prima.max, JSON.stringify(dopo));
+  T('il salvataggio ricorda le monete sul tavolo', Math.abs(dopo.monete - prima.monete) <= prima.monete * 0.1, prima.monete + ' → ' + dopo.monete);
+  T('ancora nessun errore dopo tutte le prove', errori.length === 0, errori.join(' | '));
   await ctx.close();
 }
 
 // ============================================================ TELEFONO
-console.log('\n== TELEFONO (portrait, touch) ==');
+console.log('\n== TELEFONO ==');
 {
-  const { ctx, page, errori } = await nuovaPagina({
-    viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3,
-    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
-  });
-  await page.waitForTimeout(900);
-  T('parte senza errori', errori.length === 0, errori.join(' | '));
-  T('ombre spente di serie su telefono', await page.evaluate(() => DOZER.stato.grafica.ombre === false));
-  T('tetto lire ridotto su telefono', await page.evaluate(() => DOZER.MAX_LIRE) === 200);
-  T('anche su telefono si mira solo in orizzontale (senza cannone)',
-    await page.evaluate(() => Math.abs(DOZER.lanciaLira(99).mesh.position.z - DOZER.Z_LANCIO) < 0.3));
-  const chip = await page.locator('#ch-raffica').boundingBox();
-  T('chip abilità abbastanza grandi da toccare', chip && chip.height >= 30, chip ? Math.round(chip.height) + 'px' : 'n/d');
-  const neg = await page.locator('#apriNegozio').boundingBox();
-  T('pulsante negozio raggiungibile', neg && neg.y + neg.height <= 844);
-  T('chip e negozio non si sovrappongono', chip && neg && chip.x + chip.width <= neg.x + 1,
-    'chip fino a ' + Math.round(chip.x + chip.width) + ', negozio da ' + Math.round(neg.x));
-  await page.tap('#apriNegozio');
+  const { ctx, page, errori } = await nuovaPagina({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await page.waitForTimeout(800);
+  T('nessun errore in console (telefono)', errori.length === 0, errori.join(' | '));
+  await page.locator('#sceltaMonete .mon[data-t="1"]').tap();
+  T('al tocco si sceglie la moneta iniziale', await page.evaluate(() => DOZER.stato.sel) === 1);
+  await page.locator('#giocaBtn').tap();
+  await page.waitForTimeout(700);
+  T('GIOCA al tocco', await page.evaluate(() => DOZER.inGioco()));
+  const box = await page.locator('#monete').boundingBox();
+  T('la barra delle monete sta nello schermo', box && box.x >= 0 && box.x + box.width <= 391 && box.y + box.height <= 845, JSON.stringify(box));
+  const sc = await page.locator('#scossaBtn').boundingBox(), ng = await page.locator('#negozioBtn').boundingBox();
+  const sovrapp = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  T('scossa e negozio non coprono la barra delle monete', !sovrapp(sc, box) && !sovrapp(ng, box));
+  await page.locator('#monete .mon[data-t="0"]').tap();
+  T('al tocco si cambia moneta', await page.evaluate(() => DOZER.stato.sel) === 0);
+  await page.evaluate(() => { DOZER.pulisci(); DOZER.stato.saldo = 1000; });
+  await page.touchscreen.tap(195, 380);
+  T('un tocco sul tavolo lancia', await page.evaluate(() => DOZER.stato.saldo) === 950);
+  await page.locator('#negozioBtn').tap();
+  await page.waitForTimeout(400);
+  T('il negozio si apre al tocco', await page.locator('#negozio:not(.chiuso)').count() === 1);
+  await page.locator('#chiudi').tap();
   await page.waitForTimeout(300);
-  T('negozio si apre col tocco', !(await page.locator('#negozio').evaluate(e => e.classList.contains('chiuso'))));
-  const tabBox = await page.locator('.tab').boundingBox();
-  T('barra schede dentro lo schermo', tabBox && tabBox.width <= 390);
-  await page.tap('.tab button[data-tab="opz"]');
-  await page.waitForTimeout(250);
-  T('scheda opzioni sul telefono', await page.locator('.seg button').count() >= 9);
-  const segBtn = await page.locator('.seg button').first().boundingBox();
-  T('pulsanti opzioni comodi col pollice', segBtn && segBtn.height >= 34, segBtn ? Math.round(segBtn.height) + 'px' : 'n/d');
-  const larghezzaVoci = await page.locator('.voci').evaluate(e => e.scrollWidth - e.clientWidth);
-  T('niente scorrimento orizzontale nel negozio', larghezzaVoci <= 2, 'extra ' + larghezzaVoci + 'px');
-  T('nessun errore su telefono', errori.length === 0, errori.join(' | '));
+  T('e si chiude al tocco', await page.locator('#negozio.chiuso').count() === 1);
+  T('meno monete su telefono', await page.evaluate(() => { const D = DOZER; D.pilaIniziale(); D.stato.saldo = 1e9; let m = 0; for (let i = 0; i < 500; i++) { D.lanciaMoneta(0, 0); m = Math.max(m, D.monete().length); } return m; }) <= 261);
+  T('nessun errore alla fine (telefono)', errori.length === 0, errori.join(' | '));
   await ctx.close();
 }
 
-// ============================================================ RAFFICA (equilibrio)
-console.log('\n== RAFFICA TENUTA PREMUTA ==');
-  // --- raffica: niente pioggia di premi fuori scala ---
+// ============================================================ SALVATAGGI VECCHI O ROVINATI
+console.log('\n== SALVATAGGI ==');
 {
-  const { ctx: c2, page: p2, errori: e2 } = await nuovaPagina({ viewport: { width: 1280, height: 800 } });
-  await p2.waitForTimeout(1200);
-  await p2.evaluate(() => {
-    const st = DOZER.stato;
-    st.pot.raffica = 6; st.pot.multi = 4; st.pot.idle = 15; st.pot.forza = 8;
-    st.attivi.raffica = true; st.attivi.cannone = false; st.audio = false;
-    st.gettoni = 76; st.premi = 0; st.vinte = 0;
-    DOZER.aggiornaAbilita();
-  });
-  await p2.mouse.move(640, 430);
-  await p2.waitForTimeout(200);
-  await p2.mouse.down();
-  // guardo la combo mentre gioca: deve ricadere a ogni corsa del ripiano
-  const serie = [];
-  for (let i = 0; i < 60; i++) {
-    await p2.waitForTimeout(250);
-    serie.push(await p2.evaluate(() => DOZER.comboOra()));
-  }
-  await p2.mouse.up();
-  let azzeramenti = 0;
-  for (let i = 1; i < serie.length; i++) if (serie[i] < serie[i - 1]) azzeramenti++;
-  const r = await p2.evaluate(() => ({ premi: Math.floor(DOZER.stato.premi), vinte: DOZER.stato.vinte, lire: DOZER.lireSulTavolo(), comboMax: DOZER.stato.comboMax }));
-  const perLira = r.vinte ? r.premi / r.vinte : 0;
-  T('tenendo premuta la raffica si vince davvero qualcosa', r.vinte > 5, r.vinte + ' lire vinte');
-  // il bonus combo si ferma a +5, il resto viene dalle torri
-  T('il guadagno per lira resta nel tetto (combo limitata)', perLira <= 9, perLira.toFixed(1) + ' premi/lira');
-  // se non si azzerasse mai, la combo salirebbe e basta: qui deve ricadere piu' volte
-  T('la combo si azzera a ogni corsa del ripiano', azzeramenti >= 2,
-    azzeramenti + ' ricadute in 15 s · combo max x' + r.comboMax);
-  T('il tavolo non straborda sotto raffica', r.lire <= 312, r.lire + ' lire in scena');
-  T('nessun errore durante la raffica', e2.length === 0, e2.join(' | '));
-  await c2.close();
-  }
-
-
-// ============================================================ CARTE SPECIALI
-console.log('\n== CARTE SPECIALI ==');
-{
-  const { ctx: c3, page: p3, errori: e3 } = await nuovaPagina({ viewport: { width: 1280, height: 800 } });
-  await p3.waitForTimeout(900);
-  const carte = await p3.evaluate(() => {
-    const D = DOZER;
-    D.stato.audio = false;
-    // il tavolo di partenza non serve: lo tolgo di mezzo prima di misurare
-    for (const m of D.lire) m.attiva = false;
-    for (let f = 0; f < 4; f++) D.aggiornaFisica(1/60);
-    const prima = D.stato.carte || 0;
-    const premiPrima = D.stato.premi;
-    let creato = 0;
-    for (let i = 0; i < 12; i++) {
-      if (D.carteSulTavolo() >= D.CARTE_MAX_TAVOLO) continue;
-      D.creaCarta(-2 + (i % 5) * 1, D.Z_LANCIO); creato++;
-    }
-    const suTavolo = D.carteSulTavolo();
-    for (const m of D.lire) if (m.attiva && m.carta !== undefined) { m.mesh.position.set(m.mesh.position.x, 0.2, D.BORDO_Z + 0.1); m.vz = -7; }
-    for (let f = 0; f < 120; f++) D.aggiornaFisica(1/60);
-    return { creato, suTavolo, raccolte: (D.stato.carte || 0) - prima,
-      premiCambiati: Math.abs(D.stato.premi - premiPrima) > 0.5,
-      tipi: Object.keys(D.stato.carteTipi || {}).length,
-      max: D.CARTE_MAX_TAVOLO, quante: D.CARTE.length };
-  });
-  T('esistono piu\' tipi di carta', carte.quante >= 4, carte.quante + ' tipi');
-  T('sul tavolo non ci sono mai piu\' di 5 carte insieme', carte.suTavolo <= carte.max && carte.max === 5, carte.suTavolo + ' carte');
-  T('oltre il tetto non ne nascono altre', carte.creato === carte.max, carte.creato + ' create su 12 tentativi');
-  T('le carte che cadono dal bordo finiscono in collezione', carte.raccolte > 0, carte.raccolte + ' raccolte');
-  T('le carte NON pagano premi', !carte.premiCambiati);
-  T('la collezione tiene il conto per tipo', carte.tipi > 0, carte.tipi + ' tipi diversi');
-  T('nessun errore con le carte', e3.length === 0, e3.join(' | '));
-  await c3.close();
+  const vecchio = JSON.stringify({ premi: 500, gettoni: 12, pot: { taglio: 3, forza: 2 }, audio: false });
+  const { ctx, page, errori } = await nuovaPagina({ viewport: { width: 1000, height: 700 } }, { daprod_dozer_v2: vecchio });
+  await page.waitForTimeout(500);
+  T('salvataggio 1.x: parte senza errori', errori.length === 0, errori.join(' | '));
+  const s = await page.evaluate(() => ({ saldo: DOZER.stato.saldo, audio: DOZER.stato.opz.audio, pot: Object.keys(DOZER.stato.pot) }));
+  T('salvataggio 1.x: i vecchi premi diventano lire', s.saldo === 15000, JSON.stringify(s));
+  T('salvataggio 1.x: spariscono taglio e forza', !s.pot.includes('taglio') && !s.pot.includes('forza') && s.audio === false);
+  await ctx.close();
 }
-
-// ============================================================ SALVATAGGIO VECCHIO
-console.log('\n== SALVATAGGIO DI UNA VERSIONE VECCHIA ==');
 {
-  const vecchio = JSON.stringify({
-    premi: 4321, gettoni: 9, vinte: 12, totVinte: 40, totLanci: 90, totTorri: 3, comboMax: 7,
-    pot: { idle: 4, forza: 3, multi: 2, cannonePot: 1, raffica: 2, taglio: 9 },
-    attivi: { cannone: true, raffica: true, forza: true, multi: true, idle: true, torri: true },
-    audio: true, torreRecord: 'boh', sbloccati: { cannone: true, feltro: 'rubino' },
-    feltriPosseduti: ['verde', 'blu'], skin: 'oro'
-  });
-  const { ctx, page, errori } = await nuovaPagina({ viewport: { width: 1280, height: 800 } }, vecchio);
-  await page.waitForTimeout(900);
-  T('il gioco parte con un salvataggio vecchio', errori.length === 0, errori.join(' | '));
-  T('nessun avviso rosso', await page.locator('#erroreGioco').count() === 0);
-  T('taglio riportato nei limiti', await page.evaluate(() => DOZER.stato.pot.taglio) <= 6);
-  T('record torre sanificato', await page.evaluate(() => DOZER.stato.torreRecord) >= 1);
-  T('cannone e raffica non entrambi accesi', await page.evaluate(() => !(DOZER.stato.attivi.cannone && DOZER.stato.attivi.raffica)));
-  T('opzioni grafiche create se mancanti', await page.evaluate(() => typeof DOZER.stato.grafica.effetti === 'number'));
-  T('premi conservati', await page.evaluate(() => DOZER.stato.premi) >= 4321);
+  const { ctx, page, errori } = await nuovaPagina({ viewport: { width: 1000, height: 700 } },
+    { daprod_dozer_v3: JSON.stringify({ saldo: 'tanti', maxLancio: 99, sel: -4, pot: { multi: 77 }, tavolo: [1, 2, 'x'] }) });
+  await page.waitForTimeout(500);
+  const s = await page.evaluate(() => ({ saldo: DOZER.stato.saldo, max: DOZER.stato.maxLancio, sel: DOZER.stato.sel, multi: DOZER.stato.pot.multi, monete: DOZER.monete().length }));
+  T('salvataggio rovinato: valori rimessi a posto', s.saldo === 5000 && s.max === 7 && s.sel === 0 && s.multi === 3 && s.monete > 80, JSON.stringify(s));
+  T('salvataggio rovinato: nessun errore', errori.length === 0, errori.join(' | '));
+  await ctx.close();
+}
+{
+  const { ctx, page, errori } = await nuovaPagina({ viewport: { width: 1000, height: 700 } }, { daprod_dozer_v3: '{non è json' });
+  await page.waitForTimeout(500);
+  T('salvataggio illeggibile: si riparte puliti', errori.length === 0 && await page.evaluate(() => DOZER.stato.saldo) === 5000);
   await ctx.close();
 }
 
-console.log(`\n==== ${ok} OK · ${ko} KO ====`);
 await browser.close();
 server.close();
+console.log(`\n${ok} OK, ${ko} KO`);
 process.exit(ko ? 1 : 0);
