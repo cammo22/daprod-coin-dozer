@@ -78,19 +78,20 @@ console.log('\n== COMPUTER ==');
   const pila = await page.evaluate(() => { const m = DOZER.monete(); return [m.filter(c => c.y > 1.5 && c.y < 3 && c.z < -1.2).length, m.filter(c => c.y < 1.2 && c.z > -1.2).length]; });
   T('pila iniziale sui piani 2 e 3', pila[0] > 35 && pila[1] > 50, pila.join(' / '));
 
-  // --- NIENTE MONETE INCASTRATE ALL'INIZIO ---
+  // --- IL PIANO 1 HA IL SUO TAPPETO, MA SCORRE: NIENTE MONETE INCASTRATE ---
   const flusso = await page.evaluate(() => {
     const D = DOZER; D.stato.saldo = 1e6; D.stato.sel = 0;
+    const suP1 = (c) => c.vivo && !c.fuori && c.y > D.LIV[0].y - 0.1 && c.z < D.LIV[0].zEdge;
+    const inizio = D.monete().filter(suP1).length;
     const lanciate = [];
-    for (let i = 0; i < 40; i++) { lanciate.push(D.lanciaMoneta(-3.6 + (i % 10) * 0.8, i % 2)); D.simula(0.35); }
-    const z = D.Z_LANCIO, primo = lanciate.every(c => Math.abs(c.z - z) < 0.3 || !c.vivo || c.z > z - 3);
-    D.simula(12);
-    const ancoraSu = lanciate.filter(c => c.vivo && !c.fuori && c.y > D.LIV[0].y - 0.1 && c.z < D.LIV[0].zEdge).length;
-    const sulP1 = D.monete().filter(c => c.y > D.LIV[0].y - 0.1 && c.z < D.LIV[0].zEdge).length;
-    return { ancoraSu, sulP1, primo };
+    for (let i = 0; i < 60; i++) { lanciate.push(D.lanciaMoneta(-3.6 + (i % 10) * 0.8, i % 2)); D.simula(0.5); }
+    const z = D.Z_LANCIO, primo = lanciate.slice(-3).every(c => !c.vivo || Math.abs(c.z - z) < 1.2 || c.z > z);
+    const vecchie = lanciate.slice(0, 45), uscite = vecchie.filter(c => !suP1(c)).length;
+    return { inizio, fine: D.monete().filter(suP1).length, uscite, su: vecchie.length, primo, dietro: z < D.SPINTORI[0].fMax };
   });
-  T('le monete scendono dal carrello in fondo, sul piano 1', flusso.primo);
-  T('nessuna moneta resta incastrata sul piano 1', flusso.ancoraSu === 0 && flusso.sulP1 === 0, JSON.stringify(flusso));
+  T('la moneta cade in fondo al piano 1, dietro alla corsa del primo spintore', flusso.primo && flusso.dietro);
+  T('sul piano 1 c\'è un tappeto di monete', flusso.inizio >= 15, flusso.inizio + ' monete');
+  T('il tappeto del piano 1 scorre: le monete lanciate scendono al piano 2', flusso.uscite >= flusso.su * 0.9 && flusso.fine <= flusso.inizio + 15, JSON.stringify(flusso));
 
   // --- COSTI ---
   const costo = await page.evaluate(() => {

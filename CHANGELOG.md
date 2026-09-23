@@ -12,6 +12,13 @@ e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subi
   mostrava grande quanto i suoi pixel: 2-3 volte lo schermo, tagliato. Ora copre sempre esattamente lo
   schermo. Nuova prova su un telefono a densità 2,625 che controlla proprio questo.
 
+### Il piano 1 conta davvero
+- Il carrello lascia cadere la moneta **in fondo al piano 1**, davanti al primo spintore, e non più
+  quasi sul bordo. Lo spintore ha una corsa più corta, così sul piano 1 resta un **tappeto di
+  monete**: ogni moneta nuova ci entra da dietro e spinge giù quelle davanti, come nei piani sotto.
+  Il tappeto non cresce: con un lancio ogni mezzo secondo, 9 monete su 10 sono già scese al piano 2
+  dopo pochi secondi (lo controllano le prove).
+
 ### Le app
 - Ogni release ora ha tre file da scaricare: **APK** per Android, **EXE** per Windows (portatile,
   doppio clic e si gioca) e **DMG** per Mac. Tutte contengono il gioco e three.js, quindi **funzionano

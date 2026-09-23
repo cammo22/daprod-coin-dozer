@@ -18,7 +18,7 @@ vincite. **Due monete uguali una sopra l'altra si fondono nel taglio più grande
 1. **All'inizio scegli la moneta** con cui giocare (poi la cambi quando vuoi dalla barra in basso).
    Ogni lancio costa il valore della moneta.
 2. **Tocca il tavolo**: conta solo la colonna. Il carrello in alto scorre lì e lascia cadere la moneta
-   sul **piano 1**.
+   **in fondo al piano 1**, dove entra nel tappeto di monete e spinge giù quelle davanti.
 3. **Tre spintori** la portano giù: piano 1 → piano 2 → piano 3 → **vasca delle vincite**. Quello che
    cade nella vasca è tuo, al suo valore. Quello che cade nei **buchi laterali** va alla casa.
 4. **Fondi le monete**: quando una moneta si posa sopra una **uguale**, le due diventano il taglio
@@ -65,7 +65,7 @@ se non ti basta il saldo nemmeno per una L.50, arriva L.1.000 in regalo.
 ## ✨ Cosa c'è dentro
 
 - **Tre piani a cascata** con tre spintori che escono da sotto il piano di sopra, come nei coin
-  pusher veri: niente più monete ferme all'inizio, il piano 1 le passa sempre al piano sotto.
+  pusher veri: ogni piano ha il suo tappeto di monete che scorre verso il bordo.
 - **Marchio DaProd ovunque**: insegna neon che si accende sfarfallando, schermo dello slot, frontale
   della vasca, spintori, bordi luminosi dei piani, panni, carrello e gettone.
 - **Luci**: bagliori (bloom), mappa d'ambiente per cromo e monete, led diversi per ogni piano,
