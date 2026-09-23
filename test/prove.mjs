@@ -48,7 +48,7 @@ console.log('\n== COMPUTER ==');
   T('nessun errore in console', errori.length === 0, errori.join(' | '));
   T('un solo canvas', await page.locator('canvas').count() === 1);
   T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
-  T('versione v2.0.1 nel marchio', (await page.locator('#versione').textContent()) === 'v2.0.1');
+  T('versione v2.0.2 nel marchio', (await page.locator('#versione').textContent()) === 'v2.0.2');
   T('logo DaProd nel HUD, nella schermata iniziale e nel negozio', await page.locator('svg.logoDP').count() >= 3);
 
   // --- ALL'INIZIO SI SCEGLIE LA MONETA ---
@@ -90,8 +90,24 @@ console.log('\n== COMPUTER ==');
     return { inizio, fine: D.monete().filter(suP1).length, uscite, su: vecchie.length, primo, dietro: z < D.SPINTORI[0].fMax };
   });
   T('la moneta cade in fondo al piano 1, dietro alla corsa del primo spintore', flusso.primo && flusso.dietro);
+  // ogni moneta lanciata si posa la prima volta sul piano 1 (panno o sopra lo spintore 1), sotto
+  // all'anello di mira: non deve scavalcarlo cadendo direttamente sul piano 2 (il vecchio errore la
+  // spostava di 3,5). Se cade accanto alla faccia dello spintore che avanza, può esserne spinta di
+  // qualche decimo: si tollera al massimo un diametro di moneta.
+  const atterraggi = await page.evaluate(() => {
+    const D = DOZER; D.stato.saldo = 1e6; const r = [];
+    for (let i = 0; i < 16; i++) {
+      const c = D.lanciaMoneta(-3.5 + (i % 8) * 1, i % 2);
+      for (let k = 0; k < 240 && c.vivo && !c.terra; k++) D.passo(1 / 120);
+      if (c.vivo) r.push({ y: +c.y.toFixed(2), dz: +(c.z - D.Z_LANCIO).toFixed(2) });
+      D.simula(0.37);
+    }
+    return r;
+  });
+  T('ogni moneta lanciata si posa sul piano 1, sotto l\'anello di mira',
+    atterraggi.length >= 12 && atterraggi.every(a => a.y >= 3.19 && Math.abs(a.dz) < 0.9), JSON.stringify(atterraggi));
   T('sul piano 1 c\'è un tappeto di monete', flusso.inizio >= 15, flusso.inizio + ' monete');
-  T('il tappeto del piano 1 scorre: le monete lanciate scendono al piano 2', flusso.uscite >= flusso.su * 0.9 && flusso.fine <= flusso.inizio + 15, JSON.stringify(flusso));
+  T('il tappeto del piano 1 scorre: le monete lanciate scendono al piano 2', flusso.uscite >= flusso.su * 0.8 && flusso.fine <= flusso.inizio + 15, JSON.stringify(flusso));
 
   // --- COSTI ---
   const costo = await page.evaluate(() => {

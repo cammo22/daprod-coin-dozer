@@ -4,6 +4,22 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.0.2] — 2026-09-23 · Il piano viola si riempie davvero 🟣🪙
+
+### Risolto
+- **Le monete lanciate scavalcavano il piano 1** e cadevano direttamente sul piano 2, lontano
+  dall'anello di mira: per questo il piano viola restava vuoto e l'anteprima non corrispondeva al punto
+  di caduta. Il bordo del piano 1 fa da "raschietto" per le monete sopra lo spintore del piano 2, e una
+  moneta che in un solo passo di fisica attraversava la quota del piano veniva scambiata per una di
+  quelle e spinta davanti al bordo. Ora raschietto e faccia degli spintori valgono solo per le monete
+  che erano già a quella quota: chi sta cadendo si posa.
+- Ora la moneta si posa esattamente sotto l'anello: sopra il primo spintore (che la riporta indietro e
+  la lascia cadere davanti a sé) o sul panno viola, e da lì il tappeto del piano 1 si riempie e scorre.
+  Adesso ogni moneta attraversa tutto il piano 1, quindi ci mette qualche secondo in più a scendere:
+  con un lancio ogni mezzo secondo, dopo 30 secondi più di 8 monete su 10 sono già al piano 2 e il
+  tappeto non cresce.
+- Nuova prova: 16 monete lanciate, ognuna deve posarsi sul piano 1 dentro l'anello di mira.
+
 ## [2.0.1] — 2026-09-23 · Camera sistemata e app per Android, Windows e Mac 📱🪟🍎
 
 ### Risolto
