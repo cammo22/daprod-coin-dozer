@@ -396,7 +396,7 @@
 <script type="module">
 import * as THREE from 'three';
 
-const VERSIONE = 'v2.0.1';
+const VERSIONE = 'v2.0.2';
 const $ = (id) => document.getElementById(id);
 const TATTILE = (typeof matchMedia === 'function') &&
   (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
@@ -1184,12 +1184,16 @@ function limiti(c) {
   }
   if (c.z < LIV[0].zBack + c.r) { c.z = LIV[0].zBack + c.r; if (c.vz < 0) c.vz = 0; }
   for (const p of SPINTORI) {
+    // Faccia dello spintore e bordo del piano sopra valgono solo per chi era GIÀ a quella quota al passo
+    // prima (c.py): una moneta che ci sta solo cadendo attraverso si deve posare, non essere spostata.
+    // (Prima una moneta lanciata che attraversava la quota del piano 1 veniva scambiata per una moneta
+    // sopra lo spintore 2 e spinta davanti al bordo: scavalcava il piano 1 e cadeva lontano dall'anello.)
     // la faccia dello spintore
-    if (c.y < p.top - 0.02 && c.y + c.h > p.pav + 0.005 && c.z - c.r < p.z && c.z > p.z - p.len) {
+    if (c.y < p.top - 0.02 && c.py < p.top - 0.02 && c.y + c.h > p.pav + 0.005 && c.z - c.r < p.z && c.z > p.z - p.len) {
       c.z = p.z + c.r; if (c.vz < p.vz) c.vz = p.vz;
     }
     // il bordo del piano sopra (o il cofano) raschia via chi sta sopra lo spintore
-    if (c.y < p.scrTop - 0.01 && c.y + c.h > p.scrBot + 0.005 && c.z - c.r < p.scr && c.z > p.scr - 4) {
+    if (c.y < p.scrTop - 0.01 && c.py < p.scrTop - 0.01 && c.y + c.h > p.scrBot + 0.005 && c.z - c.r < p.scr && c.z > p.scr - 4) {
       c.z = p.scr + c.r; if (c.vz < 0) c.vz = 0;
     }
   }
