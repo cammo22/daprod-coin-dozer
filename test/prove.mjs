@@ -71,7 +71,7 @@ console.log('\n== DESKTOP ==');
   T('nessun errore in console', errori.length === 0, errori.join(' | '));
   T('canvas presente', await page.locator('canvas').count() === 1);
   T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
-  T('versione v1.6.0 in HUD', (await page.locator('#versione').textContent()) === 'v1.6.0');
+  T('versione v1.7.0 in HUD', (await page.locator('#versione').textContent()) === 'v1.7.0');
   T('pila iniziale fitta', await page.evaluate(() => DOZER.lireSulTavolo()) > 130);
 
   // --- MECCANICA DEL DOZER: si sceglie solo la colonna, si cade sempre in fondo ---
@@ -156,6 +156,17 @@ console.log('\n== DESKTOP ==');
       await page.evaluate(() => DOZER.stato.pot.taglio) === 0);
   }
 
+  // --- VASCA E TORRI (v1.7) ---
+  {
+    T('il tavolo è più profondo: bordo dei premi a -6,2', await page.evaluate(() => DOZER.BORDO_Z) === -6.2);
+    T('la vasca ha le sponde alte', await page.evaluate(() => DOZER.SPONDA_H) >= 1.2);
+    const torri0 = await page.evaluate(() => DOZER.torriInPiedi());
+    T('all\'avvio ci sono torri di lire in piedi', torri0 >= 2, torri0 + ' torri');
+    const masse = await page.evaluate(() => DOZER.TAGLI.map(t => DOZER.massaLira(t)));
+    T('la massa cresce con il taglio', masse.every((m, i) => i === 0 || m > masse[i - 1]),
+      masse.map(m => m.toFixed(2)).join(' < '));
+  }
+
   // --- METEORA (il cannone) ---
   {
     const met = await page.evaluate(async () => {
@@ -164,16 +175,19 @@ console.log('\n== DESKTOP ==');
       D.stato.attivi.cannone = true; D.stato.attivi.raffica = false; D.aggiornaAbilita();
       const modoMira = D.modoAttuale();
       for (let f = 0; f < 90; f++) D.aggiornaFisica(1/60);
+      // stesse lire prima e dopo: quelle spinte oltre il bordo contano come "oltre il bordo",
+      // non spariscono dalla media (altrimenti una meteora che vince tanto sembrerebbe inutile)
       const vive = D.lire.filter(m => m.attiva);
-      const zPrima = vive.reduce((a, m) => a + m.mesh.position.z, 0) / vive.length;
+      const zDi = m => m.attiva ? m.mesh.position.z : D.BORDO_Z - 1;
+      const zPrima = vive.reduce((a, m) => a + zDi(m), 0) / vive.length;
       const lanciPrima = D.stato.totLanci;
-      D.lanciaMeteora(0, -2.5, 1);
+      const zMira = D.BORDO_Z + 2.5;                 // mira a 2,5 dal bordo dei premi, qualunque sia la lunghezza del tavolo
+      D.lanciaMeteora(0, zMira, 1);
       const dopoLancio = { pronta: D.meteoraPronta(), acceso: D.stato.attivi.cannone, manca: D.meteoraMancano() };
       for (let f = 0; f < 60 * 4; f++) { D.aggiornaFisica(1/60); D.aggiornaMeteore(1/60); }
-      const vive2 = D.lire.filter(m => m.attiva);
-      const zDopo = vive2.reduce((a, m) => a + m.mesh.position.z, 0) / vive2.length;
+      const zDopo = vive.reduce((a, m) => a + zDi(m), 0) / vive.length;
       const inVolo = D.meteoreVolo.length;
-      D.lanciaMeteora(0, -2.5, 1);
+      D.lanciaMeteora(0, zMira, 1);
       return { modoMira, zPrima, zDopo, ...dopoLancio, rifiutata: D.meteoreVolo.length === inVolo,
         lireLanciate: D.stato.totLanci - lanciPrima, ricaricaMax: D.ricaricaMeteora(0) };
     });
@@ -201,8 +215,8 @@ console.log('\n== DESKTOP ==');
       const vive = D.lire.filter(m => m.attiva);
       return { vinte: D.stato.vinte - vinte0, premi: D.stato.premi - premi0,
         inScena: vive.length,
-        davanti: vive.filter(m => m.mesh.position.z < -2.5).length,
-        mezzo: vive.filter(m => m.mesh.position.z >= -2.5 && m.mesh.position.y < DOZER.ALTEZZA_PIASTRA - 0.05).length };
+        davanti: vive.filter(m => m.mesh.position.z < D.BORDO_Z + 2.5).length,
+        mezzo: vive.filter(m => m.mesh.position.z >= D.BORDO_Z + 2.5 && m.mesh.position.y < DOZER.ALTEZZA_PIASTRA - 0.05).length };
     });
     T('giocando normalmente le lire cadono davvero dal bordo', flusso.vinte > 60, flusso.vinte + ' vinte in 90 s');
     T('entra quanto esce: la pila non cresce all\'infinito', flusso.inScena < 190, flusso.inScena + ' in scena');
@@ -321,6 +335,53 @@ console.log('\n== DESKTOP ==');
   await ctx.close();
 }
 
+// ============================================================ TORRI: ESPERIMENTO PULITO
+console.log('\n== TORRI CHE CROLLANO ==');
+{
+  // tavolo vuoto, una torre di 10, una lira lanciata contro la base alla stessa velocità:
+  // una volta una L.100, una volta una L.1.000.000. Si contano i pezzi staccati dalla torre.
+  const prova = async (taglio) => {
+    const { ctx, page } = await nuovaPagina({ viewport: { width: 800, height: 600 } });
+    const r = await page.evaluate((taglio) => {
+      const D = DOZER;
+      for (const m of D.lire) { m.attiva = false; m.mesh.visible = false; }
+      const torre = D.costruisciTorre(-2, -3.2, 10);
+      for (let f = 0; f < 30; f++) D.aggiornaFisica(1 / 60);
+      const pianiPrima = Math.max(...torre.map(m => m.livello));
+      const t = D.TAGLI[taglio];
+      const colpo = D.creaLira(-2, t.h / 2, -2.0, { taglio });
+      colpo.vz = -4;
+      for (let f = 0; f < 90; f++) D.aggiornaFisica(1 / 60);
+      const asse = torre[0].mesh.position;
+      const staccati = torre.filter(m => !m.attiva ||
+        Math.hypot(m.mesh.position.x - asse.x, m.mesh.position.z - asse.z) > 0.35).length;
+      return { pianiPrima, staccati };
+    }, taglio);
+    await ctx.close();
+    return r;
+  };
+  const piccola = await prova(0), grande = await prova(6);
+  T('la torre di prova è in piedi', piccola.pianiPrima >= 8 && grande.pianiPrima >= 8, piccola.pianiPrima + ' piani');
+  T('una L.100 stacca almeno un pezzo', piccola.staccati >= 1, piccola.staccati + ' pezzi');
+  T('una L.1.000.000 ne stacca di più', grande.staccati > piccola.staccati,
+    piccola.staccati + ' con la L.100, ' + grande.staccati + ' con la L.1 MLN');
+
+  // crollate tutte le torri, ne risale una
+  const { ctx, page } = await nuovaPagina({ viewport: { width: 800, height: 600 } });
+  const rinascita = await page.evaluate(() => {
+    const D = DOZER;
+    for (const m of D.lire) if (m.diTorre) { m.attiva = false; m.mesh.visible = false; }
+    for (let f = 0; f < 10; f++) D.aggiornaFisica(1 / 60);
+    const prima = D.torriInPiedi();
+    D.curaTorri(999);
+    for (let f = 0; f < 30; f++) D.aggiornaFisica(1 / 60);
+    return { prima, dopo: D.torriInPiedi() };
+  });
+  T('quando le torri crollano ne risale una nuova', rinascita.dopo > rinascita.prima,
+    rinascita.prima + ' → ' + rinascita.dopo + ' torri');
+  await ctx.close();
+}
+
 // ============================================================ TELEFONO
 console.log('\n== TELEFONO (portrait, touch) ==');
 {
@@ -331,7 +392,7 @@ console.log('\n== TELEFONO (portrait, touch) ==');
   await page.waitForTimeout(900);
   T('parte senza errori', errori.length === 0, errori.join(' | '));
   T('ombre spente di serie su telefono', await page.evaluate(() => DOZER.stato.grafica.ombre === false));
-  T('tetto lire ridotto su telefono', await page.evaluate(() => DOZER.MAX_LIRE) === 170);
+  T('tetto lire ridotto su telefono', await page.evaluate(() => DOZER.MAX_LIRE) === 200);
   T('anche su telefono si mira solo in orizzontale (senza cannone)',
     await page.evaluate(() => Math.abs(DOZER.lanciaLira(99).mesh.position.z - DOZER.Z_LANCIO) < 0.3));
   const chip = await page.locator('#ch-raffica').boundingBox();
@@ -414,7 +475,7 @@ console.log('\n== CARTE SPECIALI ==');
       D.creaCarta(-2 + (i % 5) * 1, D.Z_LANCIO); creato++;
     }
     const suTavolo = D.carteSulTavolo();
-    for (const m of D.lire) if (m.attiva && m.carta !== undefined) { m.mesh.position.set(m.mesh.position.x, 0.2, -4.9); m.vz = -7; }
+    for (const m of D.lire) if (m.attiva && m.carta !== undefined) { m.mesh.position.set(m.mesh.position.x, 0.2, D.BORDO_Z + 0.1); m.vz = -7; }
     for (let f = 0; f < 120; f++) D.aggiornaFisica(1/60);
     return { creato, suTavolo, raccolte: (D.stato.carte || 0) - prima,
       premiCambiati: Math.abs(D.stato.premi - premiPrima) > 0.5,

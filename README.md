@@ -68,6 +68,11 @@ e nella scheda **⚙️ OPZIONI** ci sono audio, **ombre**, **effetti** (pieni /
   impilano; zero rimbalzi, zero monete storte.
 - **Torri di lire**: le lire si centrano su quella sotto (pile ordinate) e si impilano **fino a 30 piani**;
   dal 4° piano scatta un **bonus torre** con suono e particelle, e il record resta salvato.
+- **Vasca profonda** (1.7): campo lungo, sponde alte con bordo d'ottone e vaschetta dei premi sotto al
+  bordo, dove si vedono cadere le lire vinte.
+- **Torri che crollano** (1.7): sul campo ci sono pile di lire già in piedi. Ogni lira ha un peso che
+  cresce col taglio; quando urta forte una pila, dalla cima si staccano 1 pezzo con la L.100 e uno in
+  più per ogni taglio sopra. Crollate le torri, ne sale una nuova.
 - **Potenziamenti** (salvati nel browser, tutti con **tetto massimo** e barra di livello):
   - 🪙 **Taglio di lancio** — **sette tagli**: L.100 → L.500 → L.1.000 → L.10.000 →
     L.100.000 → L.500.000 → **L.1 MILIONE** (paga 250 contro 1)
@@ -115,17 +120,19 @@ python -m http.server 8080     # poi apri http://localhost:8080
 
 ### ✅ Controlli automatici
 
-Nel repository ci sono **94 prove** che aprono il gioco in un browser vero (desktop, telefono e
+Nel repository ci sono **102 prove** che aprono il gioco in un browser vero (desktop, telefono e
 con un salvataggio di una versione vecchia) e controllano che parta senza errori, che il tavolo
 non si riempia mai, che la lira scenda sempre dalla fessura in fondo, che il muro trattenga chi non
 si è posato, che i 7 tagli crescano bene, che le carte non superino le 5 sul tavolo e non paghino
-premi, che la meteora spinga la pila e non riparta prima dei 5 minuti, che le abilità si spengano
-e che il negozio funzioni anche al tocco:
+premi, che la meteora spinga la pila e non riparta prima dei 5 minuti, che le torri crollino di più
+coi tagli grossi e che ne risalga una nuova, che le abilità si spengano e che il negozio funzioni
+anche al tocco:
 
 ```bash
-npm i -D playwright three
+npm i --no-save playwright three@0.160.0
 npx playwright install chromium
 node test/prove.mjs
+node test/foto.mjs 8 tavolo     # foto del tavolo (computer e telefono) in test/.out/
 ```
 
 ## 📱 Da telefono

@@ -1,3 +1,4 @@
 node_modules/
 test/three.module.js
 *.tgz
+test/.out/
