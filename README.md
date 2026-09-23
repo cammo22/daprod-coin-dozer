@@ -110,6 +110,26 @@ node test/prove.mjs
 node test/foto.mjs 8 tavolo     # foto della macchina (computer e telefono) in test/.out/
 ```
 
+## 🤖 App Android (APK)
+
+Ogni release ha l'**APK** allegato: scarica `DaProd-Coin-Dozer-vX.Y.Z.apk` dalle
+[release](https://github.com/cammo22/daprod-coin-dozer/releases/latest), aprilo sul telefono e consenti
+l'installazione da origini sconosciute. L'app contiene il gioco e three.js, quindi **funziona anche
+offline**, a tutto schermo e con lo schermo sempre acceso.
+
+L'APK lo compila GitHub Actions (`.github/workflows/apk.yml`) a ogni tag `v*`, e pubblica da solo la
+release con le note prese dal CHANGELOG. Il progetto Android è in `android/`: è una WebView che serve
+gli asset da `https://appassets.androidplatform.net`. Per compilarlo in locale:
+
+```bash
+npm i --no-save three@0.160.0 && node android/prepara-www.mjs
+cd android && gradle assembleRelease      # serve l'Android SDK
+```
+
+Per firmare sempre con la stessa chiave (così gli aggiornamenti si installano sopra), aggiungi ai
+segreti del repository `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` e
+`ANDROID_KEY_PASSWORD`. Senza segreti l'APK è firmato con una chiave di debug.
+
 ## 📱 Da telefono
 
 Apri il pulsante **▶ GIOCA ORA** qui sopra: la pagina è già pronta per il touch (zoom bloccato,

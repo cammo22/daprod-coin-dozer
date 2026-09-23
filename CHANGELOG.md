@@ -58,6 +58,10 @@ Rifatto da zero, dalla fisica alla grafica all'interfaccia.
 - Il tavolo viene salvato: riaprendo il gioco ritrovi le monete dove le avevi lasciate. Chi arriva
   dalla 1.x trova i vecchi premi convertiti in lire (×20).
 
+### 🤖 App Android
+- Da questa versione ogni release ha l'**APK** allegato: il gioco a tutto schermo in un'app, con
+  three.js incluso, quindi **funziona anche offline**. Lo compila GitHub Actions a ogni tag.
+
 ### Sotto il cofano
 - Fisica 2,5D nuova, a passo fisso (120 al secondo) con griglia spaziale; le monete si disegnano con
   una InstancedMesh per taglio, quindi centinaia di monete costano pochissimo.
