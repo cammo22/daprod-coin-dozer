@@ -4,6 +4,36 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [1.7.0] — 2026-09-23 · La vasca profonda e le torri che crollano 🏗️🪙
+
+### Un tavolo più profondo
+- Il campo delle lire è **più lungo**: il bordo dei premi passa da z −5 a **−6,2**. Più spazio fra il
+  ripiano e il bordo, una pila più grande (185 lire all'avvio invece di 150) e posto per le torri.
+- Il tavolo è una **vasca**: le sponde salgono sopra il feltro con pareti scure, bordo d'ottone e un
+  filo di luce. Prima erano allo stesso livello del panno e il campo sembrava una tavola piatta.
+- Sotto al bordo dei premi c'è la **vaschetta**, con orlo d'ottone e una luce calda: le lire vinte si
+  vedono cadere dentro.
+- Il ripiano spinge più avanti (fino a −1,4) con la stessa corsa di prima; la camera si è
+  allontanata quanto basta per vedere tutto, bordo e vaschetta compresi, anche da telefono.
+
+### Le torri che crollano
+- All'avvio ci sono **3 torri di lire in piedi** sul campo, alte 10 piani, con la cima in L.500.
+- Le lire hanno un **peso**: cresce col taglio (la L.100 pesa 1, la L.1.000.000 più di 4). Negli
+  urti la lira pesante sposta di più e si sposta di meno.
+- Quando una lira urta forte una pila, **dalla cima si staccano dei pezzi**: 1 con la L.100, e uno in
+  più per ogni taglio sopra. Più alto il taglio che inserisci, più la torre crolla. Dai 2 pezzi in
+  su compare la scritta **CROLLO**.
+- Quando in piedi ne restano meno di due, **ne sale una nuova** (🏗️ NUOVA TORRE).
+- Le torri di casa non pagano il bonus torre: sono il bersaglio, non una vincita regalata.
+
+### Sotto il cofano
+- Correzione: per decidere chi colpisce chi, l'urto guarda le velocità **prima** del contatto.
+  Guardandole dopo, fra due lire uguali la colpita risultava più veloce della colpitrice.
+- Prove: **102 OK** (8 nuove: vasca, peso dei tagli, torri all'avvio, una L.100 e una
+  L.1.000.000 lanciate contro la stessa torre, torre che risale). Le misure legate al tavolo ora
+  partono dal bordo dei premi e non da numeri fissi. `test/foto.mjs` fotografa il tavolo dopo
+  qualche secondo di gioco, su computer e telefono.
+
 ## [1.6.0] — 2026-09-19 · Sette tagli, carte da collezione e la meteora ♠☄️
 
 ### Le lire cadono davvero in fondo

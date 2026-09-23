@@ -533,7 +533,7 @@ const nomeTaglio = (n) => TAGLI[Math.max(0, Math.min(TAGLI.length - 1, n))].nome
 const fattoreForza = (n) => 1 + 0.25 * n;                 // moltiplicatore della spinta di lancio
 const lirePerLancio = (n) => 1 + n;                       // lire lanciate per click
 const forzaCannone = (n) => 1 + 0.5 * n;                  // potenza dello sparo
-const VERSIONE = 'v1.6.0';                                // mostrata nell'HUD per verificare gli aggiornamenti
+const VERSIONE = 'v1.7.0';                                // mostrata nell'HUD per verificare gli aggiornamenti
 const COSTO_FELTRO = { blu: 250, bordeaux: 700, notte: 1500 };
 const NOME_FELTRO = { verde: 'Verde DaProd', blu: 'Blu Royal', bordeaux: 'Bordeaux', notte: 'Notte Neon' };
 const PRESTIGIO_CANNONE = 1;
@@ -782,14 +782,25 @@ function geoArrotondata(larg, prof, spess, raggio) {
   return g;
 }
 
+// ============ GEOMETRIA DEL TAVOLO (v1.7: più profondo) ============
+// Il campo delle lire era corto (bordo dei premi a z -5) e piatto. Ora il bordo sta più avanti
+// (-6,2): c'è più spazio fra il ripiano e il bordo, la pila è più grande e le torri ci stanno.
+// E il tavolo è una VASCA: sponde alte attorno al campo, vaschetta dei premi sotto al bordo.
+const BORDO_Z = -6.2;                 // bordo dei premi: oltre, le lire cadono e si vincono
+const FONDO_Z = 5.0;                  // fondo della macchina (muro)
+const TAVOLO_D = FONDO_Z - BORDO_Z;   // lunghezza del tavolo
+const TAVOLO_ZC = (FONDO_Z + BORDO_Z) / 2;
+const SPONDA_H = 1.35;                // quanto le sponde della vasca salgono sopra il feltro
+const CAM_Y = 12.4, CAM_Z = -14.4, CAM_GUARDA_Z = -2.2;   // camera arretrata e rivolta più avanti: si vedono bordo e vaschetta
+
 // ============ SCENA ============
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0a12);
 scene.fog = new THREE.Fog(0x0a0a12, 25, 50);
 
 const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 100);
-camera.position.set(0, 10, -12);
-camera.lookAt(0, 0, 0);
+camera.position.set(0, CAM_Y, CAM_Z);
+camera.lookAt(0, 0, CAM_GUARDA_Z);
 
 // su telefono l'antialias hardware costa parecchio: si spegne e si guadagnano fotogrammi
 const renderer = new THREE.WebGLRenderer({ antialias: !TATTILE, powerPreference: 'high-performance' });
@@ -858,7 +869,7 @@ scene.add(ambient);
 
 const spot = new THREE.SpotLight(0xffddaa, 78, 32, Math.PI/4, 0.45, 1);
 spot.position.set(0, 14, -1);
-spot.target.position.set(0, 0, -2.6);   // il faro punta sulla pila, non sul ripiano
+spot.target.position.set(0, 0, -3.2);   // il faro punta sulla pila, non sul ripiano
 spot.castShadow = true;
 spot.shadow.mapSize.set(TATTILE ? 512 : 1024, TATTILE ? 512 : 1024);
 spot.shadow.camera.near = 5;
@@ -884,7 +895,8 @@ const COLORE_FELTRI = { verde: 0x1a5c3a, blu: 0x1b3a6b, bordeaux: 0x5c1a2e, nott
 const tavoloMat = new THREE.MeshStandardMaterial({
   color: COLORE_FELTRI.verde, map: texFeltro, roughness: 0.95, metalness: 0.04
 });
-const tavolo = new THREE.Mesh(geoArrotondata(8, 10, 0.5, 0.55), tavoloMat);
+const tavolo = new THREE.Mesh(geoArrotondata(8, TAVOLO_D, 0.5, 0.55), tavoloMat);
+tavolo.position.z = TAVOLO_ZC;
 tavolo.receiveShadow = true;
 scene.add(tavolo);
 
@@ -894,7 +906,7 @@ const logoFeltro = new THREE.Mesh(
   new THREE.MeshBasicMaterial({ map: texLogoFeltro, transparent: true, opacity: 0.5, depthWrite: false })
 );
 logoFeltro.rotation.set(-Math.PI / 2, 0, Math.PI);   // idem: la scritta va raddrizzata
-logoFeltro.position.set(0, 0.005, -3.4);              // sul campo di gioco, dove si vede
+logoFeltro.position.set(0, 0.005, -4.1);              // sul campo di gioco, dove si vede
 scene.add(logoFeltro);
 
 // ============ SPONDE (spigoli arrotondati) ============
@@ -909,9 +921,43 @@ function creaSponda(larg, prof, x, z) {
   scene.add(m);
   return m;
 }
-creaSponda(0.3, 10, -4.15, 0);
-creaSponda(0.3, 10, 4.15, 0);
+creaSponda(0.3, TAVOLO_D, -4.15, TAVOLO_ZC);
+creaSponda(0.3, TAVOLO_D, 4.15, TAVOLO_ZC);
 const spondaFondo = creaSponda(8, 0.3, 0, 5.05);
+
+// ---- VASCA: le sponde salgono sopra il feltro, il campo delle lire sta incassato ----
+// Pareti interne scure (danno il senso di profondità), bordo superiore in ottone con un filo
+// di luce, e sotto al bordo dei premi la VASCHETTA dove si vedono cadere le lire vinte.
+const pareteVascaMat = new THREE.MeshStandardMaterial({ color: 0x241710, roughness: 0.6, metalness: 0.25 });
+const ottoneMat = new THREE.MeshStandardMaterial({ color: 0xc9a14a, roughness: 0.32, metalness: 0.85 });
+for (const lato of [-1, 1]) {
+  const parete = new THREE.Mesh(geoArrotondata(0.26, TAVOLO_D - 0.3, SPONDA_H, 0.08), pareteVascaMat);
+  parete.position.set(lato * 4.13, SPONDA_H, TAVOLO_ZC + 0.15);    // la geometria scende da y=0: la alzo
+  parete.castShadow = true; parete.receiveShadow = true;
+  scene.add(parete);
+  const bordo = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.09, TAVOLO_D - 0.2), ottoneMat);
+  bordo.position.set(lato * 4.13, SPONDA_H + 0.045, TAVOLO_ZC + 0.1);
+  scene.add(bordo);
+  const filo = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, TAVOLO_D - 0.4),
+    new THREE.MeshBasicMaterial({ color: 0x66e6ff, transparent: true, opacity: 0.75 }));
+  filo.position.set(lato * 3.97, SPONDA_H * 0.55, TAVOLO_ZC + 0.1);
+  scene.add(filo);
+}
+// vaschetta dei premi, sotto al bordo anteriore: le lire vinte ci cadono dentro
+const VASCHETTA_Y = -1.25;
+const fondoVaschetta = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.12, 1.5), pareteVascaMat);
+fondoVaschetta.position.set(0, VASCHETTA_Y, BORDO_Z - 0.8);
+fondoVaschetta.receiveShadow = true;
+scene.add(fondoVaschetta);
+const fronteVaschetta = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.9, 0.12), pareteVascaMat);
+fronteVaschetta.position.set(0, VASCHETTA_Y + 0.4, BORDO_Z - 1.55);
+scene.add(fronteVaschetta);
+const bordoVaschetta = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.07, 0.16), ottoneMat);
+bordoVaschetta.position.set(0, VASCHETTA_Y + 0.87, BORDO_Z - 1.55);
+scene.add(bordoVaschetta);
+const luceVaschetta = new THREE.PointLight(0xffd27a, 10, 5);
+luceVaschetta.position.set(0, VASCHETTA_Y + 0.9, BORDO_Z - 0.8);
+scene.add(luceVaschetta);
 
 // MURO DI FONDO: la parete della macchina. Nasconde la coda del ripiano che scorre
 // (il ripiano entra ed esce da sotto il muro, come nelle macchine vere) e regge la targa.
@@ -950,13 +996,13 @@ scene.add(targa);
 // dietro; quando torna indietro sfila via da sotto e le lire CADONO giù sul tavolo,
 // dove la faccia del ripiano le spinge verso il bordo dei premi.
 const ALTEZZA_PIASTRA = 0.34;   // quota del piano d'appoggio superiore
-const PLATE_D = 4.0;            // profondità: copre tutto il fondo, la coda sta dietro al muro
+const PLATE_D = 4.8;            // profondità: copre tutto il fondo, la coda sta dietro al muro (v1.7: più lungo col tavolo)
 const PUSHER_SPEED = 1.7;       // velocità della corsa
 // CORSA LUNGA: prima la faccia spingeva solo fra z 1,15 e 3,9, cioè DIETRO alla pila
 // (che sta fra -5 e 1): non la toccava mai. Le lire si ammucchiavano davanti e il
 // fondo restava vuoto. Ora la faccia attraversa il tavolo e spinge davvero la pila.
-const FRONTE_AVANTI = -0.6;     // dove arriva la faccia quando spinge (dentro la pila)
-const FRONTE_INDIETRO = 1.6;    // dove torna la faccia (corsa = 2,2)
+const FRONTE_AVANTI = -1.4;     // dove arriva la faccia quando spinge (dentro la pila; v1.7: tavolo più lungo)
+const FRONTE_INDIETRO = 0.8;    // dove torna la faccia (corsa = 2,2, come prima)
 const PUSHER_MIN = FRONTE_AVANTI + PLATE_D / 2;
 const PUSHER_MAX = FRONTE_INDIETRO + PLATE_D / 2;
 // le lire scendono SEMPRE qui dietro: il ripiano copre questa fascia in ogni momento
@@ -1039,10 +1085,10 @@ const LIVELLI_TORRE_MAX = 30;                       // TORRI FINO A 30 PIANI
 // Pila FITTA: in una macchina vera il campo è pieno di monete appoggiate una all'altra,
 // ed è proprio quella densità che fa viaggiare la spinta del ripiano fino al bordo.
 // Con poche lire sparse la spinta si perdeva dopo due monete.
-const LIRE_INIZIALI = 150;
+const LIRE_INIZIALI = 185;                      // v1.7: il campo è più lungo
 // Tetto MORBIDO delle lire in scena: NON blocca mai il lancio. Quando si supera, le lire
 // in fondo al tavolo (le più lontane dal bordo dei premi) tornano da sole in cassa ♻️
-const MAX_LIRE = TATTILE ? 170 : 300;
+const MAX_LIRE = TATTILE ? 200 : 320;
 const RICICLO_PER_FRAME = 4;                        // quante lire al massimo si riciclano per fotogramma
 
 // faccia della lira disegnata su canvas, con la scritta del taglio
@@ -1280,25 +1326,117 @@ function riciclaEccesso() {
   compattaLire();
 }
 
+// ---------- TORRI DI CASA (v1.7) ----------
+// Pile di lire già in piedi sul campo, come nelle macchine vere. Le lire che arrivano le urtano
+// e le fanno crollare pezzo per pezzo: più alto è il taglio (più pesante), più pezzi stacca
+// (vedi staccaTorre). Quando ne restano meno di TORRI_MIN, ne sale una nuova.
+const TORRI_CASA = [[-2.4, -3.9], [0, -4.6], [2.4, -3.9]];   // x, z delle torri all'avvio
+const PIANI_TORRE_CASA = 10;
+const LIRE_TORRI_CASA = TORRI_CASA.length * PIANI_TORRE_CASA;
+const TORRI_MIN = 2;
+const RICOSTRUISCI_TORRE_OGNI = 45;          // secondi fra un controllo e l'altro
+function costruisciTorre(x, z, piani) {
+  // una torre si posa su quello che c'è sotto: si parte dall'alto della pila in quel punto
+  let base = 0;
+  for (const m of lire) {
+    if (!m.attiva) continue;
+    const dx = m.mesh.position.x - x, dz = m.mesh.position.z - z;
+    if (dx * dx + dz * dz < 0.3 * 0.3) base = Math.max(base, m.mesh.position.y + m.h / 2);
+  }
+  const fatte = [];
+  for (let i = 0; i < piani; i++) {
+    const t = i < piani - 3 ? 0 : 1;           // corpo in L.100, cima in L.500: la cima vale di più
+    const h = TAGLI[t].h;
+    const m = creaLira(x + (Math.random() - 0.5) * 0.02, base + h / 2 + 0.002, z + (Math.random() - 0.5) * 0.02, { taglio: t });
+    m.torrePremiato = true;                    // le torri di casa non pagano il bonus torre: sono il bersaglio
+    m.diTorre = true;
+    base += h;
+    fatte.push(m);
+  }
+  return fatte;
+}
+function torriInPiedi() {
+  // una torre è in piedi se una sua lira sta almeno al 6° piano
+  let n = 0; const viste = [];
+  for (const m of lire) {
+    if (!m.attiva || m.livello < 6) continue;
+    if (viste.some(v => Math.hypot(v.x - m.mesh.position.x, v.z - m.mesh.position.z) < 0.9)) continue;
+    viste.push({ x: m.mesh.position.x, z: m.mesh.position.z }); n++;
+  }
+  return n;
+}
+let prossimaTorre = RICOSTRUISCI_TORRE_OGNI;
+function curaTorri(dt) {
+  prossimaTorre -= dt;
+  if (prossimaTorre > 0) return;
+  prossimaTorre = RICOSTRUISCI_TORRE_OGNI;
+  if (torriInPiedi() >= TORRI_MIN) return;
+  const [x, z] = TORRI_CASA[Math.floor(Math.random() * TORRI_CASA.length)];
+  const nuove = costruisciTorre(x + (Math.random() - 0.5) * 0.8, z + (Math.random() - 0.5) * 0.6, PIANI_TORRE_CASA);
+  const cima = nuove[nuove.length - 1].mesh.position;
+  testoVolante(cima.x, cima.y + 0.5, cima.z, '🏗️ NUOVA TORRE', 'torre');
+}
+
+// ---------- CROLLO DELLE TORRI (v1.7) ----------
+// Massa di una lira: cresce con la grandezza del taglio (raggio² × spessore). La L.100 vale 1,
+// la L.1.000.000 circa 4: negli urti la più pesante sposta di più e si sposta di meno.
+const massaLira = (m) => (m.r / 0.29) * (m.r / 0.29) * (m.h / 0.10);
+// Quando una lira urta forte una pila, dalla cima si staccano 1 + (indice del taglio) pezzi:
+// la L.100 ne stacca 1, la L.500 2, la L.1000 3... e volano via nella direzione dell'urto.
+const URTO_MIN_STACCO = 0.55;          // velocità d'urto minima per staccare qualcosa
+function sopraDi(base) {
+  // le lire che poggiano su "base", su su fino alla cima
+  const catena = [];
+  let cur = base;
+  for (let guardia = 0; guardia < LIVELLI_TORRE_MAX; guardia++) {
+    const vic = cercaVicine(cur.mesh.position.x, cur.mesh.position.z);
+    let su = null;
+    for (let j = 0; j < vic.length; j++) if (vic[j].sotto === cur && vic[j].attiva) { su = vic[j]; break; }
+    if (!su) break;
+    catena.push(su); cur = su;
+  }
+  return catena;
+}
+function staccaTorre(colpita, colpitrice, nx, nz, velUrto) {
+  if (velUrto < URTO_MIN_STACCO) return 0;
+  const catena = sopraDi(colpita);
+  if (catena.length === 0) return 0;
+  const indice = Math.max(0, TAGLI.findIndex(t => t.taglio === colpitrice.taglio));
+  const pezzi = Math.min(catena.length, 1 + indice);
+  const forza = Math.min(3.2, 0.9 + velUrto * 0.8) * Math.sqrt(massaLira(colpitrice));
+  for (let k = 0; k < pezzi; k++) {
+    const m = catena[catena.length - 1 - k];      // dalla cima in giù
+    const spinta = forza * (1 - k * 0.12);
+    m.vx += nx * spinta + (Math.random() - 0.5) * 0.6;
+    m.vz += nz * spinta + (Math.random() - 0.5) * 0.6;
+    m.vy += 1.2 + Math.random() * 0.8;           // un saltino: si stacca davvero dalla pila
+    m.wx = (Math.random() - 0.5) * 8; m.wz = (Math.random() - 0.5) * 8;
+    m.sotto = null; m.aTerra = false; m.atterrata = false;
+  }
+  return pezzi;
+}
+
 // strato di base: file fitte di lire MISTE (tagli diversi) da vicino al bordo fino alla piastra
 const TAGLIO_PILA = [0, 0, 0, 1, 1, 1, 2, 2, 3];   // la pila di casa e' fatta di tagli bassi
 function taglioACasoDallaPila() {
   return TAGLIO_PILA[Math.floor(Math.random() * TAGLIO_PILA.length)];
 }
-for (let riga = 0; riga < 9 && lire.length < LIRE_INIZIALI; riga++) {
-  const zb = -4.6 + riga * 0.6;
-  for (let k = 0; k < 10 && lire.length < LIRE_INIZIALI; k++) {
+for (let riga = 0; riga < 11 && lire.length < LIRE_INIZIALI - LIRE_TORRI_CASA; riga++) {
+  const zb = BORDO_Z + 0.4 + riga * 0.6;
+  for (let k = 0; k < 10 && lire.length < LIRE_INIZIALI - LIRE_TORRI_CASA; k++) {
     creaLira(-3.5 + k * 0.72 + (Math.random() - 0.5) * 0.12, 0.08, zb + (Math.random() - 0.5) * 0.09,
       { taglio: taglioACasoDallaPila() });
   }
 }
 // alcune lire sopra le altre: la pila parte già a 2-3 piani
-while (lire.length < LIRE_INIZIALI) {
+while (lire.length < LIRE_INIZIALI - LIRE_TORRI_CASA) {
   const sotto = lire[Math.floor(Math.random() * lire.length)];
   creaLira(sotto.mesh.position.x + (Math.random() - 0.5) * 0.18,
     sotto.mesh.position.y + (sotto.h + 0.11) / 2, sotto.mesh.position.z,
     { taglio: taglioACasoDallaPila() });
 }
+// le torri di casa, sopra la pila
+for (const [x, z] of TORRI_CASA) costruisciTorre(x, z, PIANI_TORRE_CASA);
 
 // ============ INPUT (mirino, lancio, sparo del cannone) ============
 const raycaster = new THREE.Raycaster();
@@ -1330,8 +1468,8 @@ function aggiornaPuntatore(e) {
   if (cannoneAcceso()) {
     // METEORA: si mira DOVE VUOI sul tavolo, profondità compresa (il vecchio sistema)
     puntatore.x = Math.max(-3.6, Math.min(3.6, p.x));
-    puntatore.z = Math.max(-4.7, Math.min(DECK_Z1 - 0.3, p.z));
-    puntatore.dentro = Math.abs(p.x) < 5.2 && p.z > -6.4 && p.z < 6.4;
+    puntatore.z = Math.max(BORDO_Z + 0.3, Math.min(DECK_Z1 - 0.3, p.z));
+    puntatore.dentro = Math.abs(p.x) < 5.2 && p.z > BORDO_Z - 1.4 && p.z < 6.4;
   } else {
     // LIRE: conta solo la colonna, la profondità è sempre la fessura in fondo
     puntatore.x = limitaX(p.x);
@@ -1639,7 +1777,7 @@ function aggiornaFisica(dt) {
         if (top > restY) { restY = top; appoggio = o; }
       }
       // oltre il bordo anteriore: niente più supporto, la lira cade giù
-      if (p.z < -5) restY = -100;
+      if (p.z < BORDO_Z) restY = -100;
       m.sotto = appoggio;
       m.livello = appoggio ? appoggio.livello + 1 : 1;         // piano della torre
 
@@ -1759,15 +1897,27 @@ function aggiornaFisica(dt) {
           if (d2 >= minD * minD || d2 < 1e-8) continue;
           const dist = Math.sqrt(d2);
           const nx = dx / dist, nz = dz / dist;
-          const overlap = (minD - dist) / 2;
-          pa.x += nx * overlap; pa.z += nz * overlap;
-          pb.x -= nx * overlap; pb.z -= nz * overlap;
+          // v1.7: la separazione e l'urto tengono conto della MASSA del taglio. La lira pesante
+          // si sposta poco e sposta molto; fra due lire uguali tutto resta come prima.
+          const wa = 1 / massaLira(a), wb = 1 / massaLira(b), ws = wa + wb;
+          const overlap = minD - dist;
+          pa.x += nx * overlap * wa / ws; pa.z += nz * overlap * wa / ws;
+          pb.x -= nx * overlap * wb / ws; pb.z -= nz * overlap * wb / ws;
           if (giro > 0) continue;                           // l'urto si conta una volta sola
           const rvn = (a.vx - b.vx) * nx + (a.vz - b.vz) * nz;
           if (rvn < 0) {
-            const imp = rvn * 0.55;
-            a.vx -= nx * imp; a.vz -= nz * imp;
-            b.vx += nx * imp; b.vz += nz * imp;
+            // chi colpisce chi si decide PRIMA dell'urto: la quantità di moto di ognuna verso
+            // l'altra (n va da b ad a). Dopo l'urto fra due lire uguali la colpita va più
+            // veloce della colpitrice, e il confronto veniva al contrario.
+            const pa_ = -(a.vx * nx + a.vz * nz) / wa;       // a verso b
+            const pb_ = (b.vx * nx + b.vz * nz) / wb;        // b verso a
+            const J = rvn * 1.1 / ws;                       // con masse uguali = 0,55 × rvn, come prima
+            a.vx -= nx * J * wa; a.vz -= nz * J * wa;
+            b.vx += nx * J * wb; b.vz += nz * J * wb;
+            // se la colpita regge una pila, dalla cima si stacca qualcosa
+            const colpisceA = pa_ >= pb_;
+            const staccati = colpisceA ? staccaTorre(b, a, -nx, -nz, -rvn) : staccaTorre(a, b, nx, nz, -rvn);
+            if (staccati >= 2) crolloTorre(colpisceA ? pb : pa, staccati);
           }
         }
       }
@@ -1777,7 +1927,7 @@ function aggiornaFisica(dt) {
     for (let i = attive.length - 1; i >= 0; i--) {
       const m = attive[i];
       if (!m.attiva) continue;
-      if (m.mesh.position.z < -5 && m.mesh.position.y < -1.2) {
+      if (m.mesh.position.z < BORDO_Z && m.mesh.position.y < -1.2) {
         spegniLira(m);
         vinciLira(m);
       }
@@ -1818,8 +1968,8 @@ function vinciLira(m) {
     const c = CARTE[m.carta];
     stato.carte = (stato.carte || 0) + 1;
     stato.carteTipi[c.id] = (stato.carteTipi[c.id] || 0) + 1;
-    testoVolante(pos.x, 0.5, -4.6, '♠ ' + c.nome + ' PRESA!', 'bonus');
-    particelle(pos.x, 0.3, -4.9, 26, 0xffd54a, 1.8);
+    testoVolante(pos.x, 0.5, BORDO_Z + 0.4, '♠ ' + c.nome + ' PRESA!', 'bonus');
+    particelle(pos.x, 0.3, BORDO_Z + 0.1, 26, 0xffd54a, 1.8);
     suono.sblocco();
     lampo();
     scossa(0.5);
@@ -1838,12 +1988,23 @@ function vinciLira(m) {
   stato.vinte += 1;
   stato.totVinte += 1;
   if (combo >= 3 && combo % 2 === 1) mostraCombo(combo);   // niente lampeggio a ogni lira durante una valanga
-  testoVolante(pos.x, 0.3, -4.6, '+' + guadagno + (m.taglio >= 500 ? ' 💎' : '') + (guadagno > (m.premio || 1) ? ' COMBO' : ''),
+  testoVolante(pos.x, 0.3, BORDO_Z + 0.4, '+' + guadagno + (m.taglio >= 500 ? ' 💎' : '') + (guadagno > (m.premio || 1) ? ' COMBO' : ''),
     m.taglio >= 500 ? 'bonus' : '');
-  particelle(pos.x, 0.2, -4.9, 6 + Math.min(12, combo) + (m.taglio >= 500 ? 8 : 0), m.colore || 0xffd54a, 0.9);
+  particelle(pos.x, 0.2, BORDO_Z + 0.1, 6 + Math.min(12, combo) + (m.taglio >= 500 ? 8 : 0), m.colore || 0xffd54a, 0.9);
   suono.vinci(combo);
   if (combo >= 5) { lampo(); scossa(0.3); }
   aggiornaHUD();
+}
+
+// una lira pesante ha fatto crollare più pezzi di una torre: si vede e si sente
+let ultimoCrollo = 0;
+function crolloTorre(p, pezzi) {
+  const ora = performance.now();
+  if (ora - ultimoCrollo < 350) return;          // niente raffiche di scritte
+  ultimoCrollo = ora;
+  testoVolante(p.x, p.y + 0.6, p.z, 'CROLLO x' + pezzi, 'torre');
+  particelle(p.x, p.y + 0.3, p.z, 6 + pezzi * 2, 0xffd54a, 1.1);
+  suono.torre();
 }
 
 // torre di lire completata: il bonus cresce con il piano raggiunto (fino a 30)
@@ -2418,6 +2579,7 @@ function animate() {
   t += dt;
 
   aggiornaFisica(dt);
+  curaTorri(dt);                                  // v1.7: se le torri sono crollate, ne sale una nuova
   riciclaEccesso();          // ♻️ il tavolo fa spazio da solo: il lancio non si rifiuta mai
   aggiornaMeteore(dt);
   aggiornaParticelle(dt);
@@ -2511,14 +2673,14 @@ function animate() {
 
   // --- camera: zoom (utente + arretramento in verticale) + scossa ---
   const kv = fattoreVerticale();
-  bersaglioCamera.set(0, 10 * kv * cameraZoom, -12 * kv * cameraZoom);
+  bersaglioCamera.set(0, CAM_Y * kv * cameraZoom, CAM_GUARDA_Z + (CAM_Z - CAM_GUARDA_Z) * kv * cameraZoom);
   camera.position.lerp(bersaglioCamera, 0.1);
   if (scossaForza > 0) {
     scossaForza = Math.max(0, scossaForza - dt * 2.6);
     camera.position.x += (Math.random() - 0.5) * scossaForza * 0.5;
     camera.position.y += (Math.random() - 0.5) * scossaForza * 0.4;
   }
-  camera.lookAt(0, 0, 0);
+  camera.lookAt(0, 0, CAM_GUARDA_Z);
 
   tempoSalvataggio += dt;
   if (tempoSalvataggio > 4) { tempoSalvataggio = 0; salvaPartita(); }
@@ -2628,6 +2790,7 @@ window.DOZER = {
   lanciaMeteora, meteoraPronta, meteoraMancano, aggiornaMeteore, ricaricaMeteora,
   lireSulTavolo, riciclaEccesso, modoAttuale, cambiaAbilita, cambiaOpzione, aggiornaAbilita,
   pusherAvanti: () => pusherZ < PUSHER_MIN + 0.12,   // a che punto della corsa e' il ripiano
+  BORDO_Z, SPONDA_H, massaLira, torriInPiedi, costruisciTorre, curaTorri,
   comboOra: () => combo,
   creaLira, lanciaLira, aggiornaFisica, aggiornaHUD, rendiNegozio
 };
