@@ -4,6 +4,66 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.0.0] — 2026-09-23 · Il remake: tre piani, fusioni e jackpot DaProd 🎰🪙
+
+Rifatto da zero, dalla fisica alla grafica all'interfaccia.
+
+### Tre piani a cascata
+- La macchina ha ora **tre piani uno sotto l'altro**, ognuno col suo **spintore** che esce da sotto il
+  piano di sopra (come nei coin pusher veri). Le monete cadono di piano in piano: dal carrello al
+  **piano 1**, poi al **piano 2**, poi al **piano 3** e da lì nella **vasca delle vincite**.
+- **Addio monete incastrate all'inizio**: niente più camera di carico e muro invisibile. Il piano 1 è
+  un alimentatore: il suo spintore arriva fino al bordo e ogni moneta scende sempre al piano sotto
+  entro una o due corse. Le prove lanciano 40 monete e controllano che in alto non ne resti nessuna.
+- Chi arriva dall'alto **si posa sopra le altre** invece di essere spinto di lato: le pile nascono
+  davvero, anche sui piani 2 e 3, quando le monete cadono dal bordo di sopra.
+- Ai lati del piano 3 ci sono i **buchi della casa** (quello che ci cade non paga), che il
+  potenziamento **Sponde laterali** accorcia fino a chiudere del tutto.
+
+### Si sceglie la moneta, le monete si fondono
+- **All'inizio si sceglie con quale moneta giocare**, e dalla barra in basso la si cambia quando si
+  vuole. Ogni lancio costa il valore della moneta; nella vasca la moneta vale quanto costa.
+- **Due monete uguali una sopra l'altra si fondono nel taglio più grande**: L.50 → L.100 → L.200 →
+  L.500 → L.1.000 → L.2.000 → L.5.000 → L.10.000 → L.50.000 → L.100.000 → **Diamante da 1 MILIONE**.
+  La moneta nuova fa un saltello e, se ricade su una uguale, **si fonde ancora (catena)** con bonus.
+- I tagli più grandi si lanciano sbloccandoli: da soli quando crei per fusione un taglio due gradini
+  sopra, oppure comprandoli (30 volte il loro valore).
+- Tolti **Taglio di lancio** e **Forza di lancio**: il taglio lo scegli tu, la forza non serve più.
+
+### Più roba da fare
+- 🎰 **Gettone DaProd**: ogni tanto scende in regalo. Se cade nella vasca gira lo **slot sullo schermo
+  della macchina**: coppia = 4 monete in regalo, tris = **pioggia di 12 monete**, tre loghi DaProd =
+  **JACKPOT** con lire e pioggia di 26 monete grosse.
+- 🫨 **Scossa**: fa saltare tutte le monete del tavolo (e quelle che ricadono sulle uguali si fondono).
+  Si ricarica in 40 secondi.
+- Potenziamenti nuovi o rifatti: ✨ Multi-lancio, ⚡ Raffica (tieni premuto), 🧲 Fusione magnetica
+  (si fondono anche un po' storte), ⚙️ Motore spintori, 🧱 Sponde laterali, 💰 Vasca d'oro (+10% a
+  livello), 🍀 Fortuna DaProd (più gettoni).
+- **Bonus di cortesia**: se il saldo non basta nemmeno per una L.50, dopo qualche secondo arriva
+  L.1.000 in regalo. Non si resta mai a secco.
+
+### Grafica e interfaccia
+- Cabinato nuovo in lacca viola e cromo, **insegna neon DaProd** che si accende sfarfallando,
+  **schermo dello slot** con i rulli, lampadine che si rincorrono (e impazziscono quando vinci), led
+  diversi per ogni piano, marchio DaProd su spintori, bordi, carrello, panni e frontale.
+- **Bagliori** (bloom) sulle luci, mappa d'ambiente che fa brillare cromo e monete, pavimento lucido e
+  luci sfocate della sala sullo sfondo. Ogni taglio ha faccia coniata, bordo zigrinato e le gemme
+  (smeraldo, zaffiro, rubino, diamante) brillano di luce propria.
+- **Inquadratura automatica**: la camera calcola da sola la distanza per far stare tutta la
+  macchina, dall'insegna alla vasca, su computer e telefono.
+- HUD nuovo (saldo che scorre, vinto, fusioni, taglio record), barra delle monete con icone, avvisi,
+  scritte volanti, **ONDATA** di vincite, **CATENA** di fusioni e schermata **JACKPOT**.
+- Negozio con quattro schede: potenziamenti, monete (con la **tabella delle fusioni** da collezionare),
+  opzioni (audio, qualità alta/media/bassa, qualità automatica, FPS) e statistiche.
+- Il tavolo viene salvato: riaprendo il gioco ritrovi le monete dove le avevi lasciate. Chi arriva
+  dalla 1.x trova i vecchi premi convertiti in lire (×20).
+
+### Sotto il cofano
+- Fisica 2,5D nuova, a passo fisso (120 al secondo) con griglia spaziale; le monete si disegnano con
+  una InstancedMesh per taglio, quindi centinaia di monete costano pochissimo.
+- Prove automatiche riscritte da zero (`test/prove.mjs`), con un server comune (`test/servi.mjs`) che
+  serve three.js e i suoi addon da `node_modules` se ci sono.
+
 ## [1.7.0] — 2026-09-23 · La vasca profonda e le torri che crollano 🏗️🪙
 
 ### Un tavolo più profondo
