@@ -4,6 +4,77 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.1.0] — 2026-09-24 · Tagli veri, abilità, eventi DaProd e il miliardo impossibile 🎰☄️💶
+
+### Una macchina più profonda e più calma
+- **Ogni zona è più profonda**: 5 unità di panno libero sul piano 1 (prima 3,8), 6,8 sul piano 2
+  (5,4) e 8,8 sul piano 3 (6,8). La pila iniziale è più grande e il tavolo regge più monete.
+- **Le monete nascono più in alto e più in fondo**: il carrello corre a quota 6,9 (prima 5,75), subito
+  davanti al cofano, e la moneta cade da lì in fondo al piano 1. Schermo, insegna e colonnine sono
+  saliti per restare in vista.
+- **Spintori meno potenti**: corse più corte (1,25 / 1,2 / 0,95) e più lenti (4,4 / 5,6 s), e quello
+  **giallo del piano 3 è lentissimo** (9 s a corsa). Si scatenano solo con ⏩ TURBO o con l'evento
+  FRENESIA, e ora cambiano velocità senza scatti.
+
+### I tagli veri, fino al miliardo
+- **L.50, L.100, L.1.000, L.5.000, L.50.000, L.100.000, L.250.000, L.500.000, L.1 MILIONE**, poi 5,
+  10, 50, 100, 250 e 500 milioni fino a **L.1 MILIARDO**. Ogni taglio ha metallo o gemma suoi; i numeri
+  lunghi sulla faccia si stringono per starci.
+- **Le monete uguali fanno una pila**: una moneta che si posa su una uguale si impila (si vede proprio
+  la torretta, moneta per moneta). Quando la pila vale quanto il taglio dopo si fonde: 2 × L.50 = L.100,
+  **10 × L.100 = L.1.000**, 5 × L.1.000 = L.5.000, 10 × L.5.000 = L.50.000 e così via.
+- **Le fusioni non creano più soldi dal nulla**: una pila paga nella vasca quanto le monete che contiene.
+  Prima due L.10.000 diventavano una L.50.000 e il saldo esplodeva.
+- La **catena** conta solo quando la moneta appena nata dalla fusione ricade su una pila uguale (prima
+  bastavano due fusioni qualsiasi a 1,6 s di distanza, e con le L.50 il bonus cresceva all'infinito).
+- Si lanciano al massimo le **L.50.000**; sbloccare un taglio costa 20 volte il suo valore.
+
+### Il milione è un'impresa
+- Premi dello slot in **monete piccole e fisse** (L.100 e L.1.000), qualunque taglio si lanci; il
+  gettone DaProd arriva al massimo una volta ogni 25 s; buchi della casa un po' più lunghi (1,6).
+- Con le simulazioni la macchina da sola restituisce circa 0,85–0,9 di quello che ci metti: i guadagni
+  arrivano da slot ed eventi, e sono gli stessi con le monete piccole e con quelle grosse. Tutte le
+  abilità al massimo costano circa L.500.000: **anche col tavolo tutto potenziato il milione resta
+  lontanissimo**, il miliardo è irraggiungibile.
+
+### 🕹 Abilità accanto alla scossa
+- Nuova **barra delle abilità**, anche quelle **ancora bloccate** (col lucchetto e il prezzo, verdi
+  quando te le puoi permettere: basta toccarle per sbloccarle). Su computer è una griglia in basso a
+  sinistra, su telefono una riga sopra le monete accanto al negozio.
+- 🫨 **Scossa** (ricarica da 40 fino a 22 s), ⚡ **Raffica** (tieni premuto, fino a 8 al secondo, e il suo
+  pulsante la accende e la spegne), ☄️ **Meteora** (torna! tocchi dove vuoi, anche in profondità, e la
+  meteora scaraventa le monete), ⏩ **Turbo**, 🧲 **Calamita** e 🧱 **Muro** (chiude i buchi della casa).
+- **Tolti** Multi-lancio, Fusione magnetica, Motore spintori, Sponde laterali, Vasca d'oro e Fortuna
+  DaProd. Chi li aveva comprati se li ritrova **rimborsati** (fino a L.100.000); la Raffica resta.
+- I livelli si comprano nel negozio, che mostra anche il tasto di ogni abilità.
+
+### 🎰 Eventi DaProd
+- Ogni due o tre minuti di gioco (solo se stai giocando davvero) **lo slot chiama un evento**: bande
+  nere da cinema, la camera vola davanti allo schermo girandoci intorno, i rulli girano, **l'ultimo
+  rallenta** con il batticuore, esce l'evento e la camera torna al tavolo.
+- 🌧 **Pioggia DaProd** (16 monete), ⚙️ **Frenesia** (12 s di spintori scatenati e buchi chiusi),
+  🧲 **Calamita DaProd** (15 s in cui le monete uguali si impilano da sole). Durante l'evento non si
+  lancia e il carrello si fa da parte.
+
+### 💶 Lire o euro
+- Chi arriva a **L.1.000.000** sblocca il tasto **€**: saldo, prezzi, barra delle monete e negozio si
+  leggono in euro (1 € = L.1.936,27). Con lo stesso tasto (o `V`) si torna alle lire.
+
+### 💬 Scritte meno ingombranti
+- Su computer avvisi, **CATENA** e **ONDATA** stanno **ai bordi** (avvisi a sinistra, catene e ondate a
+  destra), non più in mezzo al tavolo.
+- Su telefono sono in **versione piccola** (al massimo due avvisi alla volta) e il nuovo tasto **💬**
+  le spegne del tutto: restano solo gli avvisi importanti (saldo, sblocchi, eventi). Anche in opzioni
+  e col tasto `H`.
+
+### Sotto il cofano
+- Salvataggio nuovo (`daprod_dozer_v4`): dalla 2.0 si tengono saldo (fino a L.500.000), statistiche,
+  opzioni e raffica, con i tagli rimappati sul valore più vicino; il tavolo riparte nuovo perché la
+  macchina è cambiata.
+- Prove: **108 OK** (nuove: tagli e pile, pile che pagano il loro valore, catena di pile, calamita,
+  profondità e spintori, abilità bloccate nella barra, meteora, turbo, muro, eventi, euro, scritte,
+  migrazione dalla 2.0).
+
 ## [2.0.2] — 2026-09-23 · Il piano viola si riempie davvero 🟣🪙
 
 ### Risolto
