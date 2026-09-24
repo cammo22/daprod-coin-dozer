@@ -4,6 +4,13 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.2.1] — 2026-09-24 · Qui è una demo, le lire stanno nella suite
+
+- **Sul sito e nelle app il gioco torna la sua demo**: niente barra delle Lire DaProd, niente saldo diviso
+  fra i giochi nel browser. Le Lire DaProd, la Borsa e le carte ci sono solo giocando dalla sala giochi della
+  [DaProd Suite](https://github.com/cammo22/DaProdSuite).
+- Nella suite, se il computer DaProd non risponde, il gioco continua lo stesso.
+
 ## [2.2.0] — 2026-09-24 · Le Lire DaProd: un portafoglio per tutti i giochi 💶
 
 ### 💶 Le Lire DaProd: un portafoglio solo per tutti i giochi DaProd
