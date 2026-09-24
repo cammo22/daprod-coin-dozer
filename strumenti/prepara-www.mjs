@@ -24,6 +24,8 @@ let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 if (!html.includes(CDN)) { console.error('URL della CDN non trovato in index.html'); process.exit(1); }
 html = html.split(CDN).join('./three/');
 fs.writeFileSync(path.join(WWW, 'index.html'), html);
+// Il portafoglio unico dei giochi DaProd (le Lire): sta accanto al gioco.
+fs.copyFileSync(path.join(ROOT, 'daprod-lira.js'), path.join(WWW, 'daprod-lira.js'));
 for (const d of ['build/three.module.js', 'examples/jsm/postprocessing', 'examples/jsm/shaders', 'LICENSE']) {
   fs.cpSync(path.join(THREE, d), path.join(WWW, 'three', d), { recursive: true });
 }
