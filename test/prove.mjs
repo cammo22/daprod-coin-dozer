@@ -48,7 +48,7 @@ console.log('\n== COMPUTER ==');
   T('nessun errore in console', errori.length === 0, errori.join(' | '));
   T('un solo canvas', await page.locator('canvas').count() === 1);
   T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
-  T('versione v2.2.1 nel marchio', (await page.locator('#versione').textContent()) === 'v2.2.1');
+  T('versione v2.2.2 nel marchio', (await page.locator('#versione').textContent()) === 'v2.2.2');
   T('logo DaProd nel HUD, nella schermata iniziale e nel negozio', await page.locator('svg.logoDP').count() >= 3);
 
   // --- ALL'INIZIO SI SCEGLIE LA MONETA ---
@@ -64,7 +64,11 @@ console.log('\n== COMPUTER ==');
   T('GIOCA chiude la schermata iniziale', await page.evaluate(() => DOZER.inGioco()) && await page.locator('#intro.via').count() === 1);
   T('la barra delle monete mostra i tagli lanciabili', await page.locator('#monete .mon').count() === await page.evaluate(() => DOZER.MAX_LANCIO + 1));
   T('la moneta scelta è evidenziata', await page.locator('#monete .mon.sel').getAttribute('data-t') === '1');
+  T('in barra c e una moneta sola: i tagli sono chiusi', await page.locator('#monete').isHidden() && await page.locator('#monetaSu').isVisible());
+  await page.locator('#monetaSu').click();
+  T('toccata, si aprono tutti i tagli', await page.locator('#monete').isVisible());
   await page.locator('#monete .mon[data-t="0"]').click();
+  T('scelta la moneta, i tagli si richiudono', await page.locator('#monete').isHidden());
   T('dalla barra si cambia moneta', await page.evaluate(() => DOZER.stato.sel) === 0);
 
   // --- TRE PIANI A CASCATA ---
@@ -405,14 +409,17 @@ console.log('\n== TELEFONO ==');
   await page.locator('#giocaBtn').tap();
   await page.waitForTimeout(700);
   T('GIOCA al tocco', await page.evaluate(() => DOZER.inGioco()));
-  const box = await page.locator('#monete').boundingBox();
-  T('la barra delle monete sta nello schermo', box && box.x >= 0 && box.x + box.width <= 413 && box.y + box.height <= 801, JSON.stringify(box));
+  const box = await page.locator('#monetaSu').boundingBox();
+  T('la moneta da lanciare sta nello schermo', box && box.x >= 0 && box.x + box.width <= 413 && box.y + box.height <= 801, JSON.stringify(box));
   const sc = await page.locator('#scossaBtn').boundingBox(), ng = await page.locator('#negozioBtn').boundingBox();
   const sovrapp = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-  T('scossa e negozio non coprono la barra delle monete', !sovrapp(sc, box) && !sovrapp(ng, box));
+  T('scossa e negozio non coprono la moneta da lanciare', !sovrapp(sc, box) && !sovrapp(ng, box));
   const ab = await page.locator('#abilita').boundingBox();
   T('le abilità stanno in una riga dentro lo schermo, accanto al negozio', ab && ab.x >= 0 && ab.x + ab.width <= ng.x + 1 && !sovrapp(ab, box), JSON.stringify(ab));
   T('su telefono c\'è il tasto per le scritte', await page.locator('#scritteBtn').isVisible());
+  await page.locator('#monetaSu').tap();
+  const menu = await page.locator('#monete').boundingBox();
+  T('i tagli si aprono dentro lo schermo', menu && menu.x >= 0 && menu.x + menu.width <= 413 && menu.y >= 0, JSON.stringify(menu));
   await page.locator('#monete .mon[data-t="0"]').tap();
   T('al tocco si cambia moneta', await page.evaluate(() => DOZER.stato.sel) === 0);
   await page.evaluate(() => { DOZER.pulisci(); DOZER.stato.saldo = 1000; });
@@ -463,6 +470,21 @@ console.log('\n== SALVATAGGI ==');
   const { ctx, page, errori } = await nuovaPagina({ viewport: { width: 1000, height: 700 } }, { daprod_dozer_v4: '{non è json' });
   await page.waitForTimeout(500);
   T('salvataggio illeggibile: si riparte puliti', errori.length === 0 && await page.evaluate(() => DOZER.stato.saldo) === 5000);
+  await ctx.close();
+}
+{
+  // Il bonus di cortesia: cinque, poi si aspetta; e il conto resta dopo aver ricaricato la pagina.
+  const { ctx, page, errori } = await nuovaPagina({ viewport: { width: 1000, height: 700 } });
+  await page.waitForTimeout(500);
+  const dati = await page.evaluate(() => {
+    const D = DOZER; D.stato.cortesie = []; const prima = D.stato.saldo;
+    const esiti = []; for (let i = 0; i < 7; i++) esiti.push(D.bonusDiCortesia());
+    return { dati: esiti.filter(Boolean).length, saldo: D.stato.saldo - prima, segnati: D.stato.cortesie.length };
+  });
+  T('bonus di cortesia: al massimo 5 ogni 6 ore', dati.dati === 5 && dati.saldo === 5000 && dati.segnati === 5, JSON.stringify(dati));
+  const tornano = await page.evaluate(() => { const D = DOZER; D.stato.cortesie = D.stato.cortesie.map(t => t - 7 * 3600e3); return D.bonusDiCortesia(); });
+  T('bonus di cortesia: dopo 6 ore tornano', tornano === true);
+  T('bonus di cortesia: nessun errore', errori.length === 0, errori.join(' | '));
   await ctx.close();
 }
 
