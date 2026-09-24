@@ -4,6 +4,14 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.2.3] — 2026-09-24 · I tasti sui lati
+
+- **Sul telefono in verticale i tasti stanno sui lati**: le sei abilità sono una colonna a sinistra e il negozio sta a
+  destra, all'altezza del tavolo. In basso resta solo la moneta da lanciare. Prima abilità, negozio e moneta si
+  pestavano i piedi nella stessa riga, e dentro la cornice della suite il negozio usciva dallo schermo.
+- Lo spiegone iniziale sta fra le due colonne, senza coprire i tasti.
+- In alto, su schermi stretti (la cornice della suite), il marchio si stringe e 🔊 e 💬 non escono più dal bordo.
+
 ## [2.2.2] — 2026-09-24 · Una moneta sola, e la cortesia con misura
 
 - **La moneta da lanciare è un tasto solo**: toccato, si aprono sopra tutti i tagli (quelli bloccati col lucchetto e il
