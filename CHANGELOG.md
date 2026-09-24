@@ -4,6 +4,22 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.2.0] — 2026-09-24 · Le Lire DaProd: un portafoglio per tutti i giochi 💶
+
+### 💶 Le Lire DaProd: un portafoglio solo per tutti i giochi DaProd
+- **Le Lire DaProd** (`daprod-lira.js`): lo stesso portafoglio nella Coin Dozer, nella Claw Machine e in
+  Neon Partenope. Stanno tutti su `cammo22.github.io`, quindi il browser tiene **un saldo solo**: le lire
+  staccate in un gioco si spendono negli altri.
+- **La partita e lo stacco**: quello che vinci nel gioco fa **punti**. Quando vuoi smettere premi **Stacca**
+  e i punti diventano lire, alla **quotazione** di adesso, per la tua fetta (15%). Al massimo L.3.000 al
+  giorno: il resto della partita resta per domani.
+- **La Borsa della Lira**: la quotazione sale quando si spende (le ricariche) e scende quando si incassa
+  (gli stacchi), con un'onda lenta uguale per tutti. Staccare adesso o aspettare è parte del gioco.
+- **Ricarica** con le Lire: un gettone da L.100 ti dà **L.2.000 di monete**.
+- **Dentro la DaProd Suite** il gioco sta nella sala giochi, e il portafoglio è quello vero del computer:
+  lì le cose grosse (jackpot, tris al gettone DaProd, eventi) ti danno **carte** da giocare nella slot delle combinazioni.
+- Il portafoglio è la barra in basso (sul telefono il tondo **₤**): toccala per vedere Borsa, fetta e tetto.
+
 ## [2.1.0] — 2026-09-24 · Tagli veri, abilità, eventi DaProd e il miliardo impossibile 🎰☄️💶
 
 ### Una macchina più profonda e più calma

@@ -455,6 +455,8 @@
   </div>
 </div>
 
+<!-- Le Lire DaProd: il portafoglio unico dei giochi DaProd (vedi daprod-lira.js). -->
+<script src="daprod-lira.js"></script>
 <script type="importmap">
 {
   "imports": {
@@ -466,7 +468,7 @@
 <script type="module">
 import * as THREE from 'three';
 
-const VERSIONE = 'v2.1.0';
+const VERSIONE = 'v2.2.0';
 const $ = (id) => document.getElementById(id);
 const TATTILE = (typeof matchMedia === 'function') &&
   (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
@@ -1645,6 +1647,8 @@ function vinci(c) {
   }
   const T = TAGLI[c.t], val = T.v * c.n;
   stato.saldo += val; stato.st.vinto += val; stato.st.vinte += c.n;
+  // Quello che cade nella vasca fa anche punti della partita DaProd.
+  if (window.DaProdLira) DaProdLira.punti('dozer', val);
   vinciteOnda += val; ondaT = 1.4;
   testo3D(c.x, 0.3, LIV[2].zEdge + 0.3, '+' + soldi(val), c.t >= 3 || c.n >= 4 ? 'gr' : '');
   particelle(c.x, -0.4, LIV[2].zEdge + 0.5, 8 + c.t * 3 + c.n * 2, T.gem || 0xffd54a, 0.9, { su: true });
@@ -1786,11 +1790,13 @@ function esitoSlot(f) {
     slot.msg = `JACKPOT DaProd!  +${soldi(bonus)}  +  PIOGGIA DI MONETE`; slot.vinto = 2;
     megaVincita();
     avviso(`🎰 JACKPOT DaProd! +${soldi(bonus)} e pioggia di monete`, 'mag imp');
+    if (window.DaProdLira) DaProdLira.evento('dozer', 'jackpot');
   } else if (tris) {
     pioggia(PREMI_SLOT.tris, 1, 1, 0.08); pioggia(1, 2, 2);
     slot.msg = `TRIS ${SIMBOLI[f[0]]}!  PIOGGIA DI ${PREMI_SLOT.tris + 1} MONETE`; slot.vinto = 1;
     suono.premio(); festa = 2.5;
     avviso(`🎰 TRIS! Piovono ${PREMI_SLOT.tris + 1} monete sul tavolo`, 'cia');
+    if (window.DaProdLira) DaProdLira.evento('dozer', 'tris');
   } else if (coppia) {
     pioggia(PREMI_SLOT.coppia, 1, 1, 0.12);
     slot.msg = `COPPIA!  ${PREMI_SLOT.coppia} × ${nomeTaglio(1)} IN REGALO`; slot.vinto = 1;
@@ -1883,6 +1889,7 @@ function avviaEvento(id) {
   cine.fase = 'va'; cine.t = 0; cine.evento = id;
   premuto = false; mira = false;
   stato.st.eventi++;
+  if (window.DaProdLira) DaProdLira.evento('dozer', 'evento');
   document.body.classList.add('cine');
   $('evento').classList.remove('su');
   suono.evento();
@@ -2624,6 +2631,16 @@ applicaQualita();
 preparaPost();
 posaCamera(1);
 requestAnimationFrame(ciclo);
+
+// Le Lire DaProd: la partita fatta qui si stacca in lire, e le lire si
+// spendono per ricaricare le monete. Dentro la DaProd Suite e' la sala giochi
+// a tenere il conto; sul sito lo tiene il browser, diviso con gli altri giochi.
+if (window.DaProdLira) DaProdLira.init({
+  gioco: 'dozer',
+  posto: 'basso-sinistra',
+  telefono: { top: '118px', left: '8px' },
+  ricarica: { detto: '+L.2.000 di monete', dai: () => { stato.saldo += 2000; aggiornaHUD(); daSalvare = true; avviso('🪙 Ricarica DaProd: +' + soldi(2000), 'cia'); } },
+});
 
 // API per le prove automatiche e per chi vuole curiosare dalla console
 window.DOZER = {
