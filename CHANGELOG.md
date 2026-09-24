@@ -4,6 +4,15 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.2.2] — 2026-09-24 · Una moneta sola, e la cortesia con misura
+
+- **La moneta da lanciare è un tasto solo**: toccato, si aprono sopra tutti i tagli (quelli bloccati col lucchetto e il
+  prezzo per sbloccarli), e si richiudono appena ne scegli uno. Prima erano cinque tasti in fila che si mangiavano la barra.
+- **Il bonus di cortesia arriva al massimo 5 volte ogni 6 ore**: dice quanti ne restano, e quando sono finiti quando torna
+  il prossimo. Si ricorda anche ricaricando la pagina.
+- Dentro la [DaProd Suite](https://github.com/cammo22/DaProdSuite) la ricarica è un portafoglio: scegli quante lire della
+  suite passare al gioco, e ogni L.1 diventa L.20 di monete.
+
 ## [2.2.1] — 2026-09-24 · Qui è una demo, le lire stanno nella suite
 
 - **Sul sito e nelle app il gioco torna la sua demo**: niente barra delle Lire DaProd, niente saldo diviso
