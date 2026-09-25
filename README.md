@@ -44,8 +44,9 @@ L.250.000 **smeraldo** → L.500.000 **zaffiro** → **L.1 MILIONE rubino** → 
 milioni (ametista, topazio, acquamarina, tormalina, opale, onice) → **L.1 MILIARDO diamante DaProd**.
 
 Le pile **non creano soldi dal nulla**: una pila da 3 L.100 nella vasca paga L.300. Si parte lanciando
-L.50 e L.100; L.1.000, L.5.000 e L.50.000 si sbloccano **da sole** quando crei un taglio due gradini
-sopra, oppure **comprandole** (20 volte il valore).
+L.50 e L.100; i tagli fino al **milione** si sbloccano **da soli** quando crei un taglio due gradini
+sopra, oppure **comprandoli** (20 volte il valore). Col milione in mano, le fusioni fino al miliardo si fanno
+davvero. Le cifre grosse si scrivono corte: L.150k, L.15,5M, L.1 mld.
 
 ### 🎰 Gettone DaProd, slot ed eventi
 
@@ -54,14 +55,24 @@ vasca, lo **schermo della macchina** gira lo slot: **coppia** = 3 × L.100, **tr
 monete, **tre loghi DaProd** = **JACKPOT**. I premi sono in monete piccole e fisse, qualunque taglio
 tu stia lanciando.
 
-Ogni due o tre minuti di gioco lo slot chiama un **EVENTO DaProd**: la camera vola davanti allo
-schermo, i rulli girano (l'ultimo rallenta fino all'ultimo simbolo), esce l'evento e si torna al tavolo:
+Ogni tre-sei minuti di gioco lo slot chiama un **EVENTO DaProd**: la camera vola davanti allo
+schermo, i rulli girano (l'ultimo rallenta fino all'ultimo simbolo), esce l'evento e si torna al tavolo.
+Sono dodici, e fanno male o bene **davvero**: premi e danni si misurano sul taglio più grosso che lanci.
 
 | | Evento | Cosa succede |
 | --- | --- | --- |
-| ★★★ | 🌧 Pioggia DaProd | piovono 16 monete sui piani 2 e 3 |
-| 777 | ⚙️ Frenesia | per 12 s spintori scatenati e buchi della casa chiusi |
-| 🧲🧲🧲 | 🧲 Calamita DaProd | per 15 s le monete uguali che si toccano si impilano da sole |
+| 🌧 | Pioggia d'oro | trenta monete del tuo taglio più grosso piovono sul tavolo |
+| ⚙️ | Frenesia | per 20 s spintori scatenati e buchi della casa chiusi |
+| 🧲 | Calamita DaProd | per 25 s le monete uguali che si toccano si impilano da sole |
+| ✖️3 | Triplo | per 30 s quello che cade nella vasca vale il triplo |
+| 💰 | Bonanza | quaranta monete del tuo taglio più grosso, dritte nel saldo |
+| ☄️ | Sciame di meteore | cinque meteore sul bordo del terzo piano |
+| 🌋 | Terremoto | le monete sui lati del terzo piano finiscono alla casa |
+| 🧾 | Tassa DaProd | la casa si prende il 20% del saldo |
+| 🔌 | Blackout | gli spintori si fermano per 25 s |
+| 🕳 | Voragine | per 25 s i buchi della casa sono lunghi il triplo |
+| 🧊 | Gelo | per 30 s quello che cade vale la metà |
+| 🦹 | Il Ladro | si porta via le otto monete più preziose del tavolo |
 
 ### 🕹 Abilità (accanto alla scossa, anche quelle ancora bloccate)
 
@@ -72,7 +83,6 @@ schermo, i rulli girano (l'ultimo rallenta fino all'ultimo simbolo), esce l'even
 | ☄️ | Meteora | tocchi dove vuoi e una meteora scaraventa le monete | L.5.000 |
 | ⏩ | Turbo | spintori al doppio e con la corsa più lunga per qualche secondo | L.6.000 |
 | 🧲 | Calamita | le monete uguali che si toccano si impilano | L.8.000 |
-| 🧱 | Muro | chiude i buchi della casa per qualche secondo | L.10.000 |
 
 Un'abilità bloccata si sblocca toccandola (si illumina di verde quando te la puoi permettere); i
 livelli si comprano nel negozio. Tutte al massimo costano circa L.500.000: **il milione resta un
@@ -81,8 +91,8 @@ miraggio anche con tutto potenziato**. Se non ti basta il saldo nemmeno per una 
 
 ### 💶 Lire o euro
 
-Chi arriva a **L.1.000.000** sblocca il tasto **€**: saldo, prezzi e monete si leggono in euro
-(1 € = L.1.936,27) e con lo stesso tasto si torna alle lire.
+Dalla 2.2.6 il gioco non cambia valuta da sé: dentro la DaProd Suite lire o euro si sceglie in alto
+nella sala giochi, e il Dozer la segue (1 € = L.1.936,27). Fuori dalla suite parla in lire.
 
 ### 💬 Scritte
 

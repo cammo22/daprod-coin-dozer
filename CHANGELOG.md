@@ -4,6 +4,23 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.2.6] — 2026-09-25 · Più grande, più cattivo, fino al miliardo
+
+- **Il campo è più grande**: un metro in più per lato, e il terzo piano (quello che cade nella vasca) è più lungo di 2,2.
+  Ci stanno più monete: la pila iniziale è più alta e il tavolo ne tiene fino a 420 sul telefono, 560 sul computer.
+- **Si lancia fino al milione**: nel negozio si sbloccano anche L.100.000, L.250.000, L.500.000 e L.1 MILIONE. Prima si
+  arrivava alle L.50.000, e le fusioni dal 5 milioni al miliardo non si facevano mai.
+- **Il Muro non c'è più**: i buchi della casa li chiude solo l'evento FRENESIA, per 20 secondi.
+- **Gli eventi sono dodici, rari e forti**, uno ogni 3-6 minuti di gioco. Sei buoni (Pioggia d'oro, Frenesia, Calamita,
+  Triplo, Bonanza, Sciame di meteore) e sei cattivi (Terremoto, Tassa, Blackout, Voragine, Gelo, il Ladro). Premi e danni
+  si misurano sul taglio più grosso che lanci: chi gioca col milione vince e perde da milione.
+- **Le cifre si scrivono corte**: L.150k, L.15,5M, L.1 mld.
+- **Niente più cambio di valuta nel gioco**: dentro la [DaProd Suite](https://github.com/cammo22/DaProdSuite) lire o euro
+  si sceglie in alto nella sala, e vale anche qui. Fuori dalla suite il Dozer parla in lire.
+- Nella suite il Dozer è **il mangiasoldi** della sala: si porta a casa al massimo il doppio di quello che si mette, e le
+  lire che restano vanno nella Banca da cui Claw e Neon pagano i loro premi. Il saldo del gioco si vede dal vivo nella
+  cornice («nel gioco»).
+
 ## [2.2.5] — 2026-09-25 · Si vince davvero, e una lira è una lira
 
 - **La Fortuna DaProd**: più giochi, più vale quello che cade nella vasca. Ogni venti monete lanciate mezzo punto in più,
