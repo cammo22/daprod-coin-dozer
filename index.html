@@ -332,6 +332,10 @@
     #vintoBox { display: none; }
     #recordBox img { width: 15px; height: 15px; }
     #audioBtn { width: 34px; height: 34px; font-size: 14px; }
+    /* 2.2.3: nella cornice della suite lo schermo e' piu' stretto di un telefono,
+       e i tastini a destra (🔊, 💬) uscivano dal bordo. Il marchio cede posto. */
+    #marchio, #destra { min-width: 0; }
+    #marchio { flex-shrink: 1; }
     #barra { flex-wrap: wrap; padding: 0 8px calc(8px + var(--sal)); gap: 6px; justify-content: space-between; }
     #selettore { order: -1; flex: 1 0 100%; }
     #selettore .titolo { display: none; }
@@ -345,6 +349,20 @@
     #abilita { position: fixed; left: 8px; bottom: calc(94px + var(--sal)); display: flex; gap: 5px;
       --abw: min(50px, calc((100vw - 16px - 50px - 6 * 5px) / 6)); }
     .ab .lab { font-size: 6px; letter-spacing: .2px; }
+    /* ⚠ In verticale, i lati (2.2.3). «Nel dozer sfruttiamo meglio i lati per
+       i pulsanti»: la macchina sta nel terzo centrale e ai lati c'era il vuoto,
+       mentre in basso sei abilita', il negozio e la moneta si pestavano i piedi
+       (nella suite il negozio usciva dallo schermo). Adesso le abilita' sono una
+       colonna a sinistra e il negozio sta a destra, all'altezza del tavolo; in
+       basso resta solo la moneta. */
+    @media (orientation: portrait) {
+      #abilita { top: 50%; bottom: auto; transform: translateY(-46%); flex-direction: column; gap: 8px;
+        --abw: min(56px, calc((100dvh - 300px) / 6 - 8px)); }
+      .ab .lab { font-size: 6.5px; }
+      #negozioBtn.tondo { top: 50%; bottom: auto; transform: translateY(-46%); right: 8px; width: 60px; height: 60px; }
+      #negozioBtn.tondo:active { transform: translateY(-46%) scale(.95); }
+      #negozioBtn .ico { font-size: 24px; }
+    }
     #avvisi { left: 50%; transform: translateX(-50%); top: calc(84px + var(--sat)); width: 94vw; align-items: center; gap: 4px; }
     .avviso { font-size: 9px; letter-spacing: .5px; padding: 5px 10px; text-align: center; border-radius: 999px; }
     #avvisi .avviso:nth-last-child(n+3) { display: none; }
@@ -367,12 +385,22 @@
     .tondo .lab { font-size: 7px; }
     #hint { left: 8px; right: 8px; margin: 0 auto; width: fit-content; top: auto; bottom: calc(156px + var(--sal)); font-size: 11px; padding: 6px 12px; max-width: none; text-align: center; }
     #hint.via { transform: translateY(12px); }
+    @media (orientation: portrait) { #hint { left: 72px; right: 76px; } }   /* fra le due colonne dei lati */
     #intro .passi { grid-template-columns: 1fr; }
     #intro .passo { display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 12px; }
     #intro .passo i { margin: 0; }
     .compra { min-width: 88px; font-size: 10.5px; }
     .riga { gap: 9px; padding: 9px; }
     .riga .ico { width: 40px; height: 40px; font-size: 22px; }
+  }
+  @media (max-width: 400px) {
+    #hud { gap: 6px; padding-left: 8px; padding-right: 8px; }
+    #marchio svg { width: 92px; }
+    #marchio .sub { font-size: 6px; letter-spacing: 1px; padding-left: 23px; }
+    #saldoBox { padding: 6px 9px 7px; }
+    #saldo { font-size: 17px; }
+    #mini { gap: 4px; }
+    .mini { padding: 4px 6px 5px; }
   }
 </style>
 </head>
@@ -488,7 +516,7 @@
 <script type="module">
 import * as THREE from 'three';
 
-const VERSIONE = 'v2.2.2';
+const VERSIONE = 'v2.2.3';
 const $ = (id) => document.getElementById(id);
 const TATTILE = (typeof matchMedia === 'function') &&
   (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);

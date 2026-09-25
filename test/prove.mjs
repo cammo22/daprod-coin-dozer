@@ -48,7 +48,7 @@ console.log('\n== COMPUTER ==');
   T('nessun errore in console', errori.length === 0, errori.join(' | '));
   T('un solo canvas', await page.locator('canvas').count() === 1);
   T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
-  T('versione v2.2.2 nel marchio', (await page.locator('#versione').textContent()) === 'v2.2.2');
+  T('versione v2.2.3 nel marchio', (await page.locator('#versione').textContent()) === 'v2.2.3');
   T('logo DaProd nel HUD, nella schermata iniziale e nel negozio', await page.locator('svg.logoDP').count() >= 3);
 
   // --- ALL'INIZIO SI SCEGLIE LA MONETA ---
@@ -415,7 +415,9 @@ console.log('\n== TELEFONO ==');
   const sovrapp = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   T('scossa e negozio non coprono la moneta da lanciare', !sovrapp(sc, box) && !sovrapp(ng, box));
   const ab = await page.locator('#abilita').boundingBox();
-  T('le abilità stanno in una riga dentro lo schermo, accanto al negozio', ab && ab.x >= 0 && ab.x + ab.width <= ng.x + 1 && !sovrapp(ab, box), JSON.stringify(ab));
+  // 2.2.3: in verticale le abilità stanno in colonna sul lato sinistro e il negozio sul destro
+  T('le abilità stanno in colonna sul lato sinistro, dentro lo schermo', ab && ab.x >= 0 && ab.x + ab.width < 206 && ab.height > ab.width && ab.y >= 0 && ab.y + ab.height <= 801 && !sovrapp(ab, box), JSON.stringify(ab));
+  T('il negozio sta sul lato destro, dentro lo schermo', ng && ng.x > 206 && ng.x + ng.width <= 413 && !sovrapp(ng, ab), JSON.stringify(ng));
   T('su telefono c\'è il tasto per le scritte', await page.locator('#scritteBtn').isVisible());
   await page.locator('#monetaSu').tap();
   const menu = await page.locator('#monete').boundingBox();
