@@ -335,6 +335,7 @@
     .mini .etich { font-size: 7px; letter-spacing: 1.5px; }
     .mini b { font-size: 10.5px; }
     #vintoBox { display: none; }
+    @media (max-width: 420px) { #fusioniBox { display: none; } }   /* 2.2.5: il posto va alla Fortuna */
     #recordBox img { width: 15px; height: 15px; }
     #audioBtn { width: 34px; height: 34px; font-size: 14px; }
     /* 2.2.3: nella cornice della suite lo schermo e' piu' stretto di un telefono,
@@ -445,7 +446,8 @@
     </div>
     <div id="mini">
       <div class="mini carta" id="vintoBox"><div class="etich">VINTO</div><b id="vinto" class="verde">L.0</b></div>
-      <div class="mini carta"><div class="etich">FUSIONI</div><b id="fusioniN">0</b></div>
+      <div class="mini carta" id="fusioniBox"><div class="etich">FUSIONI</div><b id="fusioniN">0</b></div>
+      <div class="mini carta" id="fortunaBox" title="Fortuna DaProd: piu' giochi, piu' vale quello che cade"><div class="etich">FORTUNA</div><b id="fortunaN" class="verde">×1,00</b></div>
       <div class="mini carta" id="recordBox"><div class="etich">RECORD</div><b><img id="recordImg" alt=""><span id="recordTxt">—</span></b></div>
       <button id="scritteBtn" class="carta piccolo" aria-label="scritte" title="nascondi le scritte">💬</button>
       <button id="valutaBtn" class="carta piccolo" aria-label="valuta" title="lire / euro" hidden>€</button>
@@ -521,7 +523,7 @@
 <script type="module">
 import * as THREE from 'three';
 
-const VERSIONE = 'v2.2.4';
+const VERSIONE = 'v2.2.5';
 const $ = (id) => document.getElementById(id);
 const TATTILE = (typeof matchMedia === 'function') &&
   (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
@@ -1703,10 +1705,10 @@ function vinci(c) {
     particelle(c.x, -0.5, LIV[2].zEdge + 0.6, 30, 0xb04dff, 1.2, { su: true, arcobaleno: true });
     avviaSlot(); return;
   }
-  const T = TAGLI[c.t], val = T.v * c.n;
+  // 2.2.5: la Fortuna DaProd — piu' si gioca, piu' vale quello che cade (vedi fortuna()).
+  const T = TAGLI[c.t], val = Math.round(T.v * c.n * fortuna());
   stato.saldo += val; stato.st.vinto += val; stato.st.vinte += c.n;
-  // Quello che cade nella vasca fa anche punti della partita DaProd.
-  if (window.DaProdLira) DaProdLira.punti('dozer', val);
+  // Dalla 2.2.5 nella suite non si mandano punti: il saldo si incassa com'e' (vedi DaProdLira.init).
   vinciteOnda += val; ondaT = 1.4;
   testo3D(c.x, 0.3, LIV[2].zEdge + 0.3, '+' + soldi(val), c.t >= 3 || c.n >= 4 ? 'gr' : '');
   particelle(c.x, -0.4, LIV[2].zEdge + 0.5, 8 + c.t * 3 + c.n * 2, T.gem || 0xffd54a, 0.9, { su: true });
@@ -1764,6 +1766,48 @@ function dopoFusione(n, quante) {
   impulsoLed = 1;
   aggiornaHUD(); daSalvare = true;
 }
+/**
+ * ⚠ La Fortuna DaProd (2.2.5). Chiesto da Cammo: «nel dozer facciamo in modo
+ * che piano piano si guadagni sempre di piu', poco alla volta». Ogni venti
+ * monete lanciate quello che cade nella vasca vale mezzo punto percentuale in
+ * piu', fino a una volta e mezza. Si vede nell'HUD e ogni cinque punti lo dice.
+ */
+const FORTUNA_MAX = 0.5, FORTUNA_OGNI = 20, FORTUNA_PASSO = 0.005;
+function fortuna() { return 1 + Math.min(FORTUNA_MAX, Math.floor(stato.st.lanci / FORTUNA_OGNI) * FORTUNA_PASSO); }
+let fortunaDetta = 1;
+function guardaLaFortuna() {
+  const f = fortuna();
+  if (f >= fortunaDetta + 0.05 - 1e-9) {
+    fortunaDetta = Math.floor(f * 20) / 20;
+    avviso(`🍀 Fortuna DaProd ×${f.toFixed(2).replace('.', ',')}: le monete che cadono valgono di piu'`, 'mag imp');
+  }
+}
+
+/**
+ * ⚠ Il tavolo pulito (2.2.5): «se io butto tutte le monete e pulisco devo
+ * poter vincere». Quando sul tavolo resta meno di un terzo della pila di
+ * partenza, arriva il premio: un quarto di tutto quello che hai speso da
+ * quando la pila e' stata rifatta (almeno cinquanta monete da L.50), e la pila
+ * torna piena. Serve averne lanciate almeno trenta: un tavolo vuoto per altri
+ * motivi (una prova, un salvataggio rotto) non paga.
+ */
+const PILA_N = 250, PULITO_SOTTO = 0.33, PULITO_LANCI = 30, PULITO_QUOTA = 0.25;
+let spesoAlPulito = null, lanciAlPulito = 0;
+function tavoloPulito(forza = false) {
+  // Si conta da quando si apre il gioco: la spesa di ieri non e' di questa pila.
+  if (spesoAlPulito === null) { spesoAlPulito = stato.st.speso; lanciAlPulito = stato.st.lanci; }
+  const sul = monete.filter(c => c.vivo && !c.fuori && c.t !== CHIP).length;
+  if (!forza && (!inGioco || sul >= PILA_N * PULITO_SOTTO || stato.st.lanci - lanciAlPulito < PULITO_LANCI)) return 0;
+  const premio = Math.max(50 * TAGLI[0].v, Math.round((stato.st.speso - spesoAlPulito) * PULITO_QUOTA));
+  stato.saldo += premio; stato.st.vinto += premio;
+  spesoAlPulito = stato.st.speso; lanciAlPulito = stato.st.lanci;
+  avviso(`🧹 TAVOLO PULITO! Premio DaProd +${soldi(premio)} e la pila torna piena`, 'mag imp');
+  megaVincita();
+  pilaIniziale();
+  aggiornaHUD(); daSalvare = true;
+  return premio;
+}
+
 function megaVincita() {
   stato.st.jackpot++;
   festa = 5; scuoti(0.6);
@@ -2108,6 +2152,7 @@ const inEuro = () => stato.euro && stato.opz.valuta === 'euro';
 const soldi = (n) => inEuro() ? (n < 0 ? '-' : '') + '€' + fmtEuro.format(Math.abs(n) / LIRE_PER_EURO) : lire(n);
 const nomeTaglio = (t) => t === CHIP ? INFO_CHIP.nome : inEuro() ? soldi(TAGLI[t].v) : TAGLI[t].nome;
 let saldoMostrato = stato.saldo;
+function aggiornaFortuna() { $('fortunaN').textContent = '×' + fortuna().toFixed(2).replace('.', ','); }
 function aggiornaHUD() {
   $('vinto').textContent = soldi(stato.st.vinto);
   $('fusioniN').textContent = punti(stato.st.fusioni);
@@ -2690,7 +2735,7 @@ function bonusDiCortesia() {
   }
   return false;
 }
-let ultimo = performance.now(), accFisica = 0, cortesiaT = 0, salvaT = 0, chiusuraMostrata = -1;
+let ultimo = performance.now(), accFisica = 0, cortesiaT = 0, salvaT = 0, chiusuraMostrata = -1, controlloT = 0;
 function ciclo(ora) {
   requestAnimationFrame(ciclo);
   const dt = Math.min(0.05, Math.max(0, (ora - ultimo) / 1000)); ultimo = ora;
@@ -2714,6 +2759,7 @@ function ciclo(ora) {
     if (cortesiaT > 6) { cortesiaT = 0; bonusDiCortesia(); }
   } else cortesiaT = 0;
   aggiornaAbilitaUI(false);
+  controlloT += dt; if (controlloT > 1) { controlloT = 0; guardaLaFortuna(); tavoloPulito(); aggiornaFortuna(); }
   if (Math.abs(chiusuraBuchi - chiusuraMostrata) > 0.001) { chiusuraMostrata = chiusuraBuchi; aggiornaSponde(); }
   disegnaMonete(dt);
   for (const s of SPINTORI) s.mesh.position.set(0, s.pav + s.h / 2 + 0.005, s.z - s.len / 2);
@@ -2744,10 +2790,16 @@ requestAnimationFrame(ciclo);
 // Le Lire DaProd: solo dentro la sala giochi della DaProd Suite la partita
 // fatta qui si stacca in lire. Qui sul sito e nelle app daprod-lira.js non fa
 // niente, e il gioco e' la sua demo.
+// Dalla 2.2.5 una lira e' una lira: quello che ricarichi dalla suite e' il tuo
+// saldo qui, e l'incasso riporta il saldo nella suite, meno il 10% di DaProd.
 if (window.DaProdLira) DaProdLira.init({
   gioco: 'dozer',
-  // Le lire della suite diventano monete: L.1 = 20 lire di monete (L.100 → L.2.000).
-  ricarica: { detto: 'L.1 della suite = L.20 di monete', cambio: 20, dai: (lire) => { const m = Math.round((lire || 100) * 20); stato.saldo += m; aggiornaHUD(); daSalvare = true; avviso('🪙 Ricarica DaProd: +' + soldi(m), 'cia'); } },
+  ricarica: { detto: 'una lira della suite e\' una lira di monete', cambio: 1, dai: (lire) => { const m = Math.max(0, Math.round(lire || 0)); stato.saldo += m; aggiornaHUD(); daSalvare = true; avviso('🪙 Ricarica DaProd: +' + soldi(m), 'cia imp'); } },
+  cassa: {
+    quanto: () => Math.floor(stato.saldo),
+    togli: (r) => { stato.saldo = Math.max(0, stato.saldo - (r.preso || 0)); aggiornaHUD(); daSalvare = true; salva();
+      avviso('💰 Incassato: ' + soldi(r.netto) + ' nel portafoglio DaProd' + (r.oltre > 0 ? ' · ' + soldi(r.oltre) + ' restano qui' : ''), 'cia imp'); },
+  },
 });
 
 // API per le prove automatiche e per chi vuole curiosare dalla console
@@ -2763,6 +2815,7 @@ window.DOZER = {
   avviaEvento, finisciEvento, cine, prossimoEvento: () => prossimoEvento,
   cambiaValuta, cambiaScritte, soldi, controllaEuro, aggiornaHUD,
   pulisci: () => { monete = []; },
+  fortuna, tavoloPulito, PILA_N,
   pilaIniziale, riciclaEccesso, inizioBuchi, salva, carica, fotografaTavolo, slot,
   finisciSlot: () => { let n = 0; while (slot.gira && n++ < 400) aggiornaSlot(0.02); return !slot.gira; },
   colonna: (x) => { colonna = colonnaMirata = x; },
