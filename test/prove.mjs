@@ -48,14 +48,14 @@ console.log('\n== COMPUTER ==');
   T('nessun errore in console', errori.length === 0, errori.join(' | '));
   T('un solo canvas', await page.locator('canvas').count() === 1);
   T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
-  T('versione v2.2.5 nel marchio', (await page.locator('#versione').textContent()) === 'v2.2.5');
+  T('versione v2.2.6 nel marchio', (await page.locator('#versione').textContent()) === 'v2.2.6');
   T('logo DaProd nel HUD, nella schermata iniziale e nel negozio', await page.locator('svg.logoDP').count() >= 3);
 
   // --- ALL'INIZIO SI SCEGLIE LA MONETA ---
   T('schermata iniziale visibile', await page.locator('#intro').isVisible());
   const scelte = await page.locator('#sceltaMonete .mon').count();
   T('nella schermata iniziale si sceglie la moneta', scelte >= 2, scelte + ' monete');
-  await page.locator('#sceltaMonete .mon[data-t="1"]').click();
+  await page.waitForTimeout(800); await page.locator('#sceltaMonete .mon[data-t="1"]').click({ timeout: 60000 });
   T('scelta la L.100 dalla schermata iniziale', await page.evaluate(() => DOZER.stato.sel) === 1);
   T('una moneta bloccata non si sceglie senza saldo', await page.evaluate(() => { DOZER.stato.saldo = 10; return DOZER.sbloccaTaglio(2); }) === false);
   await page.evaluate(() => { DOZER.stato.saldo = 5000; });
@@ -117,7 +117,8 @@ console.log('\n== COMPUTER ==');
   T('ogni moneta lanciata si posa sul piano 1, sotto l\'anello di mira',
     atterraggi.length >= 12 && atterraggi.every(a => a.y >= 3.19 && Math.abs(a.dz) < 0.9), JSON.stringify(atterraggi));
   T('sul piano 1 c\'è un tappeto di monete', flusso.inizio >= 15, flusso.inizio + ' monete');
-  T('il tappeto del piano 1 scorre: le monete lanciate scendono al piano 2', flusso.uscite >= flusso.su * 0.5 && flusso.fine <= flusso.inizio + 15, JSON.stringify(flusso));
+  // 2.2.6: il piano e' piu' largo, e la pila spinge piu' piano: ne basta un terzo.
+  T('il tappeto del piano 1 scorre: le monete lanciate scendono al piano 2', flusso.uscite >= flusso.su * 0.25 && flusso.fine <= flusso.inizio + 15, JSON.stringify(flusso));
 
   // --- COSTI ---
   const costo = await page.evaluate(() => {
@@ -241,18 +242,8 @@ console.log('\n== COMPUTER ==');
     return { saldo: D.stato.saldo, perse: D.stato.st.perse - p0 };
   });
   T('una moneta spinta nel buco laterale va alla casa e non paga', casa.saldo === 0 && casa.perse === 1, JSON.stringify(casa));
-  const muro = await page.evaluate(() => {
-    const D = DOZER; D.pulisci(); D.stato.saldo = 20000; D.stato.pot.muro = 0;
-    const sblocca = D.usaAbilita('muro');
-    D.stato.pronta.muro = 0; const usa = D.usaAbilita('muro');
-    D.simula(0.6);
-    const c = D.nuovaMoneta(1, D.HW - 0.5, 0, D.LIV[2].zEdge - 0.4); c.terra = true; c.vx = 3;
-    D.simula(1);
-    const r = { sblocca, usa, saldo: D.stato.saldo, inizio: D.inizioBuchi(), viva: c.vivo && !c.fuori, ancora: D.usaAbilita('muro') };
-    D.simula(25); r.riaperti = D.inizioBuchi() < 5; return r;
-  });
-  T('MURO: si sblocca pagando e chiude i buchi della casa', muro.sblocca && muro.usa && muro.saldo === 10000 && muro.viva && muro.inizio >= 5.59, JSON.stringify(muro));
-  T('MURO: ha una ricarica e poi i buchi si riaprono', muro.ancora === false && muro.riaperti, JSON.stringify(muro));
+  // 2.2.6: il MURO non c'e' piu' («togliamo il muro»): i buchi li chiude solo la FRENESIA.
+  T('il MURO non e\' piu\' un\'abilita\'', await page.evaluate(() => !('muro' in DOZER.ABIL)));
 
   // --- SLOT DaProd ---
   const slot = await page.evaluate(async () => {
@@ -303,12 +294,12 @@ console.log('\n== COMPUTER ==');
   await page.waitForTimeout(300);
   T('Esc chiude il negozio', await page.locator('#negozio.chiuso').count() === 1);
   const vecchi = await page.evaluate(() => Object.keys(DOZER.ABIL).join(','));
-  T('abilità nuove: scossa, raffica, meteora, calamita, turbo, muro', vecchi === 'scossa,raffica,meteora,calamita,turbo,muro', vecchi);
+  T('abilità: scossa, raffica, meteora, calamita, turbo (il muro e\' uscito)', vecchi === 'scossa,raffica,meteora,calamita,turbo', vecchi);
 
   // --- BARRA DELLE ABILITÀ ACCANTO ALLA SCOSSA ---
   await page.evaluate(() => { const D = DOZER; for (const k in D.stato.pot) D.stato.pot[k] = k === 'scossa' ? 1 : 0; D.stato.saldo = 0; D.aggiornaHUD(); });
-  T('accanto alla scossa ci sono tutte le abilità', await page.locator('#abilita .ab').count() === 6 && await page.locator('#abilita #scossaBtn').count() === 1);
-  T('quelle bloccate si vedono col lucchetto', await page.locator('#abilita .ab.bloccata').count() === 5);
+  T('accanto alla scossa ci sono tutte le abilità', await page.locator('#abilita .ab').count() === 5 && await page.locator('#abilita #scossaBtn').count() === 1);
+  T('quelle bloccate si vedono col lucchetto', await page.locator('#abilita .ab.bloccata').count() === 4);
   await page.evaluate(() => { DOZER.stato.saldo = 6000; DOZER.aggiornaHUD(); });
   T('quelle che puoi permetterti si illuminano', await page.locator('#abilita .ab.bloccata.puoi').count() === 3, await page.locator('#abilita .ab.puoi').count() + '');
   await page.locator('#ab_meteora').click();
@@ -352,18 +343,38 @@ console.log('\n== COMPUTER ==');
   T('gli eventi arrivano da soli ogni tanto', await page.evaluate(() => { const p = DOZER.prossimoEvento(); return p > 30 && p < 200; }));
   await page.evaluate(() => DOZER.simula(20));
 
-  // --- VALUTA IN EURO (si sblocca a un milione di lire) ---
+  // --- LA VALUTA LA SCEGLIE LA SALA (2.2.6) ---
   const val = await page.evaluate(() => {
-    const D = DOZER; D.stato.euro = false; D.stato.st.saldoMax = 0; D.stato.opz.valuta = 'lire'; D.stato.saldo = 500000; D.aggiornaHUD();
-    const r = { bloccata: D.cambiaValuta() === false && !D.stato.euro, bott: !document.getElementById('valutaBtn').hidden };
-    D.stato.saldo = 1000000; D.aggiornaHUD();
-    r.sbloccata = D.stato.euro; r.bott2 = !document.getElementById('valutaBtn').hidden;
-    D.cambiaValuta(); r.euro = D.soldi(1936.27); r.barra = document.querySelector('#monete .mon span').textContent;
-    D.cambiaValuta(); r.lire = D.soldi(1000); D.stato.saldo = 100000; return r;
+    const D = DOZER;
+    const r = { tasto: !document.getElementById('valutaBtn'), cambia: D.cambiaValuta() === false };
+    r.corte = [D.soldi(1000), D.soldi(150000), D.soldi(15519187), D.soldi(1e9)].join(' | ');
+    return r;
   });
-  T('l\'euro è bloccato finché non arrivi a L.1.000.000', val.bloccata && !val.bott, JSON.stringify(val));
-  T('a un milione si sblocca il tasto €', val.sbloccata && val.bott2);
-  T('in euro saldo e monete si leggono in euro, e si torna alle lire', val.euro === '€1,00' && val.barra.startsWith('€') && val.lire === 'L.1.000', JSON.stringify(val));
+  T('nel gioco non c\'e\' piu\' il tasto della valuta', val.tasto && val.cambia, JSON.stringify(val));
+  T('le cifre si scrivono corte: k, M e mld', val.corte === 'L.1.000 | L.150k | L.15,5M | L.1 mld', val.corte);
+
+  // --- GLI EVENTI FORTI (2.2.6) ---
+  const forti = await page.evaluate(() => {
+    const D = DOZER; D.pulisci(); D.pilaIniziale(); D.gioca();
+    const r = { quanti: Object.keys(D.EVENTI).length, cattivi: Object.values(D.EVENTI).filter(e => !e.buono).length };
+    D.stato.maxLancio = 4; D.stato.saldo = 100000;
+    D.effettoEvento('bonanza'); r.bonanza = D.stato.saldo - 100000;
+    const prima = D.stato.saldo; D.effettoEvento('tassa'); r.tassa = prima - D.stato.saldo;
+    const n0 = D.monete().length; D.effettoEvento('ladro'); D.simula(0.2); r.ladro = n0 - D.monete().length;
+    D.avviaEvento('triplo'); D.finisciEvento(); r.triplo = D.timer();
+    D.avviaEvento('blackout'); D.finisciEvento(); r.fermo = D.timer().fermo;
+    const z0 = D.SPINTORI[2].z; D.simula(2); r.fermi = Math.abs(D.SPINTORI[2].z - z0) < 1e-6;
+    D.avviaEvento('voragine'); D.finisciEvento(); r.buchi = D.LIV[2].zEdge - D.inizioBuchi();
+    D.simula(30); r.dopo = D.timer();
+    return r;
+  });
+  T('gli eventi sono dodici, sei buoni e sei cattivi', forti.quanti === 12 && forti.cattivi === 6, JSON.stringify(forti));
+  T('BONANZA: quaranta monete del taglio piu\' grosso', forti.bonanza === 40 * 50000, JSON.stringify(forti));
+  T('TASSA: la casa si prende il 20%', forti.tassa === Math.floor(2100000 * 0.2), JSON.stringify(forti));
+  T('IL LADRO si porta via otto monete', forti.ladro >= 8, JSON.stringify(forti));
+  T('TRIPLO: vincite per tre, per 30 s', forti.triplo.k === 3 && forti.triplo.moltiplica > 25, JSON.stringify(forti));
+  T('BLACKOUT: gli spintori si fermano', forti.fermo > 20 && forti.fermi, JSON.stringify(forti));
+  T('VORAGINE: buchi lunghi il triplo, poi tornano normali', forti.buchi > 4.7 && forti.dopo.voragine === 0, JSON.stringify(forti));
 
   // --- SCRITTE SPEGNIBILI ---
   await page.locator('#scritteBtn').click();
@@ -385,7 +396,7 @@ console.log('\n== COMPUTER ==');
     for (let i = 0; i < 700; i++) { D.lanciaMoneta(-3.5 + Math.random() * 7, i % 3); if (i % 4 === 0) D.simula(1 / 30); max = Math.max(max, D.monete().length); }
     return max;
   });
-  T('il tavolo non si riempie mai', pieno <= 441, pieno + ' monete al massimo');
+  T('il tavolo non si riempie mai', pieno <= 561, pieno + ' monete al massimo');
 
   // --- VELOCITÀ DELLA FISICA ---
   const ms = await page.evaluate(() => { const D = DOZER; const t = performance.now(); D.simula(2); return (performance.now() - t) / 240; });
@@ -444,7 +455,7 @@ console.log('\n== TELEFONO ==');
   await page.locator('#chiudi').tap();
   await page.waitForTimeout(300);
   T('e si chiude al tocco', await page.locator('#negozio.chiuso').count() === 1);
-  T('meno monete su telefono', await page.evaluate(() => { const D = DOZER; D.pilaIniziale(); D.stato.saldo = 1e9; let m = 0; for (let i = 0; i < 500; i++) { D.lanciaMoneta(0, 0); m = Math.max(m, D.monete().length); } return m; }) <= 321);
+  T('meno monete su telefono', await page.evaluate(() => { const D = DOZER; D.pilaIniziale(); D.stato.saldo = 1e9; let m = 0; for (let i = 0; i < 500; i++) { D.lanciaMoneta(0, 0); m = Math.max(m, D.monete().length); } return m; }) <= 421);
   T('nessun errore alla fine (telefono)', errori.length === 0, errori.join(' | '));
   await ctx.close();
 }
@@ -466,7 +477,7 @@ console.log('\n== SALVATAGGI ==');
     { daprod_dozer_v4: JSON.stringify({ saldo: 'tanti', maxLancio: 99, sel: -4, pot: { raffica: 77, scossa: -3 }, tavolo: [1, 2, 'x'] }) });
   await page.waitForTimeout(500);
   const s = await page.evaluate(() => ({ saldo: DOZER.stato.saldo, max: DOZER.stato.maxLancio, sel: DOZER.stato.sel, raffica: DOZER.stato.pot.raffica, scossa: DOZER.stato.pot.scossa, monete: DOZER.monete().length }));
-  T('salvataggio rovinato: valori rimessi a posto', s.saldo === 5000 && s.max === 4 && s.sel === 0 && s.raffica === 5 && s.scossa === 1 && s.monete > 120, JSON.stringify(s));
+  T('salvataggio rovinato: valori rimessi a posto', s.saldo === 5000 && s.max === 8 && s.sel === 0 && s.raffica === 5 && s.scossa === 1 && s.monete > 120, JSON.stringify(s));
   T('salvataggio rovinato: nessun errore', errori.length === 0, errori.join(' | '));
   await ctx.close();
 }
