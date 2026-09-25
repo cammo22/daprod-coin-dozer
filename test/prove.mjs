@@ -48,7 +48,7 @@ console.log('\n== COMPUTER ==');
   T('nessun errore in console', errori.length === 0, errori.join(' | '));
   T('un solo canvas', await page.locator('canvas').count() === 1);
   T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
-  T('versione v2.2.3 nel marchio', (await page.locator('#versione').textContent()) === 'v2.2.3');
+  T('versione v2.2.4 nel marchio', (await page.locator('#versione').textContent()) === 'v2.2.4');
   T('logo DaProd nel HUD, nella schermata iniziale e nel negozio', await page.locator('svg.logoDP').count() >= 3);
 
   // --- ALL'INIZIO SI SCEGLIE LA MONETA ---
@@ -419,6 +419,10 @@ console.log('\n== TELEFONO ==');
   T('le abilità stanno in colonna sul lato sinistro, dentro lo schermo', ab && ab.x >= 0 && ab.x + ab.width < 206 && ab.height > ab.width && ab.y >= 0 && ab.y + ab.height <= 801 && !sovrapp(ab, box), JSON.stringify(ab));
   T('il negozio sta sul lato destro, dentro lo schermo', ng && ng.x > 206 && ng.x + ng.width <= 413 && !sovrapp(ng, ab), JSON.stringify(ng));
   T('su telefono c\'è il tasto per le scritte', await page.locator('#scritteBtn').isVisible());
+  T('su telefono niente vetro sfocato sopra il 3D', await page.evaluate(() => getComputedStyle(document.querySelector('#saldoBox')).backdropFilter === 'none'));
+  const luci = await page.evaluate(() => { const o = DOZER.stato.opz.qualita; DOZER.stato.opz.qualita = 'bassa'; DOZER.qualita(); const b = DOZER.luci();
+    DOZER.stato.opz.qualita = 'media'; DOZER.qualita(); const m = DOZER.luci(); DOZER.stato.opz.qualita = o; DOZER.qualita(); return { b, m, scala: DOZER.scalaAuto() }; });
+  T('in bassa si spengono due luci colorate, in media tornano', luci.b === 2 && luci.m === 4 && luci.scala === 1, JSON.stringify(luci));
   await page.locator('#monetaSu').tap();
   const menu = await page.locator('#monete').boundingBox();
   T('i tagli si aprono dentro lo schermo', menu && menu.x >= 0 && menu.x + menu.width <= 413 && menu.y >= 0, JSON.stringify(menu));

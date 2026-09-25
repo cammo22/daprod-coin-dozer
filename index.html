@@ -40,6 +40,11 @@
   /* ---------- HUD ---------- */
   #hud { position: fixed; left: 0; right: 0; top: 0; z-index: 10; pointer-events: none;
     padding: calc(12px + var(--sat)) 16px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  /* ⚠ Sui telefoni niente vetro sfocato (2.2.3): il blur dietro a ogni carta va rifatto a ogni fotogramma, perche'
+     sotto c'e' il 3D che si muove, e costava piu' della macchina stessa. Il vetro diventa solo un po' piu' scuro. */
+  @media (hover: none), (pointer: coarse) {
+    .carta { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; --vetro: rgba(14,10,26,.86); }
+  }
   .carta { background: var(--vetro); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
     border: 1px solid var(--bordo); border-radius: var(--r);
     box-shadow: 0 12px 34px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.10); }
@@ -363,7 +368,7 @@
       #negozioBtn.tondo:active { transform: translateY(-46%) scale(.95); }
       #negozioBtn .ico { font-size: 24px; }
     }
-    #avvisi { left: 50%; transform: translateX(-50%); top: calc(84px + var(--sat)); width: 94vw; align-items: center; gap: 4px; }
+    #avvisi { left: 50%; transform: translateX(-50%); top: calc(106px + var(--sat)); width: 94vw; align-items: center; gap: 4px; }
     .avviso { font-size: 9px; letter-spacing: .5px; padding: 5px 10px; text-align: center; border-radius: 999px; }
     #avvisi .avviso:nth-last-child(n+3) { display: none; }
     @keyframes avvIn { from { transform: translateY(-10px) scale(.9); opacity: 0; } }
@@ -516,7 +521,7 @@
 <script type="module">
 import * as THREE from 'three';
 
-const VERSIONE = 'v2.2.3';
+const VERSIONE = 'v2.2.4';
 const $ = (id) => document.getElementById(id);
 const TATTILE = (typeof matchMedia === 'function') &&
   (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
@@ -1233,7 +1238,7 @@ const BOKEH = [];
 }
 
 // ============ LUCI ============
-scene.add(new THREE.HemisphereLight(0x9c8cff, 0x120a18, 0.55));
+const cielo = new THREE.HemisphereLight(0x9c8cff, 0x120a18, 0.55); scene.add(cielo);
 const sole = new THREE.DirectionalLight(0xfff0dc, 2.8);
 sole.position.set(5, 20, 11); sole.target.position.set(0, 0, -3); scene.add(sole, sole.target);
 sole.shadow.camera.left = -8; sole.shadow.camera.right = 8; sole.shadow.camera.top = 17; sole.shadow.camera.bottom = -12;
@@ -2525,9 +2530,24 @@ async function preparaPost() {
     postPronto = true; ridimensiona();
   } catch (e) { composer = null; }
 }
+/**
+ * Risoluzione dinamica (2.2.3). In bassa, se il telefono resta sotto i 36 al secondo, si disegna a meno pixel
+ * (fino al 60%) e il browser allarga l'immagine; quando torna fluido si risale. Prima «bassa» era il fondo: Cammo
+ * su un telefono potente restava a 30.
+ */
+let scalaAuto = 1;
 function applicaQualita() {
   const q = stato.opz.qualita, dpr = window.devicePixelRatio || 1;
-  renderer.setPixelRatio(Math.min(dpr, q === 'alta' ? 2 : q === 'media' ? 1.5 : 1));
+  if (q !== 'bassa') scalaAuto = 1;
+  renderer.setPixelRatio(Math.max(0.5, Math.min(dpr, q === 'alta' ? 2 : q === 'media' ? 1.5 : 1) * scalaAuto));
+  // In bassa due luci colorate su quattro si spengono (ogni luce la paga ogni pixel di ogni moneta): il cielo
+  // le rimpiazza, cosi' la macchina non diventa buia.
+  const poche = q === 'bassa';
+  if (LUCI_COLORE[0].visible === poche) {
+    LUCI_COLORE[0].visible = LUCI_COLORE[3].visible = !poche;
+    cielo.intensity = poche ? 0.85 : 0.55;
+    scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.needsUpdate = true); });
+  }
   const ombre = q === 'alta';
   if (renderer.shadowMap.enabled !== ombre) {
     renderer.shadowMap.enabled = ombre; sole.castShadow = ombre;
@@ -2546,18 +2566,20 @@ function ridimensiona() {
   pMat.uniforms.uScala.value = innerHeight * renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
 }
 addEventListener('resize', ridimensiona);
-let fpsAcc = 0, fpsN = 0, fpsLenti = 0;
+let fpsAcc = 0, fpsN = 0, fpsLenti = 0, fpsSvelti = 0;
 function adattaQualita(dt) {
   fpsAcc += dt; fpsN++;
   if (fpsAcc < 2) return;
   const fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0;
-  if (stato.opz.fps) $('fps').textContent = Math.round(fps) + ' FPS · ' + monetePresenti() + ' monete';
+  if (stato.opz.fps) $('fps').textContent = Math.round(fps) + ' FPS · ' + monetePresenti() + ' monete' + (scalaAuto < 1 ? ' · risoluzione ' + Math.round(scalaAuto * 100) + '%' : '');
   if (!stato.opz.auto || document.hidden) return;
   fpsLenti = fps < 36 ? fpsLenti + 1 : 0;
+  fpsSvelti = fps > 55 ? fpsSvelti + 1 : 0;
   if (fpsLenti >= 2 && stato.opz.qualita !== 'bassa') {
     stato.opz.qualita = stato.opz.qualita === 'alta' ? 'media' : 'bassa'; fpsLenti = 0;
     applicaQualita(); avviso(`Qualità automatica: ${stato.opz.qualita.toUpperCase()}`); daSalvare = true;
-  }
+  } else if (fpsLenti >= 2 && scalaAuto > 0.6) { scalaAuto = Math.max(0.6, scalaAuto - 0.15); fpsLenti = 0; applicaQualita(); }
+  else if (fpsSvelti >= 3 && scalaAuto < 1) { scalaAuto = Math.min(1, scalaAuto + 0.1); fpsSvelti = 0; applicaQualita(); }
 }
 
 // ============ DISEGNO DI OGNI FOTOGRAMMA ============
@@ -2746,7 +2768,7 @@ window.DOZER = {
   colonna: (x) => { colonna = colonnaMirata = x; },
   inGioco: () => inGioco, apriNegozio, chiudiNegozio, rendiNegozio,
   salite: () => salite, atterraggi, pioggiaInCoda: () => pioggiaCoda.length,
-  postPronto: () => postPronto, qualita: applicaQualita,
+  postPronto: () => postPronto, qualita: applicaQualita, scalaAuto: () => scalaAuto, luci: () => LUCI_COLORE.filter(l => l.visible).length,
   camera: () => { camStato.yaw = 0; camStato.pitch = 99; camT = 0; posaCamera(10); },
 };
 </script>

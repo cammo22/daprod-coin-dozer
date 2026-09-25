@@ -4,6 +4,16 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.2.4] — 2026-09-25 · Più fluido sul telefono
+
+- **Sul telefono niente vetro sfocato** dietro saldo, record e tasti: il blur andava rifatto a ogni fotogramma, perché
+  sotto c'è il 3D che si muove, e costava più della macchina. Le carte sono solo un po' più scure.
+- **In qualità bassa due luci colorate su quattro si spengono** e la luce del cielo le rimpiazza: ogni luce la paga ogni
+  pixel di ogni moneta.
+- **Risoluzione dinamica**: in bassa, se il telefono resta sotto i 36 fotogrammi al secondo, disegna a meno pixel (fino
+  al 60%) e risale da solo quando torna fluido. Con gli FPS accesi nelle opzioni si vede a quanto sta.
+- Sul telefono gli avvisi stanno sotto fusioni e record, non sopra.
+
 ## [2.2.3] — 2026-09-24 · I tasti sui lati
 
 - **Sul telefono in verticale i tasti stanno sui lati**: le sei abilità sono una colonna a sinistra e il negozio sta a
