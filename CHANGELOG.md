@@ -4,6 +4,16 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.2.5] — 2026-09-25 · Si vince davvero, e una lira è una lira
+
+- **La Fortuna DaProd**: più giochi, più vale quello che cade nella vasca. Ogni venti monete lanciate mezzo punto in più,
+  fino a una volta e mezza. Si vede nell'HUD (FORTUNA ×1,00) e ogni cinque punti lo dice.
+- **Il tavolo pulito paga**: se butti giù quasi tutta la pila (resta meno di un terzo), arriva il premio DaProd, un quarto
+  di tutto quello che hai speso da quando la pila è stata rifatta (almeno L. 2.500), e la pila torna piena.
+- Dentro la [DaProd Suite](https://github.com/cammo22/DaProdSuite) **una lira è una lira**: quello che ricarichi è il tuo
+  saldo qui, senza cambio, e «Incassa» nella cornice riporta il saldo nel portafoglio DaProd, meno il 10% di DaProd.
+  Prima L.1 della suite faceva L.20 di monete e si vinceva in punti.
+
 ## [2.2.4] — 2026-09-25 · Più fluido sul telefono
 
 - **Sul telefono niente vetro sfocato** dietro saldo, record e tasti: il blur andava rifatto a ogni fotogramma, perché

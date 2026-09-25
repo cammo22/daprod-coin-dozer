@@ -48,7 +48,7 @@ console.log('\n== COMPUTER ==');
   T('nessun errore in console', errori.length === 0, errori.join(' | '));
   T('un solo canvas', await page.locator('canvas').count() === 1);
   T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
-  T('versione v2.2.4 nel marchio', (await page.locator('#versione').textContent()) === 'v2.2.4');
+  T('versione v2.2.5 nel marchio', (await page.locator('#versione').textContent()) === 'v2.2.5');
   T('logo DaProd nel HUD, nella schermata iniziale e nel negozio', await page.locator('svg.logoDP').count() >= 3);
 
   // --- ALL'INIZIO SI SCEGLIE LA MONETA ---
@@ -158,8 +158,15 @@ console.log('\n== COMPUTER ==');
     return D.monete().map(c => c.t + 'x' + c.n).join(',');
   });
   T('la decima L.100 sulla pila da 9 fa una L.1.000', dieci === '2x1', dieci);
-  const valore = await page.evaluate(() => { const D = DOZER; D.pulisci(); D.stato.saldo = 0; const c = D.nuovaMoneta(1, 0, 0, D.LIV[2].zEdge + 0.1, 3); c.vz = 0.5; D.simula(1.2); return D.stato.saldo; });
+  // 2.2.5: la Fortuna DaProd si azzera per queste prove (lanci = 0), cosi' si controlla il valore nudo.
+  const valore = await page.evaluate(() => { const D = DOZER; D.pulisci(); D.stato.saldo = 0; D.stato.st.lanci = 0; const c = D.nuovaMoneta(1, 0, 0, D.LIV[2].zEdge + 0.1, 3); c.vz = 0.5; D.simula(1.2); return D.stato.saldo; });
   T('una pila da 3 L.100 nella vasca paga L.300: le pile non creano soldi dal nulla', valore === 300, valore);
+  const fort = await page.evaluate(() => { const D = DOZER; const l = D.stato.st.lanci; D.stato.st.lanci = 0; const a = D.fortuna(); D.stato.st.lanci = 2000;
+    const b = D.fortuna(); D.stato.st.lanci = 10 ** 6; const c = D.fortuna(); D.stato.st.lanci = l; return [a, b, c]; });
+  T('la Fortuna DaProd sale piano: ×1 all\'inizio, ×1,5 al massimo', fort[0] === 1 && fort[1] === 1.5 && fort[2] === 1.5, JSON.stringify(fort));
+  const pulito = await page.evaluate(() => { const D = DOZER; D.gioca(); D.pulisci(); const s0 = D.stato.saldo; const p = D.tavoloPulito(true);
+    return { p, dopo: D.stato.saldo - s0, pila: D.monete().length }; });
+  T('il tavolo pulito paga un premio e rifà la pila', pulito.p >= 2500 && pulito.dopo === pulito.p && pulito.pila > 150, JSON.stringify(pulito));
   const catena = await page.evaluate(() => {
     const D = DOZER; D.pulisci();
     const a = D.nuovaMoneta(0, 0, 0, 3); a.terra = true;
@@ -219,7 +226,7 @@ console.log('\n== COMPUTER ==');
 
   // --- VASCA E CASA ---
   const vasca = await page.evaluate(() => {
-    const D = DOZER; D.pulisci(); D.stato.saldo = 0;
+    const D = DOZER; D.pulisci(); D.stato.saldo = 0; D.stato.st.lanci = 0;
     const v0 = D.stato.st.vinte;
     const c = D.nuovaMoneta(2, 0, 0, D.LIV[2].zEdge + 0.1); c.vz = 0.5;
     D.simula(1.2);
