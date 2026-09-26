@@ -751,7 +751,9 @@ const PROB_CHIP = 0.025, PAUSA_CHIP = 25;        // gettone DaProd: 2,5% a lanci
 
 // ============ STATO E SALVATAGGIO ============
 const CHIAVE = 'daprod_dozer_v4';
-const SALDO_INIZIALE = 5000;
+// 2.3.0: nella sala DaProd la macchina nuova parte vuota: «la partita nuova deve
+// costare». Il saldo arriva solo caricando dal portafoglio. Fuori, la demo resta con le sue 5000.
+const SALDO_INIZIALE = (window.DaProdLira && DaProdLira.modo === 'suite') ? 0 : 5000;
 const EURO_A = 1e6;                              // la valuta in euro si sblocca arrivando a L.1.000.000
 const LIRE_PER_EURO = 1936.27;
 // Il bonus di cortesia (2.2.2): non si resta mai a secco, ma non e' un rubinetto.
