@@ -48,7 +48,7 @@ console.log('\n== COMPUTER ==');
   T('nessun errore in console', errori.length === 0, errori.join(' | '));
   T('un solo canvas', await page.locator('canvas').count() === 1);
   T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
-  T('versione v2.2.7 nel marchio', (await page.locator('#versione').textContent()) === 'v2.2.7');
+  T('versione v2.3.0 nel marchio', (await page.locator('#versione').textContent()) === 'v2.3.0');
   T('logo DaProd nel HUD, nella schermata iniziale e nel negozio', await page.locator('svg.logoDP').count() >= 3);
 
   // --- ALL'INIZIO SI SCEGLIE LA MONETA ---
@@ -88,7 +88,8 @@ console.log('\n== COMPUTER ==');
 
   // --- IL PIANO 1 HA IL SUO TAPPETO, MA SCORRE: NIENTE MONETE INCASTRATE ---
   const flusso = await page.evaluate(() => {
-    const D = DOZER; D.stato.saldo = 1e6; D.stato.sel = 0;
+    // 2.3.0: il primo tavolo si tira a sorte (ricco o magro); qui si misura la pila di sempre.
+    const D = DOZER; D.pilaIniziale(); D.stato.saldo = 1e6; D.stato.sel = 0;
     const suP1 = (c) => c.vivo && !c.fuori && c.y > D.LIV[0].y - 0.1 && c.z < D.LIV[0].zEdge;
     const inizio = D.monete().filter(suP1).length;
     const lanciate = [];
@@ -334,12 +335,12 @@ console.log('\n== COMPUTER ==');
     r.finito = D.finisciEvento(); r.coda = D.pioggiaInCoda(); r.cine = D.cine.b; r.eventi = D.stato.st.eventi;
     r.evFren = D.avviaEvento('frenesia') && D.finisciEvento(); r.timer = D.timer();
     r.evCal = D.avviaEvento('calamita') && D.finisciEvento(); r.cal = D.timer().calamita;
-    r.slot = D.slot.fin.join(''); return r;
+    r.slot = D.slot.fin.join(''); r.slotCal = String(D.EV_IDS.indexOf('calamita')).repeat(3); return r;
   });
   T('un EVENTO porta la camera allo slot e blocca i lanci', ev.parte && ev.cinema && ev.lancio === 0, JSON.stringify(ev));
   T('PIOGGIA DaProd: piovono monete', ev.finito && ev.coda >= 12 && ev.cine === 0);
   T('FRENESIA: spintori scatenati e buchi chiusi', ev.evFren && ev.timer.turbo > 10 && ev.timer.muro > 10);
-  T('CALAMITA DaProd: 15 s di calamita, e lo slot mostra il simbolo giusto', ev.evCal && ev.cal > 13 && ev.slot === '666');
+  T('CALAMITA DaProd: 15 s di calamita, e lo slot mostra il simbolo giusto', ev.evCal && ev.cal > 13 && ev.slot === ev.slotCal, JSON.stringify(ev));
   T('gli eventi arrivano da soli ogni tanto', await page.evaluate(() => { const p = DOZER.prossimoEvento(); return p > 30 && p < 200; }));
   await page.evaluate(() => DOZER.simula(20));
 
@@ -369,11 +370,11 @@ console.log('\n== COMPUTER ==');
     D.simula(125); r.dopo = D.timer();
     // 2.2.7: gli effetti accesi si vedono ai lati, e lampeggiano negli ultimi 10 s.
     D.avviaEvento('blackout'); D.finisciEvento(); D.aggiornaEffettiUI(1);
-    r.lato = document.querySelectorAll('#effetti .eff.cattivo').length === 1 && document.getElementById('bordoDx').classList.contains('su');
+    r.lato = document.querySelectorAll('#effettiDx .eff.cattivo').length === 1 && document.getElementById('bordoDx').classList.contains('su');
     D.simula(22); D.aggiornaEffettiUI(1);
-    r.lampeggia = document.querySelector('#effetti .eff.finisce') !== null;
+    r.lampeggia = document.querySelector('#effettiDx .eff.finisce') !== null;
     D.simula(10); D.aggiornaEffettiUI(1);
-    r.spento = document.querySelectorAll('#effetti .eff').length === 0 && !document.getElementById('bordoDx').classList.contains('su');
+    r.spento = document.querySelectorAll('#effettiDx .eff').length === 0 && !document.getElementById('bordoDx').classList.contains('su');
     const conti = { true: 0, false: 0 };
     for (let i = 0; i < 400; i++) conti[D.EVENTI[D.eventoACaso()].buono]++;
     r.meta = conti;
@@ -389,6 +390,13 @@ console.log('\n== COMPUTER ==');
   T('gli effetti accesi si vedono ai lati', forti.lato, JSON.stringify(forti));
   T('negli ultimi 10 secondi lampeggiano, poi spariscono', forti.lampeggia && forti.spento, JSON.stringify(forti));
   T('cinquanta e cinquanta: buoni e cattivi a meta\'', forti.meta.true > 150 && forti.meta.false > 150, JSON.stringify(forti.meta));
+  // 2.3.0: il tavolo di una partita nuova si tira a sorte, ricco o magro.
+  const umore = await page.evaluate(() => {
+    const D = DOZER, v = () => D.monete().reduce((t, c) => t + D.TAGLI[c.t].v * c.n, 0);
+    D.pilaIniziale('ricco'); const ricco = v(); D.pilaIniziale('magro'); const magro = v(); D.pilaIniziale();
+    return { ricco, magro, voce: typeof D.Voce.parla === 'function' };
+  });
+  T('tavolo ricco e tavolo magro: molto diversi', umore.ricco > umore.magro * 3 && umore.voce, JSON.stringify(umore));
 
   // --- SCRITTE SPEGNIBILI ---
   await page.locator('#scritteBtn').click();

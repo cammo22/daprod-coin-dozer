@@ -4,6 +4,24 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.3.0] — 2026-09-26 · La partita si paga, la slot decide, e gli effetti non rallentano
+
+- **Nella suite la partita nuova si paga**: si carica il gioco dal portafoglio DaProd con quanto si vuole (consigliati
+  5, 20, 50, 100, 200 o 500 €). A saldo vuoto si apre il cartello «Partita nuova» invece delle monete regalate. La
+  prima partita di sempre porta **100 € di regalo** dalla Banca DaProd, una volta sola per persona (lo decide la sala,
+  non il gioco).
+- **Ogni partita parte da un tavolo tirato a sorte**: *ricco*, alto e pieno di monete grosse, o *magro*, mezzo vuoto e
+  di spiccioli. Te lo dice un cartello e la voce.
+- **All'incasso i potenziamenti si azzerano**: abilità e monete sbloccate vanno ricomprate col portafoglio nella
+  partita dopo. Il taglio record e le statistiche restano.
+- **La slot dietro fa tutto**: i rulli dell'evento girano sulle dodici icone degli eventi (verdi i bonus, rossi i
+  malus) e si fermano su quello che succede. Prima mostravano lo stesso simbolo per tutti i malus.
+- **Il cartello dell'evento**: i bonus escono a sinistra, i malus a destra, e dicono cosa succede, quanto dura e cosa
+  conviene fare. Resta un secondo in più per leggerlo.
+- **La voce** spiega il bonus o il malus appena esce (si spegne nelle opzioni: 🗣 VOCE).
+- **Gli effetti ai lati non rallentano più il gioco**: le pastiglie nascono una volta e cambiano solo il numero, invece
+  di riscriversi cinque volte al secondo. I bonus stanno a sinistra, i malus a destra, come i cartelli.
+
 ## [2.2.7] — 2026-09-26 · Cinquanta e cinquanta, e gli effetti ai lati
 
 - **Cinquanta e cinquanta**: «il dozer ha 50 e 50 di poter vincere molto o perdere molto». Ogni evento si tira prima a
