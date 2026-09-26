@@ -48,7 +48,7 @@ console.log('\n== COMPUTER ==');
   T('nessun errore in console', errori.length === 0, errori.join(' | '));
   T('un solo canvas', await page.locator('canvas').count() === 1);
   T('nessun avviso di errore a schermo', await page.locator('#erroreGioco').count() === 0);
-  T('versione v2.2.6 nel marchio', (await page.locator('#versione').textContent()) === 'v2.2.6');
+  T('versione v2.2.7 nel marchio', (await page.locator('#versione').textContent()) === 'v2.2.7');
   T('logo DaProd nel HUD, nella schermata iniziale e nel negozio', await page.locator('svg.logoDP').count() >= 3);
 
   // --- ALL'INIZIO SI SCEGLIE LA MONETA ---
@@ -364,17 +364,31 @@ console.log('\n== COMPUTER ==');
     D.avviaEvento('triplo'); D.finisciEvento(); r.triplo = D.timer();
     D.avviaEvento('blackout'); D.finisciEvento(); r.fermo = D.timer().fermo;
     const z0 = D.SPINTORI[2].z; D.simula(2); r.fermi = Math.abs(D.SPINTORI[2].z - z0) < 1e-6;
+    D.simula(10); // la FRENESIA di prima deve aver riaperto i buchi
     D.avviaEvento('voragine'); D.finisciEvento(); r.buchi = D.LIV[2].zEdge - D.inizioBuchi();
-    D.simula(30); r.dopo = D.timer();
+    D.simula(125); r.dopo = D.timer();
+    // 2.2.7: gli effetti accesi si vedono ai lati, e lampeggiano negli ultimi 10 s.
+    D.avviaEvento('blackout'); D.finisciEvento(); D.aggiornaEffettiUI(1);
+    r.lato = document.querySelectorAll('#effetti .eff.cattivo').length === 1 && document.getElementById('bordoDx').classList.contains('su');
+    D.simula(22); D.aggiornaEffettiUI(1);
+    r.lampeggia = document.querySelector('#effetti .eff.finisce') !== null;
+    D.simula(10); D.aggiornaEffettiUI(1);
+    r.spento = document.querySelectorAll('#effetti .eff').length === 0 && !document.getElementById('bordoDx').classList.contains('su');
+    const conti = { true: 0, false: 0 };
+    for (let i = 0; i < 400; i++) conti[D.EVENTI[D.eventoACaso()].buono]++;
+    r.meta = conti;
     return r;
   });
   T('gli eventi sono dodici, sei buoni e sei cattivi', forti.quanti === 12 && forti.cattivi === 6, JSON.stringify(forti));
-  T('BONANZA: quaranta monete del taglio piu\' grosso', forti.bonanza === 40 * 50000, JSON.stringify(forti));
-  T('TASSA: la casa si prende il 20%', forti.tassa === Math.floor(2100000 * 0.2), JSON.stringify(forti));
-  T('IL LADRO si porta via otto monete', forti.ladro >= 8, JSON.stringify(forti));
-  T('TRIPLO: vincite per tre, per 30 s', forti.triplo.k === 3 && forti.triplo.moltiplica > 25, JSON.stringify(forti));
+  T('BONANZA: sessanta monete del taglio piu\' grosso', forti.bonanza === 60 * 50000, JSON.stringify(forti));
+  T('TASSA: la casa si prende il 30%', forti.tassa === Math.floor(3100000 * 0.3), JSON.stringify(forti));
+  T('IL LADRO si porta via dodici monete', forti.ladro >= 12, JSON.stringify(forti));
+  T('TRIPLO: vincite per tre, per 2 minuti', forti.triplo.k === 3 && forti.triplo.moltiplica > 110, JSON.stringify(forti));
   T('BLACKOUT: gli spintori si fermano', forti.fermo > 20 && forti.fermi, JSON.stringify(forti));
   T('VORAGINE: buchi lunghi il triplo, poi tornano normali', forti.buchi > 4.7 && forti.dopo.voragine === 0, JSON.stringify(forti));
+  T('gli effetti accesi si vedono ai lati', forti.lato, JSON.stringify(forti));
+  T('negli ultimi 10 secondi lampeggiano, poi spariscono', forti.lampeggia && forti.spento, JSON.stringify(forti));
+  T('cinquanta e cinquanta: buoni e cattivi a meta\'', forti.meta.true > 150 && forti.meta.false > 150, JSON.stringify(forti.meta));
 
   // --- SCRITTE SPEGNIBILI ---
   await page.locator('#scritteBtn').click();

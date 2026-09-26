@@ -57,22 +57,25 @@ tu stia lanciando.
 
 Ogni tre-sei minuti di gioco lo slot chiama un **EVENTO DaProd**: la camera vola davanti allo
 schermo, i rulli girano (l'ultimo rallenta fino all'ultimo simbolo), esce l'evento e si torna al tavolo.
-Sono dodici, e fanno male o bene **davvero**: premi e danni si misurano sul taglio più grosso che lanci.
+Sono dodici, e fanno male o bene **davvero**: **cinquanta e cinquanta**, si tira prima a testa o croce
+(buono o cattivo) e poi quale. Premi e danni si misurano sul taglio più grosso che lanci. Quelli a tempo
+durano **30 secondi o 2 minuti** e si vedono **ai lati dello schermo** (il bordo verde a sinistra per i buoni,
+rosso a destra per i cattivi, e le pastiglie col conto alla rovescia): negli ultimi dieci secondi lampeggiano.
 
 | | Evento | Cosa succede |
 | --- | --- | --- |
-| 🌧 | Pioggia d'oro | trenta monete del tuo taglio più grosso piovono sul tavolo |
-| ⚙️ | Frenesia | per 20 s spintori scatenati e buchi della casa chiusi |
-| 🧲 | Calamita DaProd | per 25 s le monete uguali che si toccano si impilano da sole |
-| ✖️3 | Triplo | per 30 s quello che cade nella vasca vale il triplo |
-| 💰 | Bonanza | quaranta monete del tuo taglio più grosso, dritte nel saldo |
+| 🌧 | Pioggia d'oro | quaranta monete del tuo taglio più grosso piovono sul tavolo |
+| ⚙️ | Frenesia | per 30 s spintori scatenati e buchi della casa chiusi |
+| 🧲 | Calamita DaProd | per 2 minuti le monete uguali che si toccano si impilano da sole |
+| ✖️3 | Triplo | per 2 minuti quello che cade nella vasca vale il triplo |
+| 💰 | Bonanza | sessanta monete del tuo taglio più grosso, dritte nel saldo |
 | ☄️ | Sciame di meteore | cinque meteore sul bordo del terzo piano |
 | 🌋 | Terremoto | le monete sui lati del terzo piano finiscono alla casa |
-| 🧾 | Tassa DaProd | la casa si prende il 20% del saldo |
-| 🔌 | Blackout | gli spintori si fermano per 25 s |
-| 🕳 | Voragine | per 25 s i buchi della casa sono lunghi il triplo |
-| 🧊 | Gelo | per 30 s quello che cade vale la metà |
-| 🦹 | Il Ladro | si porta via le otto monete più preziose del tavolo |
+| 🧾 | Tassa DaProd | la casa si prende il 30% del saldo |
+| 🔌 | Blackout | gli spintori si fermano per 30 s |
+| 🕳 | Voragine | per 2 minuti i buchi della casa sono lunghi il triplo |
+| 🧊 | Gelo | per 2 minuti quello che cade vale la metà |
+| 🦹 | Il Ladro | si porta via le dodici monete più preziose del tavolo |
 
 ### 🕹 Abilità (accanto alla scossa, anche quelle ancora bloccate)
 
@@ -103,11 +106,18 @@ versione piccola, e il tasto **💬** le spegne (restano solo gli avvisi importa
 
 Qui sul sito e nelle app il gioco è la sua **demo**, come sempre: niente da collegare, niente conti.
 
-Dentro la [DaProd Suite](https://github.com/cammo22/DaProdSuite) il gioco sta nella **sala giochi**: quello che
-vinci fa punti della partita, e quando stacchi diventano **Lire DaProd** alla quotazione della Borsa. Le cose
-grosse (jackpot, tris al gettone DaProd, eventi) danno **carte** per la slot delle combinazioni. Il ponte è
-`daprod-lira.js`, lo stesso file nei tre giochi (la copia buona sta nella suite): fuori dalla suite non fa niente,
-e se il computer DaProd non risponde il gioco continua lo stesso.
+Dentro la [DaProd Suite](https://github.com/cammo22/DaProdSuite) il gioco sta nella **sala giochi**, e **una lira è
+una lira**: quello che ricarichi dal portafoglio della suite è il tuo saldo qui, e l'incasso lo riporta indietro tutto,
+senza tetto, meno il 10% di DaProd. Quello che il tavolo si mangia è andato.
+
+- **I potenziamenti si pagano coi soldi veri** (dalla 2.2.7): abilità e monete da sbloccare escono dal portafoglio della
+  suite, e ogni volta la sala chiede conferma. Restano tuoi anche dopo l'incasso.
+- **L'incasso chiude la partita**: la sala dice prima tutto (quanto hai messo, quanto porti a casa), e dopo il sì il
+  saldo va nel portafoglio e il tavolo riparte pulito.
+- Le cose grosse (jackpot, tris al gettone DaProd, eventi) danno **carte** per la slot delle combinazioni.
+
+Il ponte è `daprod-lira.js`, lo stesso file nei tre giochi (la copia buona sta nella suite): fuori dalla suite non fa
+niente, e se il computer DaProd non risponde il gioco continua lo stesso.
 
 ## ✨ Cosa c'è dentro
 
