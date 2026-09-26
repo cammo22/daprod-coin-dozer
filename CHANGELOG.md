@@ -4,6 +4,21 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.2.7] — 2026-09-26 · Cinquanta e cinquanta, e gli effetti ai lati
+
+- **Cinquanta e cinquanta**: «il dozer ha 50 e 50 di poter vincere molto o perdere molto». Ogni evento si tira prima a
+  testa o croce (buono o cattivo), poi quale, e sono più forti: Bonanza 60 monete, Pioggia d'oro 40, Tassa 30%, il
+  Ladro dodici monete.
+- **Gli effetti durano 30 secondi o 2 minuti**. Calamita, Triplo, Voragine e Gelo durano due minuti; Frenesia e
+  Blackout trenta secondi.
+- **Gli effetti accesi si vedono ai lati dello schermo**: il bordo sinistro si illumina di verde per quelli buoni, il
+  destro di rosso per quelli cattivi, e a destra c'è una pastiglia per effetto col conto alla rovescia e la barra.
+  **Negli ultimi dieci secondi lampeggiano.** Valgono anche per turbo e calamita delle abilità.
+- **Nella suite i potenziamenti si pagano coi soldi veri**: abilità e monete da sbloccare escono dal portafoglio della
+  [DaProd Suite](https://github.com/cammo22/DaProdSuite), e ogni volta la sala avvisa. Restano tuoi.
+- **L'incasso non ha più tetto e chiude la partita**: il saldo va tutto nel portafoglio (meno il 10% di DaProd), e il
+  tavolo riparte pulito. Prima si portava a casa al massimo il doppio di quello messo.
+
 ## [2.2.6] — 2026-09-25 · Più grande, più cattivo, fino al miliardo
 
 - **Il campo è più grande**: un metro in più per lato, e il terzo piano (quello che cade nella vasca) è più lungo di 2,2.
