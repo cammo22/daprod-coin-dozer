@@ -4,6 +4,13 @@ Tutte le versioni notevoli del gioco. Le date sono in formato AAAA-MM-GG.
 Ogni versione pubblicata ha anche una [release GitHub](https://github.com/cammo22/daprod-coin-dozer/releases)
 e va online su [GitHub Pages](https://cammo22.github.io/daprod-coin-dozer/) subito dopo il push.
 
+## [2.3.1] — 2026-09-27 · Effetti piccoli e notifiche che contano
+
+- **Gli effetti attivi si rimpiccioliscono**: «minimizzare i potenziamenti acquistati e attivi». Il tasto ⚡ a sinistra
+  li riduce a icona e tempo (restano buoni a sinistra, cattivi a destra) e se lo ricorda. Si cambia anche dalle opzioni.
+- **Notifiche: tutte o solo importanti**, dalle opzioni. Con «solo importanti» restano gli avvisi dei soldi, degli
+  sblocchi e degli errori.
+
 ## [2.3.0] — 2026-09-26 · La partita si paga, la slot decide, e gli effetti non rallentano
 
 - **Nella suite la partita nuova si paga**: si carica il gioco dal portafoglio DaProd con quanto si vuole (consigliati
