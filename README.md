@@ -7,6 +7,7 @@
 [![Made with Three.js](https://img.shields.io/badge/Three.js-r160-black?style=flat-square&logo=three.js)](https://threejs.org/)
 [![Un solo file](https://img.shields.io/badge/HTML-singolo_file-ffab00?style=flat-square)](index.html)
 [![Licenza MIT](https://img.shields.io/badge/Licenza-MIT-blue?style=flat-square)](LICENSE)
+[![Discord](https://img.shields.io/badge/Discord-DaProd-5865F2?logo=discord&logoColor=white)](https://discord.gg/Njs52aacwq)
 
 Il **coin dozer della sala slot DaProd**, versione 2: una macchina a **tre piani** profondi con tre
 spintori. Scegli la moneta, scegli la colonna, e guardala scendere **di piano in piano** fino alla vasca
